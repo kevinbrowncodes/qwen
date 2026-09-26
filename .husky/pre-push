@@ -1,0 +1,14 @@
+# .husky/pre-push (STORY_008): runs on the host at `git push`; needs only docker. Executed by husky's shim with sh.
+# The gate runs only when a ref is being pushed to develop (CLAUDE.md §4: push to develop only after all six steps).
+# --no-verify skips it: emergencies only, with the justification in the commit message.
+root="$(git rev-parse --show-toplevel)"
+gate_needed=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/develop) gate_needed=1 ;;
+  esac
+done
+if [ "$gate_needed" -eq 1 ]; then
+  echo "[pre-push] push to develop: running the gate"
+  "${GATE_RUN:-$root/tools/gate/run.sh}" || { echo "[pre-push] gate failed; push refused (fix, then push again; --no-verify only in an emergency)"; exit 1; }
+fi

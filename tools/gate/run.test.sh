@@ -31,5 +31,23 @@ FAIL_STEP=typecheck check "--from 3 skips typecheck and lint" 0 'all requested s
 FAIL_STEP=lint check "named steps run in gate order (build then lint fails second)" 2 'FAILED at step 2/6: lint' build lint
 out="$(GATE_DRY_RUN="$fake" "$HERE/run.sh" build lint 2>&1 || true)"
 if printf '%s\n' "$out" | grep 'fake-step' | sed -n '1p' | grep -q 'fake-step lint'; then pass=$((pass + 1)); echo "ok   gate order puts lint before build"; else fail=$((fail + 1)); echo "FAIL gate order"; fi
+# The pre-push hook (STORY_008): the gate runs only for a push to develop, and a failing gate refuses the push.
+hook="$HERE/../../.husky/pre-push"
+ran="$(mktemp)"; trap 'rm -f "$fake" "$ran"' EXIT
+cat > "$fake" <<'FAKE'
+#!/usr/bin/env bash
+echo ran >> "$RAN_LOG"
+[ -z "${GATE_FAILS:-}" ]
+FAKE
+hook_check() {  # hook_check <description> <expected-exit> <expected-runs> <remote-ref>
+  local desc="$1" want_exit="$2" want_runs="$3" ref="$4" rc=0
+  : > "$ran"
+  printf 'refs/heads/x 1111 %s 2222\n' "$ref" | RAN_LOG="$ran" GATE_RUN="$fake" sh "$hook" > /dev/null 2>&1 || rc=$?
+  local runs; runs="$(wc -l < "$ran" | tr -d ' ')"
+  if [ "$rc" = "$want_exit" ] && [ "$runs" = "$want_runs" ]; then pass=$((pass + 1)); echo "ok   $desc"; else fail=$((fail + 1)); echo "FAIL $desc (exit $rc, gate runs $runs)"; fi
+}
+hook_check "a push to develop runs the gate" 0 1 refs/heads/develop
+hook_check "a push to another branch does not" 0 0 refs/heads/feature
+GATE_FAILS=1 hook_check "a failing gate refuses the push" 1 1 refs/heads/develop
 echo "run.test.sh: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

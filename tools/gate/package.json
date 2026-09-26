@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bash run.test.sh"
+    "test": "bash run.test.sh && node --test src/coverage-rank.test.ts"
   }
 }

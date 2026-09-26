@@ -77,7 +77,18 @@ Our feature list follows the MVP Scope above.
 
 ## Testing
 
-TBD — defined by the testing-foundation epic. The bar itself (70/20/10 pyramid, stub generation server, no test may depend on the real model) is in [CLAUDE.md → §3](CLAUDE.md#3-how-features-are-built-important).
+The bar (the 70/20/10 pyramid, and no test may depend on the real model) is in [CLAUDE.md → §3](CLAUDE.md#3-how-features-are-built-important). The lanes, all run inside the gate container by `tools/gate/run.sh`:
+
+| Lane | Command | What it runs |
+| --- | --- | --- |
+| Unit | `pnpm test` | `app/lib/**/*.test.ts(x)` (jsdom), the stub's own tests, `recon/`'s tests, and the gate script's tests |
+| Integration | `pnpm test:integration` | The app's route handlers called directly against the stub started in-process, with history in a real temp file (`app/test/integration/`) |
+| E2E | `pnpm test:e2e` | Playwright against the **production standalone build** and the stub, both started by `app/playwright.config.ts`. Two projects: `desktop` at the recon's 1437×1031, and `narrow` as iPhone 13 |
+
+- **The stub generation server** (`tools/stub-generation-server/`, [README](tools/stub-generation-server/README.md)) implements [the job API contract](docs/contracts/job-api.md) with outcomes chosen by name (`X-Stub-Script`), advancing one step per status poll, never by wall clock.
+- **E2E fixtures** (`app/e2e/fixtures.ts`) reset the stub before every test, fail any test that ends with a stub job still running, and provide `submitAndWait` (the terminal-status wait registered before the submit) and `expectImageLoaded`. ESLint forbids `waitForTimeout` and `setViewportSize` in specs.
+- **Coverage floors** (the app's unit and integration lanes, and the stub) were set at the measured baseline minus 2 on 2026-09-26, and only ever go up. When a lane fails, the gate lists the files with the most uncovered branches.
+- **The pre-push hook** (`.husky/pre-push`) runs the whole gate on every push to `develop` and refuses the push if it fails. `pnpm install` inside the gate installs it (it sets `core.hooksPath`); `tools/gate/install-hooks.sh` does the same for a fresh clone.
 
 ## Running Recon
 

@@ -10,11 +10,16 @@
     "start": "pnpm --filter app start",
     "recon:login": "pnpm --filter recon login",
     "recon:check": "pnpm --filter recon check",
-    "test:integration": "pnpm --filter app test:integration"
+    "test:integration": "pnpm --filter app test:integration",
+    "test:e2e": "pnpm --filter app test:e2e",
+    "prepare": "husky"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
     ]
+  },
+  "devDependencies": {
+    "husky": "9.1.7"
   }
 }

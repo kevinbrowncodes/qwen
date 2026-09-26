@@ -19,6 +19,18 @@ export default defineConfig([
     },
   },
   {
+    // CLAUDE.md §6b encoded for specs: no sleeps after a submit, no bare viewport sizes (use a device descriptor).
+    files: ["e2e/**/*.ts"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off", // Playwright fixtures call `use`, and are not React
+      "no-restricted-properties": [
+        "error",
+        { object: "page", property: "waitForTimeout", message: "Wait for the terminal status response or a locator state, never a sleep (CLAUDE.md §6b)." },
+        { property: "setViewportSize", message: "Use a device descriptor project (devices[...]), never a bare viewport (CLAUDE.md §6 rule 9)." },
+      ],
+    },
+  },
+  {
     // The config files themselves are not part of the TypeScript project: no type-aware rules for them.
     files: ["**/*.mjs", "**/*.js"],
     ...tseslint.configs.disableTypeChecked,
