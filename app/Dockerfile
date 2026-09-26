@@ -12,9 +12,12 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY app/package.json app/
 COPY recon/package.json recon/
 COPY tools/gate/package.json tools/gate/
+COPY tools/stub-generation-server/package.json tools/stub-generation-server/
 RUN pnpm install --frozen-lockfile --filter app...
 
 FROM deps AS build
+# The stub too: the app's integration tests import it, and `next build` type-checks the whole app project (BUG_003).
+COPY tools/stub-generation-server/ tools/stub-generation-server/
 COPY app/ app/
 RUN pnpm --filter app build
 

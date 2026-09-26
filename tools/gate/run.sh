@@ -6,7 +6,8 @@
 #   tools/gate/run.sh --from 4        steps 4..6 (after a fix)
 #
 # Step 0 (always): pnpm install --frozen-lockfile, so node_modules in the bind mount match the lockfile.
-# Steps whose root script does not exist yet print "no lane yet" and pass (STORY_005).
+# Step 5 also builds the production image (BUG_003). Steps whose root script does not exist yet print "no lane yet"
+# and pass (STORY_005).
 # GATE_DRY_RUN=<command>: run "<command> <step>" instead of the container (for run.test.sh only).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,6 +37,11 @@ run_step() {  # run_step <step>; returns the step's status explicitly (an if-sta
     "$GATE_DRY_RUN" "$1" || rc=$?
   else
     gate pnpm run --silent "$1" || rc=$?
+  fi
+  if [ "$rc" -eq 0 ] && [ "$1" = "build" ] && [ -z "${GATE_DRY_RUN:-}" ]; then
+    # BUG_003: a change can pass `pnpm build` in the bind mount and still break the production image.
+    log "5/6 build: production image (docker compose build app)"
+    compose build --quiet app || rc=$?
   fi
   return "$rc"
 }
