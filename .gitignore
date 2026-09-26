@@ -1,0 +1,33 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Recon: the owner's browser session and raw captures never enter git (CLAUDE.md §3e, §4b)
+recon/.profile/
+recon/out/
+
+# Model weights live on the Spark's disk, never here (CLAUDE.md §4a)
+models/
+*.safetensors
+*.gguf
+*.ckpt
+*.pt
+*.bin
+
+# Generated images never enter git. Images in general do (recon captures under
+# docs/recon/, the stub's tiny fixture), so the ignore is by directory, not by
+# extension: every generator writes into one of these (CLAUDE.md §4a)
+generated/
+outputs/
+
+# Build and test output
+coverage/
+dist/
+.turbo/
+playwright-report/
+test-results/
+
+# Editor workspace files
+*.code-workspace
