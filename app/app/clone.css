@@ -90,3 +90,35 @@ html.mobile .sidebar-toggle-icon {
 html.mobile .mms-trigger__name {
   -webkit-text-fill-color: currentColor;
 }
+
+/* ---- Dropdowns and the + menu (STORY_010) ---- */
+/* Popups render on <body> (components/Popup.tsx), positioned from the trigger, as the reference's do. */
+.clone-dropdown {
+  position: relative;
+}
+.clone-mode-menu {
+  min-width: 255px;
+}
+.qwen-chat-v2-dropdown-menu-item.clone-item-active {
+  background: var(--background-option);
+}
+.qwen-chat-v2-dropdown-menu-item {
+  cursor: pointer;
+}
+/* The Upload item's subtitle ("file, image" on the reference; "image" here). */
+.clone-item-desc {
+  display: block;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--character-tertiary-text);
+}
+
+/* Image mode: the textarea is a block, so its inline baseline gap does not add 4px under it (reading: 106 tall). */
+.clone-image-mode .message-input-textarea {
+  display: block;
+}
+/* The pill's × takes the pill's accent (reading: "small x ... fill #426eff"). */
+.mode-select-current-mode .mode-select-current-mode-close {
+  color: inherit;
+  display: inline-flex;
+}

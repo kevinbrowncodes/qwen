@@ -17,7 +17,7 @@ Every story cites the 2026-09-26 capture (`docs/recon/2026-09-26/`), and the dep
 | # | Story | Status |
 | --- | --- | --- |
 | 009 | [The home screen is laid out like the reference, from the reference's own stylesheets and icons](../story/STORY_009_the_home_screen_is_laid_out_like_the_reference_from_its_own_stylesheets.md) | Done 2026-09-26 |
-| 010 | [The composer enters image mode and offers the model and the aspect ratio](../story/STORY_010_the_composer_enters_image_mode_and_offers_the_model_and_aspect_ratio.md) | Not started |
+| 010 | [The composer enters image mode and offers the model and the aspect ratio](../story/STORY_010_the_composer_enters_image_mode_and_offers_the_model_and_aspect_ratio.md) | Done 2026-09-26 |
 | 011 | [Reference images can be attached to the composer for an edit](../story/STORY_011_reference_images_can_be_attached_for_an_edit.md) | Not started |
 | 012 | [A generation runs in place, from submit to the finished image, and can be cancelled](../story/STORY_012_a_generation_runs_in_place_from_submit_to_the_finished_image.md) | Not started |
 | 013 | [Past generations are listed in the sidebar and in My Library, and can be reopened, downloaded or removed](../story/STORY_013_past_generations_are_listed_and_reopened_from_the_sidebar_and_my_library.md) | Not started |

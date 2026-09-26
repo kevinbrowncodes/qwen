@@ -1,7 +1,7 @@
 # STORY_010 — The composer enters image mode and offers the model and the aspect ratio
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md)
-**Status:** Not started (after STORY_009)
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the owner, I want the composer's **+** to offer "Create Image", and image mode to show the reference's blue pill with the model and aspect-ratio dropdowns, so that I choose options exactly where I would on chat.qwen.ai.
@@ -63,12 +63,12 @@ After STORY_009 the composer renders in its resting state, and **+** does nothin
 
 ## Acceptance Criteria
 
-- [ ] **+** opens the menu with the two items. `Create Image` enters image mode, and Escape or an outside click closes the menu.
-- [ ] Image mode shows the pill, the model dropdown and the ratio dropdown with the measured values above. × leaves image mode.
-- [ ] The model dropdown lists the models from `/api/capabilities`, with the first selected. The ratio dropdown lists the seven ratios in the reference's order with their glyphs, and the default comes from `defaultRatio` (16:9). Choosing an item closes the popup and updates the trigger.
-- [ ] Typing shows the enabled Send. Empty or whitespace-only text shows it disabled. Enter sends and Shift+Enter makes a new line. Send is wired to a `submit` callback, and STORY_012 creates the job.
-- [ ] The dropdowns work by keyboard: Enter or Space opens, the arrow keys move, Enter picks, Escape closes. Focus returns to the trigger.
-- [ ] The options chosen persist within the session (a reload keeps image mode and the ratio through `sessionStorage`).
+- [x] **+** opens the menu with the two items. `Create Image` enters image mode, and Escape or an outside click closes the menu.
+- [x] Image mode shows the pill, the model dropdown and the ratio dropdown with the measured values above. × leaves image mode.
+- [x] The model dropdown lists the models from `/api/capabilities`, with the first selected. The ratio dropdown lists the seven ratios in the reference's order with their glyphs, and the default comes from `defaultRatio` (16:9). Choosing an item closes the popup and updates the trigger.
+- [x] Typing shows the enabled Send. Empty or whitespace-only text shows it disabled. Enter sends and Shift+Enter makes a new line. Send is wired to a `submit` callback, and STORY_012 creates the job.
+- [x] The dropdowns work by keyboard: Enter or Space opens, the arrow keys move, Enter picks, Escape closes. Focus returns to the trigger.
+- [x] The options chosen persist within the session (a reload keeps image mode and the ratio through `sessionStorage`).
 
 ## Technical Notes
 
@@ -92,3 +92,26 @@ After STORY_009 the composer renders in its resting state, and **+** does nothin
 ## Estimated Complexity
 
 M
+
+## Done (2026-09-26)
+
+**Side by side** (ours measured in the gate image after settling; reference values from the readings):
+
+| Element | Reference | Ours | Delta |
+| --- | --- | --- | --- |
+| Composer in image mode | 760×106 | 760×106 | none |
+| Textarea | 734×32 | 734×32 | none |
+| Footer | y 521, 734×32 | y 522, 734×32 | +1 |
+| Pill | 142×32, `#426eff` on the accent tint | 151×32, `rgb(66,110,255)` | +9 wide: the font (see below) |
+| Model / ratio triggers | 144 / 65 wide | 166 / 81 wide | the font |
+| Ratio popup | 126×286, items 36, r12, `#2c2c2c` | 126×286, items 36, r12, `#2c2c2c` | none |
+| Send | 32, `#ffffff`, r 50%, `#222222` arrow | same | none |
+
+Every width delta is text: the gate image has no Inter or SF, so the system stack renders in DejaVu, about 17% wider than the reference's text (the STORY_009 heading shows the same ratio). The owner's Mac resolves the stack as the reference did.
+
+**Corrections found while building:**
+- **Popups render in a layer on `<body>`** (`components/Popup.tsx`), as the reference's do. Rendered inside the composer, they were clipped by its `overflow: hidden`, and at phone width they sat under `main`.
+- **At phone width the composer keeps two rows** (the textarea, then the footer). The capture notes say it "collapses to one row", but that state was not captured (`coverage.md`). One row at 357 wide would leave the textarea about 40px next to the four controls. Ours matches the notes' other points: the icon-only pill, "Model 2.1", and popups that open above.
+- Testing Library's cleanup now runs after every unit test (`vitest.setup.ts`). Without Vitest globals it never had, and the second render of a component test saw the first one's elements.
+
+**Tests:** unit tests for `composer-state` (reducer, capabilities parsing, the session round-trip), `Dropdown` (mouse, keyboard, closing) and `Popup`. E2E: `image-mode.spec.ts`, 6 cases across the two projects. Gate green.
