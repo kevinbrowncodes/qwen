@@ -94,7 +94,7 @@ TBD (EPIC_002). Dev server on port 3000.
 | --- | --- |
 | Serving stack | TBD (EPIC_004) — Diffusers has day-0 support; ComfyUI support was not stated on the model card when read |
 | Model / checkpoint | Qwen-Image-2.1, precision to be measured |
-| Licence | Qwen Research License — **non-commercial only**; see open question #1 |
+| Licence | Qwen Research License — **non-commercial only**; decided 2026-09-26, see below |
 | Memory split | to be measured (EPIC_004) |
 | Port / env vars | to be set (EPIC_004) |
 
@@ -106,7 +106,7 @@ The Spark facts (OS, CUDA, memory, disk, what was already installed) are recorde
 - Inference: Diffusers supports it from day 0 (`QwenImage21Pipeline`), with a CPU-offload option. **VRAM requirements and the full pipeline's memory footprint are not stated** on the card; EPIC_004 measures the real footprint on the Spark. ComfyUI support is not mentioned on the card as of the read date.
 - **License: Qwen Research License Agreement (release date 2026-09-20).** It grants rights **"FOR NON-COMMERCIAL PURPOSES ONLY"** (research or evaluation); commercial use requires a separate license from Alibaba (`model-business@notice.qwencloud.com`). No territorial exclusions. Distributed copies carry an attribution notice, and models built with its outputs must display "Built with Qwen".
 
-**Open question #1 (2026-09-26): the license.** Qwen-Image-2.1's weights are open but non-commercial. A personal workstation generating images for the owner's own use fits; **if any generated image ever feeds commercial work, 2.1 is not licensed for it.** The Apache-2.0 alternative in the same family is the original **Qwen-Image** (20B, 2025-08, text-to-image; editing via Qwen-Image-Edit) — bigger, older, unrestricted. The owner decides in EPIC_004 in writing; until then the epic carries both candidates.
+**The license question, decided.** Qwen-Image-2.1's weights are open but non-commercial. A personal workstation generating images for the owner's own use fits; **if any generated image ever feeds commercial work, 2.1 is not licensed for it.** The Apache-2.0 alternative in the same family is the original **Qwen-Image** (20B, 2025-08, text-to-image; editing via Qwen-Image-Edit) — bigger, older, unrestricted. **Decided 2026-09-26: the owner builds toward Qwen-Image-2.1 for personal, non-commercial use only** ([EPIC_004](docs/epic/EPIC_004_an_image_model_runs_on_the_dgx_spark_behind_the_same_job_api.md) records the decision).
 
 Sources: [Qwen/Qwen-Image-2.1 model card](https://huggingface.co/Qwen/Qwen-Image-2.1), [Qwen Research LICENSE](https://huggingface.co/Qwen/Qwen-Image-2.1/raw/main/LICENSE), [Qwen/Qwen-Image model card](https://huggingface.co/Qwen/Qwen-Image).
 
