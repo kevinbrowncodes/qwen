@@ -1,0 +1,364 @@
+{
+  "state": "composer-reference-attached",
+  "url_path": "/",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "composer",
+      "selector": ".message-input-container",
+      "tag": "div",
+      "classes": "message-input-container",
+      "role": "",
+      "aria_label": "",
+      "text": "Create Image / Qwen-Image 2.0",
+      "box": {
+        "x": 455,
+        "y": 461,
+        "width": 760,
+        "height": 170
+      },
+      "style": {
+        "font_family": "system-ui, ui-sans-serif, -apple-system, \"system-ui\", Inter, NotoSansHans, sans-serif",
+        "font_size": "16px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#000000",
+        "background": "#2c2c2c",
+        "border": "0.8px solid rgba(250,251,255,0.2)",
+        "border_radius": "28px",
+        "padding": "12px",
+        "gap": "normal",
+        "box_shadow": "rgba(0,0,0,0.05) 0px 8px 16px -4px",
+        "transition": "height 0.2s ease-in-out, box-shadow 0.2s ease"
+      },
+      "icon_svg": null,
+      "notes": "height 106 -> 170 (+56 thumbnail row, +8 margin); block stays vertically centered in the page",
+      "children": [
+        {
+          "name": "attachment-row",
+          "selector": ".message-input-column-file",
+          "tag": "div",
+          "classes": "message-input-column-file",
+          "role": "",
+          "aria_label": "",
+          "text": "",
+          "box": {
+            "x": 468,
+            "y": 473,
+            "width": 734,
+            "height": 56
+          },
+          "style": {
+            "padding": "0px",
+            "margin": "0px 0px 8px"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "file-card-list",
+              "selector": ".file-card-list",
+              "tag": "div",
+              "classes": "file-card-list",
+              "role": "",
+              "aria_label": "",
+              "text": "",
+              "box": {
+                "x": 468,
+                "y": 473,
+                "width": 734,
+                "height": 56
+              },
+              "style": {
+                "gap": "8px",
+                "padding": "0px",
+                "background": "transparent"
+              },
+              "icon_svg": null,
+              "children": [
+                {
+                  "name": "reference-thumbnail",
+                  "selector": ".vision-item-container",
+                  "tag": "div",
+                  "classes": "vision-item-container",
+                  "role": "",
+                  "aria_label": "",
+                  "text": "",
+                  "box": {
+                    "x": 468,
+                    "y": 473,
+                    "width": 56,
+                    "height": 56
+                  },
+                  "style": {
+                    "font_family": "inherit",
+                    "font_size": "16px",
+                    "font_weight": "400",
+                    "line_height": "normal",
+                    "color": "#000000",
+                    "background": "rgba(250,251,255,0.05)",
+                    "border": "0px",
+                    "border_radius": "16px",
+                    "padding": "0px",
+                    "gap": "normal",
+                    "box_shadow": "none",
+                    "transition": "none",
+                    "overflow": "hidden"
+                  },
+                  "icon_svg": null,
+                  "children": [
+                    {
+                      "name": "thumbnail-media",
+                      "selector": ".vision-item-container > .media > .vision-item-content",
+                      "tag": "div",
+                      "classes": "media > vision-item-content",
+                      "box": {
+                        "x": 468,
+                        "y": 473,
+                        "width": 56,
+                        "height": 56
+                      },
+                      "style": {},
+                      "icon_svg": null,
+                      "children": [
+                        {
+                          "name": "thumbnail-image",
+                          "selector": "img.vision-item-image",
+                          "tag": "img",
+                          "classes": "vision-item-image",
+                          "src": "[owner photo] (https, already uploaded)",
+                          "alt": "[owner photo]",
+                          "box": {
+                            "x": 468,
+                            "y": 473,
+                            "width": 56,
+                            "height": 56
+                          },
+                          "style": {
+                            "object_fit": "cover",
+                            "border_radius": "0px (clipped by container 16px)"
+                          },
+                          "icon_svg": null,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "name": "remove-button",
+                      "selector": ".vision-item-container button.close-button",
+                      "tag": "button",
+                      "classes": "close-button",
+                      "role": "",
+                      "aria_label": "Remove file",
+                      "text": "",
+                      "box": {
+                        "x": 503,
+                        "y": 478,
+                        "width": 14,
+                        "height": 14
+                      },
+                      "style": {
+                        "font_family": "inherit",
+                        "font_size": "13.3333px",
+                        "font_weight": "400",
+                        "line_height": "normal",
+                        "color": "#222222",
+                        "background": "rgba(250,251,255,0.6)",
+                        "border": "0px",
+                        "border_radius": "50%",
+                        "padding": "0px",
+                        "gap": "normal",
+                        "box_shadow": "none",
+                        "transition": "none",
+                        "position": "absolute; top 5px; right 7px",
+                        "display": "flex",
+                        "cursor": "pointer",
+                        "opacity": "1 (always visible, not hover-only)"
+                      },
+                      "icon_svg": null,
+                      "icon": "small x, 10px box / 5x5 glyph, fill #222222 (span.anticon.icon-close, sprite qwpcicon-close2; Lucide 'x')",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "prompt-input",
+          "selector": "textarea.message-input-textarea",
+          "tag": "textarea",
+          "classes": "message-input-textarea",
+          "role": "",
+          "aria_label": "",
+          "text": "[owner text]",
+          "placeholder": "Ask Qwen",
+          "box": {
+            "x": 468,
+            "y": 537,
+            "width": 734,
+            "height": 32
+          },
+          "style": {
+            "font_size": "16px",
+            "line_height": "26px",
+            "color": "#fafbff",
+            "padding": "3px 8px"
+          },
+          "icon_svg": null,
+          "children": []
+        },
+        {
+          "name": "composer-footer",
+          "selector": ".message-input-column-footer",
+          "tag": "div",
+          "classes": "message-input-column-footer",
+          "box": {
+            "x": 468,
+            "y": 585,
+            "width": 734,
+            "height": 32
+          },
+          "style": {},
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "mode-select-group",
+              "selector": ".mode-select",
+              "tag": "div",
+              "classes": "mode-select",
+              "box": {
+                "x": 468,
+                "y": 585,
+                "width": 335,
+                "height": 32
+              },
+              "style": {
+                "gap": "8px"
+              },
+              "icon_svg": null,
+              "notes": "width 408 -> 335: aspect-ratio dropdown removed while an image is attached",
+              "children": [
+                {
+                  "name": "mode-select-button",
+                  "selector": ".mode-select-open",
+                  "tag": "div",
+                  "classes": "mode-select-open",
+                  "aria_label": "Select Mode",
+                  "box": {
+                    "x": 468,
+                    "y": 585,
+                    "width": 32,
+                    "height": 32
+                  },
+                  "icon_svg": null,
+                  "icon": "bold plus (qwpcicon-addBold)",
+                  "children": []
+                },
+                {
+                  "name": "image-mode-pill (unchanged)",
+                  "selector": ".mode-select-current-mode",
+                  "tag": "div",
+                  "classes": "mode-select-current-mode",
+                  "text": "Create Image",
+                  "box": {
+                    "x": 508,
+                    "y": 585,
+                    "width": 142,
+                    "height": 32
+                  },
+                  "style": {
+                    "color": "#426eff",
+                    "background": "rgba(66,110,255,0.12)",
+                    "border_radius": "999px"
+                  },
+                  "icon_svg": null,
+                  "children": []
+                },
+                {
+                  "name": "image-model-select (unchanged)",
+                  "selector": ".message-input-column-footer-submode",
+                  "tag": "div",
+                  "classes": "message-input-column-footer-submode",
+                  "text": "Qwen-Image 2.0",
+                  "box": {
+                    "x": 658,
+                    "y": 585,
+                    "width": 144,
+                    "height": 32
+                  },
+                  "icon_svg": null,
+                  "children": []
+                }
+              ],
+              "removed_children": [
+                "aspect-ratio-select ('16:9')"
+              ]
+            },
+            {
+              "name": "send-button",
+              "selector": "button.send-button",
+              "tag": "button",
+              "classes": "send-button",
+              "aria_label": "Send",
+              "disabled": false,
+              "box": {
+                "x": 1171,
+                "y": 585,
+                "width": 32,
+                "height": 32
+              },
+              "style": {
+                "background": "#ffffff",
+                "color": "#222222",
+                "border_radius": "50%"
+              },
+              "icon_svg": null,
+              "icon": "up arrow (qwpcicon-sendChat)",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "example-prompts (unchanged, pushed down)",
+      "selector": ".chat-recommend-image",
+      "tag": "div",
+      "classes": "chat-recommend-image",
+      "box": {
+        "x": 455,
+        "y": 654,
+        "width": 760,
+        "height": 189
+      },
+      "icon_svg": null,
+      "children": []
+    }
+  ],
+  "status_text": "none (no progress bar, spinner or status string at read time; src already https)",
+  "unchanged": [
+    "Create Image pill",
+    "Qwen-Image 2.0 dropdown",
+    "placeholder 'Ask Qwen'",
+    "no 'edit' label"
+  ],
+  "changed": [
+    "aspect-ratio dropdown removed",
+    "composer height 106 -> 170",
+    "thumbnail row added above textarea"
+  ],
+  "root_css_variables": {
+    "_note": "unchanged from home-signed-in@1437"
+  },
+  "loaded_stylesheets": [
+    "unchanged"
+  ],
+  "loaded_fonts": [
+    "none via document.fonts (system stack)"
+  ],
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}

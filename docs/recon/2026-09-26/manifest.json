@@ -1,0 +1,207 @@
+[
+  {
+    "state": "aspect-ratio-open",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/aspect-ratio-open@1437.json",
+    "url_path": "/",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "composer-image-mode",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/composer-image-mode@1437.json",
+    "url_path": "/",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "composer-reference-attached",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/composer-reference-attached@1437.json",
+    "url_path": "/",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "composer-typed",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/composer-typed@1437.json",
+    "url_path": "/",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "edit-done",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/edit-done@1437.json",
+    "url_path": "/c/[chat-id]",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "home-signed-in",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "owner-save-page",
+    "file": "snapshots/home-signed-in@1437.html",
+    "url_path": "/",
+    "captured": "2026-09-26",
+    "note": "Chrome 'Save Page As, complete' of the signed-in home; scripts removed, identity masked, stylesheets relinked to ../assets/css/."
+  },
+  {
+    "state": "home-signed-in",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/home-signed-in@1437.json",
+    "url_path": "/",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "image-model-open",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/image-model-open@1437.json",
+    "url_path": "/",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "job-done",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/job-done@1437.json",
+    "url_path": "/c/[chat-id]",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "job-generating",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/job-generating@1437.json",
+    "url_path": "/c/[chat-id]",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "job-submitted",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/job-submitted@1437.json",
+    "url_path": "/c/new-chat",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "mode-menu-open",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/mode-menu-open@1437.json",
+    "url_path": "/",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "my-library",
+    "width": 1437,
+    "viewport": {
+      "width": 1437,
+      "height": 1031
+    },
+    "source": "extension-reading",
+    "file": "states/my-library@1437.json",
+    "url_path": "/library",
+    "captured": "2026-09-26",
+    "note": "The owner's browser was at 125% zoom; values are CSS px, so the layout is the one a 1437-px-wide CSS viewport gets."
+  },
+  {
+    "state": "home-signed-in",
+    "width": 393,
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "source": "extension-reading",
+    "file": "states/home-signed-in@393.json",
+    "url_path": "/",
+    "captured": "2026-09-26"
+  },
+  {
+    "state": "job-done",
+    "width": 393,
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "source": "extension-reading",
+    "file": "states/job-done@393.json",
+    "url_path": "/c/[chat-id]",
+    "captured": "2026-09-26"
+  },
+  {
+    "state": "my-library",
+    "width": 393,
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "source": "extension-reading",
+    "file": "states/my-library@393.json",
+    "url_path": "/library",
+    "captured": "2026-09-26"
+  }
+]

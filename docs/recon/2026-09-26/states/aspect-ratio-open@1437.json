@@ -1,0 +1,190 @@
+{
+  "state": "aspect-ratio-open",
+  "url_path": "/",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "aspect-ratio-select (trigger, open)",
+      "selector": ".message-input-column-footer .qwen-chat-v2-dropdown-menu-select (2nd)",
+      "tag": "div",
+      "classes": "qwen-chat-v2-dropdown-menu-select qwen-chat-v2-dropdown-menu-select-text",
+      "role": "",
+      "aria_label": "",
+      "text": "16:9",
+      "box": {
+        "x": 811,
+        "y": 521,
+        "width": 65,
+        "height": 32
+      },
+      "style": {
+        "font_family": "system-ui, ui-sans-serif, -apple-system, \"system-ui\", Inter, NotoSansHans, sans-serif",
+        "font_size": "14px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#fafbff",
+        "background": "transparent",
+        "border": "0.8px solid transparent",
+        "border_radius": "9999px",
+        "padding": "4px 8px",
+        "gap": "4px",
+        "box_shadow": "none",
+        "transition": "none"
+      },
+      "icon_svg": null,
+      "icon": "chevron-down caret only (no ratio icon on trigger)",
+      "children": []
+    },
+    {
+      "name": "aspect-ratio-menu",
+      "selector": ".qwen-chat-v2-dropdown-menu-popup.qwen-chat-v2-dropdown-menu-popup-bottom-left",
+      "tag": "div",
+      "classes": "qwen-chat-v2-dropdown-menu-popup qwen-chat-v2-dropdown-menu-popup-bottom-left",
+      "role": "",
+      "aria_label": "",
+      "text": "1:1 / 2:3 / 3:2 / 3:4 / 4:3 / 16:9 / 9:16",
+      "box": {
+        "x": 811,
+        "y": 576,
+        "width": 126,
+        "height": 286
+      },
+      "style": {
+        "font_family": "inherit",
+        "font_size": "14px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#fafbff",
+        "background": "#2c2c2c",
+        "border": "0.8px solid rgba(250,251,255,0.12)",
+        "border_radius": "12px",
+        "padding": "4px",
+        "gap": "4px between items",
+        "box_shadow": "rgba(0,0,0,0.05) 0px 12px 24px -2px",
+        "transition": "none",
+        "z_index": "1050"
+      },
+      "icon_svg": null,
+      "item_template": {
+        "selector": ".qwen-chat-v2-dropdown-menu-item",
+        "role": "menuitem",
+        "size": "116x36",
+        "style": {
+          "font_size": "14px",
+          "color": "#fafbff",
+          "border_radius": "8px",
+          "padding": "6px 12px",
+          "selected_background": "rgba(250,251,255,0.05)"
+        },
+        "structure": "span.item-content > span.item-icon(16x16) > span.anticon > svg > use ; span.item-label ; [selected] span.item-check"
+      },
+      "children": [
+        {
+          "name": "ratio 1:1",
+          "text": "1:1",
+          "selected": false,
+          "box": {
+            "x": 816,
+            "y": 581,
+            "width": 116,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "outlined rectangle, glyph 14x14, fill #fafbff (sprite qwpcicon-a-1by1AspectRatio)"
+        },
+        {
+          "name": "ratio 2:3",
+          "text": "2:3",
+          "selected": false,
+          "box": {
+            "x": 816,
+            "y": 621,
+            "width": 116,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "outlined rectangle, glyph 10x14 (qwpcicon-a-2by3AspectRatio)"
+        },
+        {
+          "name": "ratio 3:2",
+          "text": "3:2",
+          "selected": false,
+          "box": {
+            "x": 816,
+            "y": 661,
+            "width": 116,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "outlined rectangle, glyph 14x10 (qwpcicon-a-3by2AspectRatio)"
+        },
+        {
+          "name": "ratio 3:4",
+          "text": "3:4",
+          "selected": false,
+          "box": {
+            "x": 816,
+            "y": 701,
+            "width": 116,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "outlined rectangle, glyph 12x14 (qwpcicon-a-3by4AspectRatio)"
+        },
+        {
+          "name": "ratio 4:3",
+          "text": "4:3",
+          "selected": false,
+          "box": {
+            "x": 816,
+            "y": 741,
+            "width": 116,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "outlined rectangle, glyph 14x12 (qwpcicon-a-4by3AspectRatio)"
+        },
+        {
+          "name": "ratio 16:9",
+          "text": "16:9",
+          "selected": true,
+          "classes": "qwen-chat-v2-dropdown-menu-item qwen-chat-v2-dropdown-menu-item-selected",
+          "box": {
+            "x": 816,
+            "y": 781,
+            "width": 116,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "outlined rectangle, glyph 14x8 (qwpcicon-a-16by9AspectRatio) + check mark 16px"
+        },
+        {
+          "name": "ratio 9:16",
+          "text": "9:16",
+          "selected": false,
+          "box": {
+            "x": 816,
+            "y": 821,
+            "width": 116,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "outlined rectangle, glyph 8x14 (qwpcicon-a-9by16AspectRatio)"
+        }
+      ]
+    }
+  ],
+  "root_css_variables": {
+    "_note": "unchanged from home-signed-in@1437"
+  },
+  "loaded_stylesheets": [
+    "unchanged"
+  ],
+  "loaded_fonts": [
+    "none via document.fonts (system stack)"
+  ],
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}

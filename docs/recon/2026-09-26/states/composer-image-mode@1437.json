@@ -1,0 +1,572 @@
+{
+  "state": "composer-image-mode",
+  "url_path": "/",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "composer",
+      "selector": ".message-input-container",
+      "tag": "div",
+      "classes": "message-input-container",
+      "role": "",
+      "aria_label": "",
+      "text": "Create Image / Qwen-Image 2.0 / 16:9",
+      "box": {
+        "x": 455,
+        "y": 461,
+        "width": 760,
+        "height": 106
+      },
+      "style": {
+        "font_family": "system-ui, ui-sans-serif, -apple-system, \"system-ui\", Inter, NotoSansHans, sans-serif",
+        "font_size": "16px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#000000",
+        "background": "#2c2c2c",
+        "border": "0.8px solid rgba(250,251,255,0.2)",
+        "border_radius": "28px",
+        "padding": "12px",
+        "gap": "normal",
+        "box_shadow": "rgba(0,0,0,0.05) 0px 8px 16px -4px",
+        "transition": "height 0.2s ease-in-out, box-shadow 0.2s ease"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "prompt-input",
+          "selector": "textarea.message-input-textarea",
+          "tag": "textarea",
+          "classes": "message-input-textarea",
+          "role": "",
+          "aria_label": "",
+          "text": "",
+          "placeholder": "Ask Qwen",
+          "box": {
+            "x": 468,
+            "y": 473,
+            "width": 734,
+            "height": 32
+          },
+          "style": {
+            "font_family": "inherit",
+            "font_size": "16px",
+            "font_weight": "400",
+            "line_height": "26px",
+            "color": "#fafbff",
+            "background": "transparent",
+            "border": "0px",
+            "border_radius": "0px",
+            "padding": "3px 8px",
+            "gap": "normal",
+            "box_shadow": "none",
+            "transition": "none"
+          },
+          "icon_svg": null,
+          "children": []
+        },
+        {
+          "name": "composer-footer",
+          "selector": ".message-input-column-footer",
+          "tag": "div",
+          "classes": "message-input-column-footer",
+          "role": "",
+          "aria_label": "",
+          "text": "",
+          "box": {
+            "x": 468,
+            "y": 521,
+            "width": 734,
+            "height": 32
+          },
+          "style": {
+            "font_size": "16px",
+            "background": "transparent",
+            "padding": "0px",
+            "gap": "normal"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "mode-select-group",
+              "selector": ".mode-select",
+              "tag": "div",
+              "classes": "mode-select",
+              "role": "",
+              "aria_label": "",
+              "text": "",
+              "box": {
+                "x": 468,
+                "y": 521,
+                "width": 408,
+                "height": 32
+              },
+              "style": {
+                "background": "transparent",
+                "padding": "0px",
+                "gap": "8px"
+              },
+              "icon_svg": null,
+              "children": [
+                {
+                  "name": "mode-select-button",
+                  "selector": ".mode-select-open",
+                  "tag": "div",
+                  "classes": "mode-select-open",
+                  "role": "button",
+                  "aria_label": "Select Mode",
+                  "text": "",
+                  "box": {
+                    "x": 468,
+                    "y": 521,
+                    "width": 32,
+                    "height": 32
+                  },
+                  "style": {
+                    "font_size": "20px",
+                    "color": "#f7f8fc",
+                    "background": "transparent",
+                    "border_radius": "999px",
+                    "padding": "0px"
+                  },
+                  "icon_svg": null,
+                  "icon": "bold plus, 16px, fill #fafbff (sprite id qwpcicon-addBold)",
+                  "children": []
+                },
+                {
+                  "name": "image-mode-pill",
+                  "selector": ".mode-select-current-mode",
+                  "tag": "div",
+                  "classes": "mode-select-current-mode",
+                  "role": "",
+                  "aria_label": "",
+                  "text": "Create Image",
+                  "box": {
+                    "x": 508,
+                    "y": 521,
+                    "width": 142,
+                    "height": 32
+                  },
+                  "style": {
+                    "font_family": "inherit",
+                    "font_size": "14px",
+                    "font_weight": "400",
+                    "line_height": "normal",
+                    "color": "#426eff",
+                    "background": "rgba(66,110,255,0.12)",
+                    "border": "0px",
+                    "border_radius": "999px",
+                    "padding": "4px 8px",
+                    "gap": "4px",
+                    "box_shadow": "none",
+                    "transition": "none"
+                  },
+                  "icon_svg": null,
+                  "children": [
+                    {
+                      "name": "image-mode-icon",
+                      "selector": ".mode-select-current-mode-icon",
+                      "tag": "span",
+                      "classes": "anticon mode-select-current-mode-icon",
+                      "role": "",
+                      "aria_label": "",
+                      "text": "",
+                      "box": {
+                        "x": 516,
+                        "y": 529,
+                        "width": 16,
+                        "height": 16
+                      },
+                      "style": {
+                        "color": "#426eff"
+                      },
+                      "icon_svg": null,
+                      "icon": "picture with sparkle, 16px box / 14x12 glyph, fill #426eff (sprite id qwpcicon-aiPicture)",
+                      "children": []
+                    },
+                    {
+                      "name": "image-mode-label",
+                      "selector": ".mode-select-current-mode > span:not(.anticon)",
+                      "tag": "span",
+                      "classes": "",
+                      "role": "",
+                      "aria_label": "",
+                      "text": "Create Image",
+                      "box": {
+                        "x": 536,
+                        "y": 525,
+                        "width": 86,
+                        "height": 24
+                      },
+                      "style": {},
+                      "icon_svg": null,
+                      "children": []
+                    },
+                    {
+                      "name": "image-mode-close",
+                      "selector": ".mode-select-current-mode-close",
+                      "tag": "span",
+                      "classes": "anticon mode-select-current-mode-close",
+                      "role": "",
+                      "aria_label": "",
+                      "text": "",
+                      "box": {
+                        "x": 626,
+                        "y": 529,
+                        "width": 16,
+                        "height": 16
+                      },
+                      "style": {
+                        "color": "#426eff"
+                      },
+                      "icon_svg": null,
+                      "icon": "small x, 9x9 glyph, fill #426eff (sprite id qwpcicon-close2)",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "image-model-select",
+                  "selector": ".message-input-column-footer .qwen-chat-v2-dropdown-menu-select:nth-of-type(1)",
+                  "tag": "div",
+                  "classes": "qwen-chat-v2-dropdown-menu-select qwen-chat-v2-dropdown-menu-select-text",
+                  "role": "",
+                  "aria_label": "",
+                  "text": "Qwen-Image 2.0",
+                  "box": {
+                    "x": 658,
+                    "y": 521,
+                    "width": 144,
+                    "height": 32
+                  },
+                  "style": {
+                    "font_family": "inherit",
+                    "font_size": "14px",
+                    "font_weight": "400",
+                    "line_height": "normal",
+                    "color": "#fafbff",
+                    "background": "transparent",
+                    "border": "0.8px solid transparent",
+                    "border_radius": "9999px",
+                    "padding": "4px 8px",
+                    "gap": "4px",
+                    "box_shadow": "none",
+                    "transition": "none"
+                  },
+                  "icon_svg": null,
+                  "icon": "chevron-down caret",
+                  "children": []
+                },
+                {
+                  "name": "aspect-ratio-select",
+                  "selector": ".message-input-column-footer .qwen-chat-v2-dropdown-menu-select (2nd)",
+                  "tag": "div",
+                  "classes": "qwen-chat-v2-dropdown-menu-select qwen-chat-v2-dropdown-menu-select-text",
+                  "role": "",
+                  "aria_label": "",
+                  "text": "16:9",
+                  "box": {
+                    "x": 811,
+                    "y": 521,
+                    "width": 65,
+                    "height": 32
+                  },
+                  "style": {
+                    "font_family": "inherit",
+                    "font_size": "14px",
+                    "font_weight": "400",
+                    "line_height": "normal",
+                    "color": "#fafbff",
+                    "background": "transparent",
+                    "border": "0.8px solid transparent",
+                    "border_radius": "9999px",
+                    "padding": "4px 8px",
+                    "gap": "4px",
+                    "box_shadow": "none",
+                    "transition": "none"
+                  },
+                  "icon_svg": null,
+                  "icon": "chevron-down caret",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "right-buttons",
+              "selector": ".message-input-right-button",
+              "tag": "div",
+              "classes": "message-input-right-button",
+              "role": "",
+              "aria_label": "",
+              "text": "",
+              "box": {
+                "x": 1131,
+                "y": 521,
+                "width": 72,
+                "height": 32
+              },
+              "style": {},
+              "icon_svg": null,
+              "children": [
+                {
+                  "name": "voice-input-button",
+                  "selector": "button.record-btn",
+                  "tag": "button",
+                  "classes": "record-btn",
+                  "role": "",
+                  "aria_label": "Voice Input",
+                  "text": "",
+                  "box": {
+                    "x": 1131,
+                    "y": 521,
+                    "width": 32,
+                    "height": 32
+                  },
+                  "style": {
+                    "background": "rgba(250,251,255,0.05)",
+                    "border_radius": "999px"
+                  },
+                  "icon_svg": null,
+                  "icon": "microphone, 16px, fill #fafbff (sprite id qwpcicon-mic)",
+                  "children": []
+                },
+                {
+                  "name": "voice-mode-button",
+                  "selector": ".omb__btn",
+                  "tag": "div",
+                  "classes": "omb__btn",
+                  "role": "button",
+                  "aria_label": "Voice mode",
+                  "text": "",
+                  "box": {
+                    "x": 1171,
+                    "y": 521,
+                    "width": 32,
+                    "height": 32
+                  },
+                  "style": {
+                    "background": "#ffffff",
+                    "border_radius": "999px"
+                  },
+                  "icon_svg": null,
+                  "icon": "sound-wave bars, 16px, fill #222222 (sprite id qwpcicon-soundPlayingPCMedium)",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "example-prompts",
+      "selector": ".chat-prompt-recommend-detail-container",
+      "tag": "div",
+      "classes": "chat-prompt-recommend-detail-container",
+      "role": "",
+      "aria_label": "",
+      "text": "",
+      "box": {
+        "x": 455,
+        "y": 566,
+        "width": 760,
+        "height": 241
+      },
+      "style": {
+        "padding": "24px 0px 0px",
+        "background": "transparent"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "example-grid",
+          "selector": ".chat-recommend-image",
+          "tag": "div",
+          "classes": "chat-recommend-image",
+          "role": "",
+          "aria_label": "",
+          "text": "",
+          "box": {
+            "x": 455,
+            "y": 590,
+            "width": 760,
+            "height": 189
+          },
+          "style": {
+            "border_radius": "20px",
+            "gap": "2px (inner .image-group flex)"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "example-card (x4, 189x189, first card radius 20px 0 0 20px)",
+              "selector": ".image-group > .image-container",
+              "tag": "div",
+              "classes": "image-container",
+              "role": "",
+              "aria_label": "",
+              "text": "",
+              "box": {
+                "x": 455,
+                "y": 590,
+                "width": 189,
+                "height": 189
+              },
+              "style": {},
+              "icon_svg": null,
+              "children": [
+                {
+                  "name": "card-image",
+                  "selector": ".image-container > img.image",
+                  "tag": "img",
+                  "classes": "image",
+                  "role": "",
+                  "aria_label": "",
+                  "text": "",
+                  "box": {
+                    "x": 455,
+                    "y": 590,
+                    "width": 189,
+                    "height": 189
+                  },
+                  "style": {},
+                  "icon_svg": null,
+                  "src": "omitted (Qwen sample artwork)",
+                  "children": []
+                },
+                {
+                  "name": "card-overlay",
+                  "selector": ".chat-recommend-image-list-item-text-box",
+                  "tag": "div",
+                  "classes": "chat-recommend-image-list-item-text-box",
+                  "role": "",
+                  "aria_label": "",
+                  "text": "",
+                  "box": {
+                    "x": 455,
+                    "y": 590,
+                    "width": 189,
+                    "height": 189
+                  },
+                  "style": {
+                    "font_size": "12px",
+                    "background": "rgba(0,0,0,0.1)",
+                    "border_radius": "20px 0px 0px 20px",
+                    "padding": "12px",
+                    "gap": "8px"
+                  },
+                  "icon_svg": null,
+                  "children": [
+                    {
+                      "name": "reference-thumbs (2x 32x32, radius 4px)",
+                      "selector": ".chat-recommend-image-list-item-text-box img",
+                      "tag": "img",
+                      "classes": "",
+                      "role": "",
+                      "aria_label": "",
+                      "text": "",
+                      "box": {
+                        "x": 467,
+                        "y": 645,
+                        "width": 32,
+                        "height": 32
+                      },
+                      "style": {
+                        "border_radius": "4px"
+                      },
+                      "icon_svg": null,
+                      "children": []
+                    },
+                    {
+                      "name": "prompt-snippet (clamped)",
+                      "selector": ".chat-recommend-image-list-item-text-box > div:nth-child(2)",
+                      "tag": "div",
+                      "classes": "",
+                      "role": "",
+                      "aria_label": "",
+                      "text": "[long example prompt, see note]",
+                      "box": {
+                        "x": 467,
+                        "y": 685,
+                        "width": 165,
+                        "height": 42
+                      },
+                      "style": {
+                        "font_size": "12px",
+                        "color": "#f7f8fc"
+                      },
+                      "icon_svg": null,
+                      "children": []
+                    },
+                    {
+                      "name": "use-prompt-button",
+                      "selector": ".chat-recommend-image-list-item-text-box button",
+                      "tag": "button",
+                      "classes": "",
+                      "role": "",
+                      "aria_label": "",
+                      "text": "Use Prompt",
+                      "box": {
+                        "x": 467,
+                        "y": 735,
+                        "width": 165,
+                        "height": 32
+                      },
+                      "style": {
+                        "font_size": "12px",
+                        "color": "#f7f8fc",
+                        "background": "rgba(0,0,0,0.32)",
+                        "border_radius": "999px"
+                      },
+                      "icon_svg": null,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "explore-more-link",
+          "selector": ".explore-more-content",
+          "tag": "div",
+          "classes": "explore-more-content",
+          "role": "",
+          "aria_label": "",
+          "text": "Explore more",
+          "box": {
+            "x": 1119,
+            "y": 787,
+            "width": 96,
+            "height": 20
+          },
+          "style": {
+            "font_size": "12px",
+            "font_weight": "400",
+            "line_height": "20px",
+            "color": "rgba(250,251,255,0.5)",
+            "background": "transparent",
+            "gap": "4px"
+          },
+          "icon_svg": null,
+          "icon": "chevron-right",
+          "children": []
+        }
+      ]
+    }
+  ],
+  "root_css_variables": {
+    "_note": "unchanged from home-signed-in@1437"
+  },
+  "loaded_stylesheets": [
+    "unchanged from home-signed-in@1437"
+  ],
+  "loaded_fonts": [
+    "none via document.fonts (system stack)"
+  ],
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}

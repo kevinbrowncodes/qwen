@@ -1,0 +1,316 @@
+{
+  "state": "my-library",
+  "url_path": "/library",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "sidebar-my-library-row",
+      "selector": ".sidebar-entry-fixed-list > .my-library-head",
+      "tag": "div",
+      "classes": "my-library-head",
+      "text": "My Library",
+      "box": {
+        "x": 13,
+        "y": 140,
+        "width": 215,
+        "height": 36
+      },
+      "style": {
+        "font_size": "14px",
+        "color": "#f7f8fc"
+      },
+      "icon_svg": null,
+      "behavior": "click (row or chevron) navigates to /library",
+      "children": [
+        {
+          "name": "icon",
+          "selector": ".my-library-head-left-icon",
+          "box": {
+            "x": 25,
+            "y": 150,
+            "width": 16,
+            "height": 16
+          },
+          "icon_svg": null,
+          "icon": "library/stack glyph 14x12 (qwpcicon-library; Lucide 'library')"
+        },
+        {
+          "name": "label",
+          "selector": ".my-library-head-left-text",
+          "text": "My Library",
+          "box": {
+            "x": 47,
+            "y": 146,
+            "width": 66,
+            "height": 24
+          }
+        },
+        {
+          "name": "chevron",
+          "selector": ".my-library-head-right-icon",
+          "box": {
+            "x": 206,
+            "y": 149,
+            "width": 16,
+            "height": 16
+          },
+          "icon_svg": null,
+          "icon": "chevron-right, glyph 5x9 (qwpcicon-rightMini; Lucide 'chevron-right')"
+        }
+      ]
+    },
+    {
+      "name": "sidebar-library-preview",
+      "selector": ".my-library-content .masonry-grid-mobile",
+      "tag": "div",
+      "classes": "masonry-grid-mobile",
+      "box": {
+        "x": 24,
+        "y": 188,
+        "width": 68,
+        "height": 74
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "preview-thumb",
+          "selector": ".my-library-content-item .item-card",
+          "src": "[owner image]",
+          "box": {
+            "x": 24,
+            "y": 188,
+            "width": 68,
+            "height": 68
+          },
+          "style": {
+            "overflow": "hidden"
+          }
+        }
+      ]
+    },
+    {
+      "name": "library-header",
+      "selector": ".header-route",
+      "tag": "div",
+      "classes": "header-route",
+      "box": {
+        "x": 260,
+        "y": 24,
+        "width": 79,
+        "height": 19
+      },
+      "style": {
+        "gap": "8px"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "title",
+          "selector": ".header-title",
+          "text": "My Library",
+          "style": {
+            "font_size": "16px",
+            "font_weight": "500",
+            "color": "#fafbff"
+          }
+        }
+      ]
+    },
+    {
+      "name": "my-published-button",
+      "selector": "button.header-coll (qwen-chat-v2-btn-plain)",
+      "tag": "button",
+      "classes": "qwen-chat-v2-btn qwen-chat-v2-btn-plain qwen-chat-v2-btn-m header-coll…",
+      "text": "My Published",
+      "box": {
+        "x": 1268,
+        "y": 18,
+        "width": 142,
+        "height": 32
+      },
+      "style": {
+        "font_size": "14px",
+        "color": "#fafbff",
+        "background": "#2c2c2c",
+        "border": "0.8px solid rgba(250,251,255,0.12)",
+        "border_radius": "8px",
+        "padding": "4px 16px"
+      },
+      "icon_svg": null,
+      "icon": "folder with arrow (qwpcicon-folderReleased; Lucide 'folder-output')",
+      "children": []
+    },
+    {
+      "name": "type-tabs",
+      "selector": ".qwen-chat-v2-tabs-nav-list",
+      "tag": "div",
+      "classes": "qwen-chat-v2-tabs-nav-list",
+      "text": "All / Image / Video / Document / Web Dev / Podcast",
+      "box": {
+        "x": 626,
+        "y": 96,
+        "width": 419,
+        "height": 32
+      },
+      "style": {
+        "background": "#19191a",
+        "border_radius": "8px",
+        "padding": "2px",
+        "gap": "0px"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "tab-active",
+          "selector": ".qwen-chat-v2-tabs-tab.qwen-chat-v2-tabs-tab-active",
+          "text": "All",
+          "box": {
+            "x": 628,
+            "y": 98,
+            "width": 41,
+            "height": 28
+          },
+          "style": {
+            "font_size": "14px",
+            "font_weight": "600",
+            "color": "#fafbff",
+            "background": "#2c2c2c",
+            "border_radius": "6px",
+            "padding": "0px 12px"
+          }
+        },
+        {
+          "name": "tab",
+          "selector": ".qwen-chat-v2-tabs-tab",
+          "text": "Image",
+          "box": {
+            "x": 669,
+            "y": 98,
+            "width": 63,
+            "height": 28
+          },
+          "style": {
+            "font_size": "14px",
+            "font_weight": "400",
+            "color": "rgba(250,251,255,0.5)",
+            "background": "transparent",
+            "border_radius": "6px",
+            "padding": "0px 12px"
+          }
+        },
+        {
+          "name": "tab",
+          "text": "Video"
+        },
+        {
+          "name": "tab",
+          "text": "Document"
+        },
+        {
+          "name": "tab",
+          "text": "Web Dev"
+        },
+        {
+          "name": "tab",
+          "text": "Podcast"
+        }
+      ]
+    },
+    {
+      "name": "library-grid",
+      "selector": ".library-content-body .masonry-grid",
+      "tag": "div",
+      "classes": "masonry-grid",
+      "box": {
+        "x": 405,
+        "y": 148,
+        "width": 860,
+        "height": 292
+      },
+      "style": {
+        "display": "block (masonry columns)",
+        "container_padding": "0px 12px 21px"
+      },
+      "icon_svg": null,
+      "notes": "1 real card + 5 zero-height '.item-card.empty.placeholder' column fillers",
+      "children": [
+        {
+          "name": "item-card",
+          "selector": ".masonry-grid > .item-card:not(.empty)",
+          "tag": "div",
+          "classes": "item-card",
+          "box": {
+            "x": 405,
+            "y": 148,
+            "width": 276,
+            "height": 276
+          },
+          "style": {
+            "overflow": "hidden"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "card-image",
+              "selector": ".item-card-img .qwen-chat-water-fall-image-container img",
+              "src": "[owner image]",
+              "box": {
+                "x": 405,
+                "y": 148,
+                "width": 276,
+                "height": 276
+              }
+            },
+            {
+              "name": "hover-operation-bar",
+              "selector": ".library-item-operation",
+              "tag": "div",
+              "classes": "library-item-operation",
+              "box": {
+                "x": 405,
+                "y": 360,
+                "width": 276,
+                "height": 64
+              },
+              "style": {
+                "background": "linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.4))",
+                "border_radius": "8px",
+                "padding": "0px 12px",
+                "opacity": "0 at rest (hover reveals)"
+              },
+              "icon_svg": null,
+              "children": [
+                {
+                  "name": "download",
+                  "selector": ".library-item-operation-icon",
+                  "aria_label": "Download",
+                  "box": {
+                    "x": 645,
+                    "y": 380,
+                    "width": 24,
+                    "height": 24
+                  },
+                  "icon_svg": null,
+                  "icon": "download arrow 12px (qwpcicon-download)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "root_css_variables": {
+    "_note": "unchanged from home-signed-in@1437"
+  },
+  "loaded_stylesheets": [
+    "unchanged"
+  ],
+  "loaded_fonts": [
+    "none via document.fonts (system stack)"
+  ],
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}

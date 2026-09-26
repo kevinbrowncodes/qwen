@@ -1,0 +1,183 @@
+{
+  "state": "image-model-open",
+  "url_path": "/",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "image-model-select (trigger, open)",
+      "selector": ".message-input-column-footer .qwen-chat-v2-dropdown-menu-select:nth-of-type(1)",
+      "tag": "div",
+      "classes": "qwen-chat-v2-dropdown-menu-select qwen-chat-v2-dropdown-menu-select-text",
+      "role": "",
+      "aria_label": "",
+      "text": "Qwen-Image 2.0",
+      "box": {
+        "x": 658,
+        "y": 521,
+        "width": 144,
+        "height": 32
+      },
+      "style": {
+        "font_family": "system-ui, ui-sans-serif, -apple-system, \"system-ui\", Inter, NotoSansHans, sans-serif",
+        "font_size": "14px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#fafbff",
+        "background": "transparent",
+        "border": "0.8px solid transparent",
+        "border_radius": "9999px",
+        "padding": "4px 8px",
+        "gap": "4px",
+        "box_shadow": "none",
+        "transition": "none"
+      },
+      "icon_svg": null,
+      "icon": "chevron-down caret",
+      "children": []
+    },
+    {
+      "name": "image-model-menu",
+      "selector": ".qwen-chat-v2-dropdown-menu-popup.qwen-chat-v2-dropdown-menu-popup-bottom-left",
+      "tag": "div",
+      "classes": "qwen-chat-v2-dropdown-menu-popup qwen-chat-v2-dropdown-menu-popup-bottom-left",
+      "role": "",
+      "aria_label": "",
+      "text": "Qwen-Image 3.0 / Qwen-Image 2.0",
+      "box": {
+        "x": 658,
+        "y": 576,
+        "width": 168,
+        "height": 86
+      },
+      "style": {
+        "font_family": "inherit",
+        "font_size": "14px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#fafbff",
+        "background": "#2c2c2c",
+        "border": "0.8px solid rgba(250,251,255,0.12)",
+        "border_radius": "12px",
+        "padding": "4px",
+        "gap": "normal",
+        "box_shadow": "rgba(0,0,0,0.05) 0px 12px 24px -2px",
+        "transition": "none",
+        "z_index": "1050"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "menu-item",
+          "selector": ".qwen-chat-v2-dropdown-menu-item:nth-child(1)",
+          "tag": "div",
+          "classes": "qwen-chat-v2-dropdown-menu-item",
+          "role": "menuitem",
+          "aria_label": "",
+          "text": "Qwen-Image 3.0",
+          "selected": false,
+          "box": {
+            "x": 663,
+            "y": 581,
+            "width": 159,
+            "height": 36
+          },
+          "style": {
+            "font_size": "14px",
+            "font_weight": "400",
+            "color": "#fafbff",
+            "background": "transparent",
+            "border_radius": "8px",
+            "padding": "6px 12px",
+            "gap": "6px (inner .qwen-chat-v2-dropdown-menu-item-content, flex)"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "label",
+              "selector": ".qwen-chat-v2-dropdown-menu-item-label",
+              "tag": "span",
+              "text": "Qwen-Image 3.0",
+              "box": {
+                "x": 675,
+                "y": 587,
+                "width": 107,
+                "height": 24
+              }
+            }
+          ]
+        },
+        {
+          "name": "menu-item (selected)",
+          "selector": ".qwen-chat-v2-dropdown-menu-item.qwen-chat-v2-dropdown-menu-item-selected",
+          "tag": "div",
+          "classes": "qwen-chat-v2-dropdown-menu-item qwen-chat-v2-dropdown-menu-item-selected",
+          "role": "menuitem",
+          "aria_label": "",
+          "text": "Qwen-Image 2.0",
+          "selected": true,
+          "box": {
+            "x": 663,
+            "y": 621,
+            "width": 159,
+            "height": 36
+          },
+          "style": {
+            "font_size": "14px",
+            "font_weight": "400",
+            "color": "#fafbff",
+            "background": "rgba(250,251,255,0.05)",
+            "border_radius": "8px",
+            "padding": "6px 12px",
+            "gap": "6px"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "label",
+              "selector": ".qwen-chat-v2-dropdown-menu-item-label",
+              "tag": "span",
+              "text": "Qwen-Image 2.0",
+              "box": {
+                "x": 675,
+                "y": 627,
+                "width": 107,
+                "height": 24
+              }
+            },
+            {
+              "name": "check",
+              "selector": ".qwen-chat-v2-dropdown-menu-item-check",
+              "tag": "span",
+              "text": "",
+              "box": {
+                "x": 794,
+                "y": 631,
+                "width": 16,
+                "height": 16
+              },
+              "style": {
+                "background": "#fafbff",
+                "technique": "CSS mask-image (inline SVG data URI) over solid background"
+              },
+              "icon_svg": null,
+              "icon": "check mark, 16px (Lucide 'check')"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "root_css_variables": {
+    "_note": "unchanged from home-signed-in@1437"
+  },
+  "loaded_stylesheets": [
+    "unchanged"
+  ],
+  "loaded_fonts": [
+    "none via document.fonts (system stack)"
+  ],
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}

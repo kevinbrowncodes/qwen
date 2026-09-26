@@ -1,0 +1,183 @@
+{
+  "state": "my-library",
+  "url_path": "/library",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "dpr": 3,
+    "maxTouchPoints": 1,
+    "hover": "none"
+  },
+  "components": [
+    {
+      "name": "mobile-header",
+      "selector": "header.layout-common-header.header-mobile",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 393,
+        "height": 59
+      },
+      "style": {
+        "background": "#222222"
+      },
+      "children": [
+        {
+          "name": "drawer-toggle",
+          "box": {
+            "x": 17,
+            "y": 19
+          },
+          "icon_svg": null,
+          "icon": "appicon-menu"
+        },
+        {
+          "name": "title",
+          "selector": ".header-mobile-title",
+          "text": "My Library",
+          "box": {
+            "x": 150,
+            "y": 15,
+            "width": 93,
+            "height": 29
+          },
+          "style": {
+            "font_size": "18.864px",
+            "color": "#f7f8fc"
+          }
+        },
+        {
+          "name": "my-published (icon only)",
+          "box": {
+            "x": 355,
+            "y": 19
+          },
+          "icon_svg": null,
+          "icon": "appicon-folderReleased"
+        }
+      ]
+    },
+    {
+      "name": "type-tabs (horizontal scroll)",
+      "selector": ".qwen-chat-v2-tabs-nav-wrap",
+      "box": {
+        "x": 17,
+        "y": 59,
+        "width": 435,
+        "height": 32
+      },
+      "style": {
+        "overflow_x": "auto",
+        "background": "transparent (no pill track on mobile)"
+      },
+      "children": [
+        {
+          "text": "All",
+          "active": true,
+          "box": {
+            "x": 17,
+            "y": 59,
+            "width": 41,
+            "height": 32
+          },
+          "style": {
+            "background": "rgba(255,255,255,0.12)",
+            "border_radius": "8px",
+            "padding": "0px 12px",
+            "color": "#fafbff"
+          }
+        },
+        {
+          "text": "Image",
+          "style": {
+            "color": "rgba(250,251,255,0.5)"
+          }
+        },
+        {
+          "text": "Video"
+        },
+        {
+          "text": "Document"
+        },
+        {
+          "text": "Web Dev"
+        },
+        {
+          "text": "Podcast",
+          "notes": "off-screen at x 387"
+        }
+      ]
+    },
+    {
+      "name": "library-grid (2 columns, 8px gap)",
+      "selector": ".masonry-grid",
+      "children": [
+        {
+          "name": "card (16:9)",
+          "selector": ".item-card",
+          "src": "[owner image]",
+          "box": {
+            "x": 13,
+            "y": 103,
+            "width": 180,
+            "height": 103
+          },
+          "children": [
+            {
+              "name": "operation-bar (always visible)",
+              "selector": ".library-item-operation",
+              "box": {
+                "x": 13,
+                "y": 164,
+                "width": 180,
+                "height": 42
+              },
+              "style": {
+                "background": "linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.4))",
+                "border_radius": "8px",
+                "padding": "8.384px",
+                "opacity": "1"
+              },
+              "children": [
+                {
+                  "aria_label": "Download",
+                  "icon_svg": null,
+                  "icon": "appicon-download"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "card (edit result)",
+          "selector": ".item-card",
+          "src": "[owner image]",
+          "box": {
+            "x": 201,
+            "y": 103,
+            "width": 180,
+            "height": 180
+          },
+          "children": [
+            {
+              "name": "operation-bar (always visible)",
+              "box": {
+                "x": 201,
+                "y": 241,
+                "width": 180,
+                "height": 42
+              },
+              "children": [
+                {
+                  "aria_label": "Download",
+                  "icon": "appicon-download"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "identity_visible": "closed drawer only: username [masked], avatar [masked]"
+}

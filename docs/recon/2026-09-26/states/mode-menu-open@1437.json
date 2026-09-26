@@ -1,0 +1,207 @@
+{
+  "state": "mode-menu-open",
+  "url_path": "/",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "mode-menu",
+      "selector": ".qwen-chat-v2-dropdown-menu-popup .mode-select-dropdown-menu",
+      "tag": "div",
+      "classes": "mode-select-dropdown-menu",
+      "role": "",
+      "aria_label": "",
+      "text": "Upload attachment / file, image / Create Image / Create Video / Web search / Deep Research / Web Dev / Slides / More / Tools",
+      "box": {
+        "x": 468,
+        "y": 576,
+        "width": 255,
+        "height": 374
+      },
+      "style": {
+        "font_family": "system-ui, ui-sans-serif, -apple-system, \"system-ui\", Inter, NotoSansHans, sans-serif",
+        "font_size": "14px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#fafbff",
+        "background": "#2c2c2c",
+        "border": "0.8px solid rgba(250,251,255,0.12)",
+        "border_radius": "12px",
+        "padding": "4px",
+        "gap": "4px between items",
+        "box_shadow": "rgba(0,0,0,0.05) 0px 12px 24px -2px",
+        "transition": "none"
+      },
+      "icon_svg": null,
+      "diff_vs_home": {
+        "width": "255 (home: 331)",
+        "upload_subtitle": "file, image (home: file, image, video, audio)",
+        "create_image_marked_selected": false
+      },
+      "item_template": {
+        "selector": ".qwen-chat-v2-dropdown-menu-item.mode-select-common-item",
+        "role": "menuitem",
+        "size": "238x36",
+        "style": {
+          "font_size": "14px",
+          "color": "#fafbff",
+          "background": "transparent",
+          "border_radius": "8px",
+          "padding": "6px 12px"
+        },
+        "inner": "div.mode-select-dropdown-item > icon 16px + span.mode-select-dropdown-item-name [+ span.mode-select-dropdown-item-description 12px rgba(250,251,255,0.5)]"
+      },
+      "children": [
+        {
+          "name": "upload-attachment",
+          "text": "Upload attachment",
+          "subtitle": "file, image",
+          "box": {
+            "x": 477,
+            "y": 585,
+            "width": 238,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "upload arrow (qwpcicon-upload; Lucide 'upload')"
+        },
+        {
+          "name": "create-image",
+          "text": "Create Image",
+          "box": {
+            "x": 477,
+            "y": 625,
+            "width": 238,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "picture with sparkle (qwpcicon-aiPicture; Lucide 'image-plus')"
+        },
+        {
+          "name": "create-video",
+          "text": "Create Video",
+          "box": {
+            "x": 477,
+            "y": 665,
+            "width": 238,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "video (qwpcicon-aiVideo; Lucide 'clapperboard')"
+        },
+        {
+          "name": "web-search",
+          "text": "Web search",
+          "box": {
+            "x": 477,
+            "y": 705,
+            "width": 238,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "globe (qwpcicon-online; Lucide 'globe')"
+        },
+        {
+          "name": "deep-research",
+          "text": "Deep Research",
+          "box": {
+            "x": 477,
+            "y": 745,
+            "width": 238,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "graduation cap (qwpcicon-graduationCap; Lucide 'graduation-cap')"
+        },
+        {
+          "name": "web-dev",
+          "text": "Web Dev",
+          "box": {
+            "x": 477,
+            "y": 785,
+            "width": 238,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "code brackets (qwpcicon-code; Lucide 'code')"
+        },
+        {
+          "name": "slides",
+          "text": "Slides",
+          "box": {
+            "x": 477,
+            "y": 825,
+            "width": 238,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "presentation (qwpcicon-PPT; Lucide 'presentation')"
+        },
+        {
+          "name": "more",
+          "text": "More",
+          "classes": "qwen-chat-v2-dropdown-menu-item qwen-chat-v2-dropdown-menu-item-has-submenu mode-select-common-item",
+          "box": {
+            "x": 477,
+            "y": 865,
+            "width": 238,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "three dots (qwpcicon-more) + right arrow (.qwen-chat-v2-dropdown-menu-item-arrow)",
+          "submenu_closed": [
+            {
+              "text": "Artifacts",
+              "icon": "cube"
+            },
+            {
+              "text": "Learn",
+              "icon": "book"
+            },
+            {
+              "text": "Travel Planner",
+              "icon": "airplane"
+            }
+          ]
+        },
+        {
+          "name": "tools",
+          "text": "Tools",
+          "box": {
+            "x": 477,
+            "y": 905,
+            "width": 238,
+            "height": 36
+          },
+          "icon_svg": null,
+          "icon": "wrench (qwpcicon-tool; Lucide 'wrench')",
+          "children": [
+            {
+              "name": "tools-switch",
+              "selector": ".qwen-chat-v2-switch",
+              "classes": "qwen-chat-v2-switch qwen-chat-v2-switch-black qwen-chat-v2-switch-s qwen-chat-v2-switch-checked",
+              "role": "switch",
+              "aria_checked": "true",
+              "box": {
+                "width": 28,
+                "height": 16
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "root_css_variables": {
+    "_note": "unchanged from home-signed-in@1437"
+  },
+  "loaded_stylesheets": [
+    "unchanged"
+  ],
+  "loaded_fonts": [
+    "none via document.fonts (system stack)"
+  ],
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}

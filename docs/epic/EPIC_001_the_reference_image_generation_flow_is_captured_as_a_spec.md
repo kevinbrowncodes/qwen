@@ -29,7 +29,7 @@ The owner's plan is UI first, model second. The UI is a clone, and a clone witho
 ## Hand-off (2026-09-26, revised the same day)
 
 - **How the capture was actually made.** STORY_001's Playwright sign-in was withdrawn. chat.qwen.ai's access check kept failing in the automated browser even when the owner solved it, and §3e says to stop rather than work around a challenge. The owner then captured the flow in their own signed-in Chrome:
-  - Claude in Chrome took 17 per-state DOM readings: 12 at 1437 wide, 3 at 393 wide as an emulated iPhone, plus an endpoint list and prose notes;
+  - Claude in Chrome took 15 per-state DOM readings: 12 at 1437 wide, 3 at 393 wide as an emulated iPhone, plus an endpoint list and prose notes;
   - the owner saved the signed-in home with "Save Page As", which gives the full DOM, the four icon sprites (1,113 icons) and the inline styles;
   - the nine stylesheets were saved separately.
 

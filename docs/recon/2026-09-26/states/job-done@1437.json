@@ -1,0 +1,215 @@
+{
+  "state": "job-done",
+  "t_since_send_ms": "~33000-40200 (finished between polls at 32.4s and 40.2s)",
+  "url_path": "/c/[chat-id]",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "assistant-message",
+      "selector": ".qwen-chat-message.qwen-chat-message-assistant",
+      "tag": "div",
+      "box": {
+        "x": 431,
+        "y": 180,
+        "width": 800,
+        "height": 325
+      },
+      "text": "",
+      "notes": "image only, no markdown text blocks",
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "image",
+          "selector": ".chat-response-media-render .qwen-image .ant-image img.ant-image-img.qwen-image",
+          "tag": "img",
+          "classes": "ant-image-img qwen-image",
+          "src": "[owner image] (cdn.qwenlm.ai .png, x-oss-process=image/resize,m_mfit,w_450,h_450)",
+          "natural_size": "788x450 (display rendition; full-res not exposed)",
+          "box": {
+            "x": 463,
+            "y": 196,
+            "width": 400,
+            "height": 229
+          },
+          "style": {
+            "border_radius": "20px",
+            "object_fit": "cover",
+            "transition": "fades in from opacity 0 when loaded"
+          },
+          "icon_svg": null,
+          "children": []
+        },
+        {
+          "name": "hover-top-right-actions",
+          "selector": ".upper-right-corner-item (x4)",
+          "notes": "hover-only; 32px circles, 12px apart, bg rgba(0,0,0,0.32) -> rgba(0,0,0,0.5) on hover, icon 20px white",
+          "children": [
+            {
+              "aria_label": "Good Response",
+              "box": {
+                "x": 679,
+                "y": 206,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-thumbsUp"
+            },
+            {
+              "aria_label": "Bad Response",
+              "box": {
+                "x": 723,
+                "y": 206,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-thumbsDown"
+            },
+            {
+              "aria_label": "Publish to community",
+              "box": {
+                "x": 767,
+                "y": 206,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-publish"
+            },
+            {
+              "aria_label": "Download",
+              "tooltip": "Download",
+              "box": {
+                "x": 811,
+                "y": 206,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-download",
+              "tooltip_style": {
+                "selector": ".ant-tooltip-inner",
+                "background": "#000000",
+                "font_size": "12px",
+                "box": {
+                  "x": 791,
+                  "y": 242,
+                  "width": 74,
+                  "height": 34
+                },
+                "placement": "bottom"
+              }
+            }
+          ]
+        },
+        {
+          "name": "hover-bottom-pill",
+          "selector": ".lower-center-container.control-card-bottom",
+          "box": {
+            "x": 569,
+            "y": 383,
+            "width": 189,
+            "height": 32
+          },
+          "style": {
+            "background": "rgba(0,0,0,0.32)",
+            "border_radius": "16px"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "aria_label": "Create Video",
+              "text": "Create Video",
+              "box": {
+                "x": 579,
+                "y": 387,
+                "width": 104,
+                "height": 24
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-aiVideo"
+            },
+            {
+              "name": "divider",
+              "style": {
+                "width": "1px",
+                "height": "12px",
+                "background": "rgba(255,255,255,0.5)"
+              }
+            },
+            {
+              "aria_label": "Edit",
+              "text": "Edit",
+              "box": {
+                "x": 700,
+                "y": 387,
+                "width": 48,
+                "height": 24
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-edit"
+            }
+          ]
+        },
+        {
+          "name": "action-row",
+          "selector": ".response-message-footer-actions",
+          "notes": "differs from edit reply: Copy/Good/Bad moved onto the image; row is Share, Regenerate, More actions",
+          "children": [
+            {
+              "aria_label": "Share",
+              "box": {
+                "x": 463,
+                "y": 457,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-share2"
+            },
+            {
+              "aria_label": "Regenerate",
+              "box": {
+                "x": 495,
+                "y": 457,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-refresh"
+            },
+            {
+              "aria_label": "More actions",
+              "box": {
+                "x": 527,
+                "y": 457,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-more"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "send-button (restored, disabled)",
+      "selector": "button.send-button",
+      "aria_label": "Send",
+      "disabled": true,
+      "box": {
+        "x": 1171,
+        "y": 944,
+        "width": 32,
+        "height": 32
+      }
+    }
+  ],
+  "status_text": "none",
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}

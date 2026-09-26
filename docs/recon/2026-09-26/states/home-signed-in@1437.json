@@ -1,0 +1,518 @@
+{
+  "state": "home-signed-in",
+  "url_path": "/",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "top-bar",
+      "selector": "header.header-desktop",
+      "tag": "header",
+      "classes": "header-desktop",
+      "role": "",
+      "aria_label": "",
+      "text": "Qwen3.7-Plus",
+      "box": {
+        "x": 240,
+        "y": 6,
+        "width": 1191,
+        "height": 48
+      },
+      "style": {
+        "font_family": "system-ui, ui-sans-serif, -apple-system, \"system-ui\", Inter, NotoSansHans, sans-serif",
+        "font_size": "16px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#000000",
+        "background": "transparent",
+        "border": "0px",
+        "border_radius": "0px",
+        "padding": "0px 8px",
+        "gap": "normal",
+        "box_shadow": "none",
+        "transition": "none"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "model-picker-trigger",
+          "selector": ".wms-trigger",
+          "tag": "div",
+          "classes": "wms-trigger",
+          "role": "button",
+          "aria_label": "Select Model",
+          "text": "Qwen3.7-Plus",
+          "box": {
+            "x": 248,
+            "y": 14,
+            "width": 146,
+            "height": 32
+          },
+          "style": {
+            "font_family": "inherit",
+            "font_size": "16px",
+            "font_weight": "400",
+            "line_height": "normal",
+            "color": "#000000 (label span renders light)",
+            "background": "transparent",
+            "border": "0px",
+            "border_radius": "6px",
+            "padding": "0px 12px",
+            "gap": "normal",
+            "box_shadow": "none",
+            "transition": "none"
+          },
+          "icon_svg": null,
+          "icon": "chevron-down caret, 12px, fill #fafbff",
+          "children": []
+        },
+        {
+          "name": "temporary-chat-button",
+          "selector": "button.temporary-chat-entry",
+          "tag": "button",
+          "classes": "qwen-chat-v2-btn qwen-chat-v2-btn-text qwen-chat-v2-btn-m qwen-chat-v2-btn-icon-only temporary-chat-entry",
+          "role": "",
+          "aria_label": "",
+          "text": "",
+          "box": {
+            "x": 1391,
+            "y": 14,
+            "width": 32,
+            "height": 32
+          },
+          "style": {
+            "font_family": "inherit",
+            "font_size": "14px",
+            "font_weight": "400",
+            "line_height": "24px",
+            "color": "#fafbff",
+            "background": "transparent",
+            "border": "0.8px solid transparent",
+            "border_radius": "8px",
+            "padding": "0px",
+            "gap": "0px",
+            "box_shadow": "none",
+            "transition": "background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s"
+          },
+          "icon_svg": null,
+          "icon": "temporary/incognito chat glyph, 20px, fill #fafbff",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "welcome-heading",
+      "selector": ".placeholder-logo-text",
+      "tag": "div",
+      "classes": "placeholder-logo-text",
+      "role": "",
+      "aria_label": "",
+      "text": "How can I help you?",
+      "box": {
+        "x": 732,
+        "y": 381,
+        "width": 206,
+        "height": 40
+      },
+      "style": {
+        "font_family": "inherit",
+        "font_size": "24px",
+        "font_weight": "400",
+        "line_height": "40px",
+        "color": "#fafbff",
+        "background": "transparent",
+        "border": "0px",
+        "border_radius": "0px",
+        "padding": "0px",
+        "gap": "normal",
+        "box_shadow": "none",
+        "transition": "none"
+      },
+      "icon_svg": null,
+      "children": []
+    },
+    {
+      "name": "composer",
+      "selector": ".message-input-container",
+      "tag": "div",
+      "classes": "message-input-container",
+      "role": "",
+      "aria_label": "",
+      "text": "Auto",
+      "box": {
+        "x": 455,
+        "y": 461,
+        "width": 760,
+        "height": 58
+      },
+      "style": {
+        "font_family": "inherit",
+        "font_size": "16px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#000000",
+        "background": "#2c2c2c",
+        "border": "0.8px solid rgba(250,251,255,0.2)",
+        "border_radius": "28px",
+        "padding": "12px",
+        "gap": "normal",
+        "box_shadow": "none",
+        "transition": "height 0.2s ease-in-out, box-shadow 0.2s"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "mode-select-button",
+          "selector": ".mode-select-open",
+          "tag": "div",
+          "classes": "mode-select-open",
+          "role": "button",
+          "aria_label": "Select Mode",
+          "text": "",
+          "box": {
+            "x": 468,
+            "y": 473,
+            "width": 32,
+            "height": 32
+          },
+          "style": {
+            "font_family": "inherit",
+            "font_size": "20px",
+            "font_weight": "400",
+            "line_height": "normal",
+            "color": "#f7f8fc",
+            "background": "transparent",
+            "border": "0px",
+            "border_radius": "999px",
+            "padding": "0px",
+            "gap": "normal",
+            "box_shadow": "none",
+            "transition": "none"
+          },
+          "icon_svg": null,
+          "icon": "bold plus, 16px, fill #fafbff (sprite id qwpcicon-addBold)",
+          "children": []
+        },
+        {
+          "name": "prompt-input",
+          "selector": "textarea.message-input-textarea",
+          "tag": "textarea",
+          "classes": "message-input-textarea",
+          "role": "",
+          "aria_label": "",
+          "text": "",
+          "placeholder": "Ask Qwen",
+          "box": {
+            "x": 506,
+            "y": 473,
+            "width": 531,
+            "height": 32
+          },
+          "style": {
+            "font_family": "inherit",
+            "font_size": "16px",
+            "font_weight": "400",
+            "line_height": "26px",
+            "color": "#fafbff",
+            "background": "transparent",
+            "border": "0px",
+            "border_radius": "0px",
+            "padding": "3px 8px",
+            "gap": "normal",
+            "box_shadow": "none",
+            "transition": "none"
+          },
+          "icon_svg": null,
+          "children": []
+        },
+        {
+          "name": "thinking-mode-select",
+          "selector": ".qwen-chat-v2-dropdown-menu-select.qwen-chat-v2-dropdown-menu-select-button",
+          "tag": "div",
+          "classes": "qwen-chat-v2-dropdown-menu-select qwen-chat-v2-dropdown-menu-select-button qwen-chat-v2-dropdown-menu-select-size-m",
+          "role": "",
+          "aria_label": "",
+          "text": "Auto",
+          "box": {
+            "x": 1043,
+            "y": 473,
+            "width": 80,
+            "height": 32
+          },
+          "style": {
+            "font_family": "inherit",
+            "font_size": "14px",
+            "font_weight": "400",
+            "line_height": "normal",
+            "color": "#fafbff",
+            "background": "#2c2c2c",
+            "border": "0.8px solid transparent",
+            "border_radius": "8px",
+            "padding": "4px 12px",
+            "gap": "8px",
+            "box_shadow": "none",
+            "transition": "none"
+          },
+          "icon_svg": null,
+          "icon": "chevron-down caret",
+          "children": []
+        },
+        {
+          "name": "voice-input-button",
+          "selector": "button.record-btn",
+          "tag": "button",
+          "classes": "record-btn",
+          "role": "",
+          "aria_label": "Voice Input",
+          "text": "",
+          "box": {
+            "x": 1131,
+            "y": 473,
+            "width": 32,
+            "height": 32
+          },
+          "style": {
+            "font_family": "inherit",
+            "font_size": "13.3333px",
+            "font_weight": "400",
+            "line_height": "normal",
+            "color": "#000000",
+            "background": "rgba(250,251,255,0.05)",
+            "border": "0px",
+            "border_radius": "999px",
+            "padding": "0px",
+            "gap": "normal",
+            "box_shadow": "none",
+            "transition": "none"
+          },
+          "icon_svg": null,
+          "icon": "microphone, 16px, fill #fafbff (sprite id qwpcicon-mic)",
+          "children": []
+        },
+        {
+          "name": "voice-mode-button",
+          "selector": ".omb__btn",
+          "tag": "div",
+          "classes": "omb__btn",
+          "role": "button",
+          "aria_label": "Voice mode",
+          "text": "",
+          "box": {
+            "x": 1171,
+            "y": 473,
+            "width": 32,
+            "height": 32
+          },
+          "style": {
+            "font_family": "inherit",
+            "font_size": "16px",
+            "font_weight": "400",
+            "line_height": "normal",
+            "color": "#000000",
+            "background": "#ffffff",
+            "border": "0px",
+            "border_radius": "999px",
+            "padding": "0px",
+            "gap": "normal",
+            "box_shadow": "none",
+            "transition": "none"
+          },
+          "icon_svg": null,
+          "icon": "sound-wave bars, 16px, fill #222222 (sprite id qwpcicon-soundPlayingPCMedium)",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "sidebar",
+      "selector": ".sidebar-side",
+      "tag": "div",
+      "classes": "sidebar-side side-mobile-width",
+      "role": "",
+      "aria_label": "",
+      "text": "New Chat / Search Chats / Community / Coder / Projects / New Project / All chats",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 1031
+      },
+      "style": {
+        "font_family": "inherit",
+        "font_size": "14px",
+        "font_weight": "400",
+        "line_height": "normal",
+        "color": "#f7f8fc",
+        "background": "transparent (page #171717)",
+        "border": "0px",
+        "border_radius": "0px",
+        "padding": "0px",
+        "gap": "normal",
+        "box_shadow": "none",
+        "transition": "none"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "sidebar-toggle",
+          "selector": "#sidebar-toggle-button",
+          "tag": "button",
+          "classes": "slide-switch",
+          "role": "",
+          "aria_label": "Toggle sidebar",
+          "text": "",
+          "box": {
+            "x": 192,
+            "y": 12,
+            "width": 36,
+            "height": 36
+          },
+          "style": {},
+          "icon_svg": null,
+          "icon": "panel-left",
+          "children": []
+        },
+        {
+          "name": "new-chat",
+          "selector": ".sidebar-entry-fixed-list-content",
+          "tag": "div",
+          "classes": "sidebar-entry-fixed-list-content",
+          "role": "",
+          "aria_label": "",
+          "text": "New Chat",
+          "box": {
+            "x": 13,
+            "y": 68,
+            "width": 215,
+            "height": 36
+          },
+          "style": {
+            "font_size": "14px",
+            "color": "#f7f8fc",
+            "border_radius": "8px",
+            "padding": "0px 12px"
+          },
+          "icon_svg": null,
+          "icon": "compose/pen-square, 16px",
+          "children": []
+        },
+        {
+          "name": "search-chats",
+          "selector": "input.chat-search-input",
+          "tag": "input",
+          "classes": "chat-search-input",
+          "role": "",
+          "aria_label": "",
+          "text": "",
+          "placeholder": "Search Chats",
+          "box": {
+            "x": 47,
+            "y": 110,
+            "width": 169,
+            "height": 24
+          },
+          "style": {
+            "font_size": "14px",
+            "color": "#fafbff"
+          },
+          "icon_svg": null,
+          "children": []
+        },
+        {
+          "name": "user-menu-button",
+          "selector": "button.user-menu-btn",
+          "tag": "button",
+          "classes": "user-menu-btn",
+          "role": "",
+          "aria_label": "",
+          "text": "[masked] / Free",
+          "box": {
+            "x": 12,
+            "y": 963,
+            "width": 133,
+            "height": 44
+          },
+          "style": {
+            "font_size": "13.3333px",
+            "color": "#fafbff",
+            "border_radius": "16px",
+            "padding": "0px 0px 0px 12px"
+          },
+          "icon_svg": null,
+          "avatar": {
+            "selector": "img.user-img",
+            "alt": "User profile",
+            "src": "[masked]",
+            "box": {
+              "x": 24,
+              "y": 970,
+              "width": 30,
+              "height": 30
+            }
+          },
+          "children": []
+        },
+        {
+          "name": "upgrade-button",
+          "selector": "button.member-upgrade-button",
+          "tag": "button",
+          "classes": "qwen-chat-v2-btn qwen-chat-v2-btn-plain qwen-chat-v2-btn-m member-upgrade-button",
+          "role": "",
+          "aria_label": "",
+          "text": "Upgrade",
+          "box": {
+            "x": 153,
+            "y": 969,
+            "width": 75,
+            "height": 32
+          },
+          "style": {
+            "font_size": "12px",
+            "color": "#fafbff",
+            "background": "#111112",
+            "border_radius": "8px",
+            "padding": "0px 12px"
+          },
+          "icon_svg": null,
+          "children": []
+        }
+      ]
+    }
+  ],
+  "root_css_variables": {
+    "_note": "304 custom properties on :root; this is the surface/text/border subset. Theme class on <html>: 'splash-detail dark'",
+    "--background-primary": "#222",
+    "--dark-bg": "#171717",
+    "--container-primary-fill": "#232326",
+    "--container-primary-bgweb": "#232326",
+    "--container-primary-bgapp": "#000000",
+    "--container-primary-mask": "rgba(0, 0, 0, .4)",
+    "--character-primary-text": "#f7f8fc",
+    "--character-secondary-text": "#dcdde5",
+    "--character-tertiary-text": "#a9aab8",
+    "--text-caption": "rgba(250, 251, 255, .5)",
+    "--line-primary-border": "#35353d",
+    "--line-secondary-border": "#2e2e33",
+    "--input-primary-fill-active": "#1d1d1f",
+    "--input-primary-fill-inactive": "#1d1d1f",
+    "--input-primary-fill-disabled": "#1d1d1f",
+    "--background-card": "rgba(66, 110, 255, .5)"
+  },
+  "loaded_stylesheets": [
+    "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/main.css",
+    "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/index5.css",
+    "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/MemoryUpdatedDetailPopup.css",
+    "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/index4.css",
+    "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/index42.css",
+    "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/index32.css",
+    "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/index17.css",
+    "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/index35.css",
+    "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/index25.css"
+  ],
+  "loaded_fonts": [
+    "none loaded via document.fonts; stack is system-ui, ui-sans-serif, -apple-system, Inter, NotoSansHans, sans-serif"
+  ],
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn at (12,963): username [masked], plan label 'Free', avatar img.user-img [masked]"
+}

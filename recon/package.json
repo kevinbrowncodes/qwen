@@ -10,7 +10,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.2",
+    "parse5": "^8.0.1",
     "playwright": "^1.63.0",
+    "postcss": "^8.5.28",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
   }

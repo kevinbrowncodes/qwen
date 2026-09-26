@@ -1,0 +1,141 @@
+{
+  "state": "job-generating",
+  "t_since_send_ms": 17234,
+  "url_path": "/c/[chat-id]",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "user-bubble",
+      "selector": ".chat-user-message",
+      "tag": "div",
+      "classes": "chat-user-message",
+      "text": "[owner text]",
+      "box": {
+        "x": 924,
+        "y": 94,
+        "width": 276,
+        "height": 46
+      },
+      "style": {
+        "background": "#293652",
+        "border_radius": "18px",
+        "padding": "9px 16px",
+        "font_size": "16px",
+        "color": "#fafbff"
+      },
+      "icon_svg": null,
+      "children": []
+    },
+    {
+      "name": "image-generating",
+      "selector": ".qwen-chat-message-assistant .qwen-image-generating",
+      "tag": "div",
+      "classes": "qwen-image-generating",
+      "text": "",
+      "box": {
+        "x": 463,
+        "y": 196,
+        "width": 400,
+        "height": 225
+      },
+      "style": {
+        "background": "transparent"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "skeleton",
+          "selector": ".qwen-media-skeleton",
+          "tag": "div",
+          "classes": "qwen-media-skeleton",
+          "box": {
+            "x": 463,
+            "y": 196,
+            "width": 400,
+            "height": 225
+          },
+          "style": {
+            "background": "#3e474e",
+            "border_radius": "20px",
+            "overflow": "hidden"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "field",
+              "selector": ".qwen-media-skeleton-field"
+            },
+            {
+              "name": "track",
+              "selector": ".qwen-media-skeleton-track"
+            },
+            {
+              "name": "blob",
+              "selector": ".qwen-media-skeleton-blob",
+              "box": {
+                "x": 360,
+                "y": 89,
+                "width": 430,
+                "height": 287
+              },
+              "style": {
+                "animation": "media-skeleton-drift-y 3.08s, media-skeleton-pulse 1.89s"
+              }
+            },
+            {
+              "name": "glow",
+              "selector": ".qwen-media-skeleton-glow",
+              "style": {
+                "animation": "media-skeleton-glow 1.705s"
+              }
+            },
+            {
+              "name": "grain",
+              "selector": ".qwen-media-skeleton-grain",
+              "notes": "noise texture layer"
+            },
+            {
+              "name": "center-icon",
+              "selector": ".qwen-media-skeleton-icon",
+              "box": {
+                "x": 647,
+                "y": 278,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "centered 32px glyph (not a sprite <use>)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stop-button (disabled)",
+      "selector": "button.stop-button",
+      "tag": "button",
+      "classes": "stop-button disabled",
+      "aria_label": "Stop",
+      "disabled": true,
+      "box": {
+        "x": 1171,
+        "y": 944,
+        "width": 32,
+        "height": 32
+      },
+      "style": {
+        "background": "rgba(250,251,255,0.24)",
+        "border_radius": "50%",
+        "cursor": "not-allowed"
+      },
+      "icon_svg": null,
+      "icon": "filled square (qwpcicon-stop-fill; Lucide 'square')",
+      "children": []
+    }
+  ],
+  "status_text": "none (no %, no label, no text blocks)",
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}

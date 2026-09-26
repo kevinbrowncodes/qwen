@@ -1,0 +1,266 @@
+{
+  "state": "job-done",
+  "url_path": "/c/[chat-id]",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "dpr": 3,
+    "maxTouchPoints": 1,
+    "hover": "none"
+  },
+  "components": [
+    {
+      "name": "user-bubble",
+      "selector": ".chat-user-message",
+      "text": "[owner text]",
+      "box": {
+        "x": 91,
+        "y": 74,
+        "width": 285,
+        "height": 49
+      },
+      "style": {
+        "background": "#293652",
+        "border_radius": "18px",
+        "padding": "12.576px 16.768px"
+      }
+    },
+    {
+      "name": "assistant-message",
+      "selector": ".qwen-chat-message-assistant",
+      "box": {
+        "x": 0,
+        "y": 149,
+        "width": 393,
+        "height": 220
+      },
+      "style": {
+        "padding": "0px 16.768px"
+      },
+      "children": [
+        {
+          "name": "image",
+          "selector": "img.ant-image-img.qwen-image",
+          "src": "[owner image] (x-oss-process=image/resize,m_mfit,w_320,h_320)",
+          "natural_size": "560x320",
+          "box": {
+            "x": 17,
+            "y": 157,
+            "width": 300,
+            "height": 171
+          },
+          "style": {
+            "border_radius": "20.96px"
+          },
+          "icon_svg": null
+        },
+        {
+          "name": "hover-overlays",
+          "notes": "not rendered on touch: no .upper-right-corner-item, no .lower-center-container"
+        },
+        {
+          "name": "action-row",
+          "selector": ".response-message-footer-actions",
+          "box": {
+            "x": 17,
+            "y": 337,
+            "width": 359,
+            "height": 32
+          },
+          "children": [
+            {
+              "aria_label": "Create Video",
+              "box": {
+                "x": 9,
+                "y": 337,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "appicon-aiVideo"
+            },
+            {
+              "aria_label": "Edit",
+              "box": {
+                "x": 41,
+                "y": 337,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "appicon-edit"
+            },
+            {
+              "aria_label": "Good Response",
+              "box": {
+                "x": 73,
+                "y": 337,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "appicon-thumbsUp"
+            },
+            {
+              "aria_label": "Bad Response",
+              "box": {
+                "x": 105,
+                "y": 337,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "appicon-thumbsDown"
+            },
+            {
+              "aria_label": "Share",
+              "box": {
+                "x": 137,
+                "y": 337,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "appicon-share2"
+            },
+            {
+              "aria_label": "Regenerate",
+              "box": {
+                "x": 169,
+                "y": 337,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "appicon-refresh"
+            },
+            {
+              "aria_label": "More actions",
+              "box": {
+                "x": 201,
+                "y": 337,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "appicon-more"
+            }
+          ],
+          "notes": "no Download in the row"
+        }
+      ]
+    },
+    {
+      "name": "composer (image mode, collapsed)",
+      "selector": ".message-input-container.message-input-container-separation",
+      "box": {
+        "x": 13,
+        "y": 787,
+        "width": 368,
+        "height": 55
+      },
+      "style": {
+        "background": "#2c2c2c",
+        "border_radius": "24px",
+        "padding": "10.48px",
+        "inner_height": "32px",
+        "overflow": "hidden",
+        "transition": "height 0.2s ease-in-out, box-shadow 0.2s ease-in-out"
+      },
+      "children": [
+        {
+          "name": "prompt-input",
+          "placeholder": "Ask Qwen",
+          "box": {
+            "x": 24,
+            "y": 798,
+            "width": 345,
+            "height": 38
+          }
+        },
+        {
+          "name": "footer (clipped until focus)",
+          "box": {
+            "x": 24,
+            "y": 849,
+            "width": 345,
+            "height": 34
+          },
+          "children": [
+            {
+              "name": "mode-select-button",
+              "aria_label": "Select Mode",
+              "box": {
+                "x": 24,
+                "y": 849,
+                "width": 32,
+                "height": 32
+              },
+              "icon": "appicon-add"
+            },
+            {
+              "name": "image-mode-pill (icon only)",
+              "selector": ".mode-select-current-mode",
+              "text": "",
+              "box": {
+                "x": 64,
+                "y": 849,
+                "width": 58,
+                "height": 32
+              },
+              "style": {
+                "background": "rgba(66,110,255,0.12)",
+                "border_radius": "999px"
+              },
+              "icon": "appicon-aiPicture + appicon-close2"
+            },
+            {
+              "name": "image-model-select",
+              "text": "Model 2.0",
+              "box": {
+                "x": 130,
+                "y": 849,
+                "width": 94,
+                "height": 32
+              },
+              "notes": "label shortened from 'Qwen-Image 2.0'"
+            },
+            {
+              "name": "aspect-ratio-select",
+              "text": "16:9",
+              "box": {
+                "x": 224,
+                "y": 849,
+                "width": 58,
+                "height": 32
+              }
+            },
+            {
+              "name": "voice-input",
+              "aria_label": "Voice Input",
+              "box": {
+                "x": 291,
+                "y": 849,
+                "width": 34,
+                "height": 34
+              }
+            },
+            {
+              "name": "send (disabled)",
+              "aria_label": "Send",
+              "disabled": true,
+              "box": {
+                "x": 335,
+                "y": 849,
+                "width": 34,
+                "height": 34
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "footer_statement": "not rendered at this width",
+  "identity_visible": "closed drawer only: username [masked], avatar [masked]"
+}

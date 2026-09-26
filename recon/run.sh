@@ -5,19 +5,25 @@
 #   recon/run.sh check       headless: prints session: signed-in | signed-out | unknown
 #   recon/run.sh test        the recon unit tests
 #   recon/run.sh typecheck   the recon typecheck
+#   recon/run.sh curate DATE     file the owner's capture into docs/recon/DATE (STORY_002, offline)
+#   recon/run.sh harvest DATE    harvest css, icons, brand and tokens (STORY_003, offline)
 #
 # The host needs only docker. Nothing is installed on it. This script prints
 # nothing of its own beyond errors: never the X auth file, never a cookie.
 set -euo pipefail
 
 usage() {
-  echo "usage: recon/run.sh login|check|test|typecheck" >&2
+  echo "usage: recon/run.sh login|check|test|typecheck | curate|harvest YYYY-MM-DD" >&2
   exit 2
 }
 
-[[ $# -eq 1 ]] || usage
-case "$1" in
-  login | check | test | typecheck) script="$1" ;;
+case "${1:-}" in
+  login | check | test | typecheck)
+    [[ $# -eq 1 ]] || usage
+    script="$1" ;;
+  curate | harvest)
+    [[ $# -eq 2 && "$2" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || usage
+    script="$1" ;;
   *) usage ;;
 esac
 
@@ -59,6 +65,10 @@ DISPLAY="$display"
 # through without pnpm wrapping a non-zero exit in an error banner.
 if [[ "$script" == "login" || "$script" == "check" ]]; then
   run="cd recon && exec node src/$script.ts"
+elif [[ "$script" == "curate" || "$script" == "harvest" ]]; then
+  # Offline: these scripts make no request (src/offline.test.ts guards their
+  # sources); only the pnpm install before them uses the network.
+  run="cd recon && exec node src/$script.ts $2"
 else
   run="exec corepack pnpm --filter recon $script"
 fi

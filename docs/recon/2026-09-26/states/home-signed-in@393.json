@@ -1,0 +1,357 @@
+{
+  "state": "home-signed-in",
+  "url_path": "/",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "dpr": 3,
+    "maxTouchPoints": 1,
+    "hover": "none"
+  },
+  "components": [
+    {
+      "name": "mobile-header",
+      "selector": "header.header-mobile",
+      "tag": "header",
+      "classes": "header-mobile",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 393,
+        "height": 58
+      },
+      "style": {
+        "background": "transparent"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "drawer-toggle",
+          "selector": ".header-left .sidebar-toggle-icon",
+          "tag": "span",
+          "classes": "anticon sidebar-toggle-icon",
+          "aria_label": "",
+          "box": {
+            "x": 17,
+            "y": 18,
+            "width": 21,
+            "height": 21
+          },
+          "style": {
+            "color": "#fafbff"
+          },
+          "icon_svg": null,
+          "icon": "hamburger, 3 lines (appicon-menu; Lucide 'menu')",
+          "behavior": "opens drawer"
+        },
+        {
+          "name": "model-picker",
+          "selector": ".mms-trigger",
+          "tag": "div",
+          "role": "button",
+          "aria_label": "Models Qwen3.7-Plus",
+          "text": "Qwen3.7-Plus",
+          "box": {
+            "x": 50,
+            "y": 17,
+            "width": 120,
+            "height": 23
+          },
+          "style": {
+            "font_size": "15px",
+            "font_weight": "600",
+            "color": "#fafbff"
+          },
+          "icon_svg": null,
+          "icon": "chevron-down (appicon-down)"
+        },
+        {
+          "name": "temporary-chat",
+          "selector": ".header-right button",
+          "tag": "button",
+          "aria_label": "",
+          "box": {
+            "x": 355,
+            "y": 18,
+            "width": 21,
+            "height": 21
+          },
+          "icon_svg": null,
+          "icon": "appicon-temporaryDialogue"
+        }
+      ]
+    },
+    {
+      "name": "drawer (closed)",
+      "selector": ".sidebar.sidebar-collapse > .sidebar-side.side-mobile-width.sidebar-hide-side",
+      "tag": "div",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 852
+      },
+      "style": {
+        "position": "fixed (wrapper)",
+        "open_width": "335px",
+        "background": "#111112",
+        "transition": "width 0.2s ease-in-out",
+        "z_index": "50",
+        "overflow": "hidden"
+      },
+      "icon_svg": null,
+      "contents": [
+        "user-menu-btn-mobile (0,0,335x63): avatar [masked] + username [masked] + chevron (appicon-right)",
+        "New Chat (appicon-newDialogue, row 310x42)",
+        "My Library head, icon only (appicon-library) + 76x76 thumbnails",
+        "Community",
+        "Projects / New Project (appicon-add)",
+        "All chats > Today > rows with 25px 'Chat Menu' buttons (appicon-more)"
+      ],
+      "notes": "no Upgrade button seen in drawer; drawer not opened yet (needs a tap)"
+    },
+    {
+      "name": "welcome-area",
+      "selector": ".placeholder-text-container",
+      "box": {
+        "x": 0,
+        "y": 58,
+        "width": 393,
+        "height": 712
+      },
+      "text": "",
+      "notes": "no 'How can I help you?' heading, no example prompts at this width"
+    },
+    {
+      "name": "composer",
+      "selector": ".message-input-container",
+      "tag": "div",
+      "box": {
+        "x": 17,
+        "y": 789,
+        "width": 359,
+        "height": 47
+      },
+      "style": {
+        "background": "#2c2c2c",
+        "border": "1px solid rgba(250,251,255,0.2)",
+        "border_radius": "24px",
+        "padding": "6.288px",
+        "box_shadow": "none"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "mode-select-button",
+          "selector": ".mode-select-open",
+          "aria_label": "Select Mode",
+          "box": {
+            "x": 24,
+            "y": 797,
+            "width": 32,
+            "height": 32
+          },
+          "style": {
+            "background": "#232326",
+            "border_radius": "999px"
+          },
+          "icon_svg": null,
+          "icon": "plus (appicon-add)"
+        },
+        {
+          "name": "prompt-input",
+          "selector": "textarea.message-input-textarea",
+          "placeholder": "Ask Qwen",
+          "box": {
+            "x": 69,
+            "y": 800,
+            "width": 214,
+            "height": 25
+          },
+          "style": {
+            "font_size": "16.768px",
+            "color": "#f7f8fc"
+          }
+        },
+        {
+          "name": "voice-input",
+          "selector": "button.record-btn",
+          "aria_label": "Voice Input",
+          "box": {
+            "x": 291,
+            "y": 796,
+            "width": 34,
+            "height": 34
+          },
+          "style": {
+            "background": "rgba(250,251,255,0.05)",
+            "border_radius": "999px"
+          },
+          "icon_svg": null,
+          "icon": "appicon-mic"
+        },
+        {
+          "name": "voice-mode",
+          "selector": ".omb__btn",
+          "aria_label": "Voice mode",
+          "box": {
+            "x": 335,
+            "y": 796,
+            "width": 34,
+            "height": 34
+          },
+          "style": {
+            "background": "#ffffff",
+            "border_radius": "999px"
+          },
+          "icon_svg": null,
+          "icon": "appicon-soundPlaying"
+        }
+      ],
+      "notes": "no 'Auto' thinking selector at this width"
+    },
+    {
+      "name": "drawer (open)",
+      "selector": ".sidebar > .sidebar-side.side-mobile-width",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 335,
+        "height": 852
+      },
+      "style": {
+        "background": "#111112",
+        "transition": "width 0.2s ease-in-out",
+        "font_size": "14px",
+        "row_height": "42px",
+        "row_radius": "8px",
+        "row_inset": "13px"
+      },
+      "backdrop": {
+        "selector": ".mask",
+        "box": {
+          "x": 0,
+          "y": 0,
+          "width": 393,
+          "height": 852
+        },
+        "background": "rgba(0,0,0,0.1)",
+        "z_index": "999"
+      },
+      "children": [
+        {
+          "name": "user-row",
+          "selector": ".sidebar-user",
+          "text": "[masked]",
+          "box": {
+            "x": 0,
+            "y": 0,
+            "width": 335,
+            "height": 63
+          },
+          "avatar": "[masked]",
+          "icon": "appicon-right (chevron)"
+        },
+        {
+          "name": "new-chat",
+          "selector": ".sidebar-entry-fixed-list-content",
+          "text": "New Chat",
+          "box": {
+            "x": 13,
+            "y": 63,
+            "width": 310,
+            "height": 42
+          },
+          "icon": "appicon-newDialogue"
+        },
+        {
+          "name": "search",
+          "selector": ".sidebar-temporary",
+          "text": "",
+          "box": {
+            "x": 13,
+            "y": 105,
+            "width": 310,
+            "height": 42
+          },
+          "icon": "appicon-search2"
+        },
+        {
+          "name": "my-library",
+          "selector": ".my-library-head",
+          "text": "My Library",
+          "box": {
+            "x": 13,
+            "y": 147,
+            "width": 310,
+            "height": 42
+          },
+          "icon": "appicon-library + appicon-rightMini",
+          "preview": "two 76x76 thumbnails [owner image] below, y 189-265"
+        },
+        {
+          "name": "community",
+          "selector": ".sidebar-entry-list-content",
+          "text": "Community",
+          "box": {
+            "x": 13,
+            "y": 285,
+            "width": 310,
+            "height": 42
+          },
+          "icon": "appicon-more2"
+        },
+        {
+          "name": "projects",
+          "selector": ".project-list-wrapper",
+          "text": "Projects / New Project",
+          "box": {
+            "x": 0,
+            "y": 344,
+            "width": 335,
+            "height": 67
+          },
+          "icon": "appicon-downMini, appicon-add"
+        },
+        {
+          "name": "all-chats-header",
+          "selector": ".collapsible-full",
+          "text": "All chats",
+          "box": {
+            "x": 13,
+            "y": 427,
+            "width": 310,
+            "height": 25
+          },
+          "icon": "appicon-downMini"
+        },
+        {
+          "name": "chat-row",
+          "selector": ".chat-item-drag",
+          "text": "Red Bicycle Brick Wall",
+          "box": {
+            "x": 13,
+            "y": 473,
+            "width": 310,
+            "height": 42
+          },
+          "icon": "appicon-more (25px 'Chat Menu', always visible on touch)"
+        },
+        {
+          "name": "chat-row",
+          "selector": ".chat-item-drag",
+          "text": "Add Shirt to Subject",
+          "box": {
+            "x": 13,
+            "y": 517,
+            "width": 310,
+            "height": 42
+          }
+        }
+      ],
+      "notes": "no Upgrade button in the drawer; the Chat Menu '…' shows without hover"
+    }
+  ],
+  "icon_sprite": "#appicon-* (mobile set; desktop used #qwpcicon-*)",
+  "identity_visible": "inside the closed drawer: .user-menu-btn-mobile with avatar [masked] and username [masked]"
+}

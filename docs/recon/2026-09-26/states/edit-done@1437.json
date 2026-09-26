@@ -1,0 +1,561 @@
+{
+  "state": "edit-done",
+  "url_path": "/c/[chat-id]",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "user-message",
+      "selector": ".qwen-chat-message.qwen-chat-message-user",
+      "tag": "div",
+      "classes": "qwen-chat-message qwen-chat-message-user",
+      "role": "",
+      "aria_label": "",
+      "text": "[owner text]",
+      "box": {
+        "x": 431,
+        "y": 94,
+        "width": 800,
+        "height": 214
+      },
+      "style": {
+        "font_family": "system-ui, ui-sans-serif, -apple-system, \"system-ui\", Inter, NotoSansHans, sans-serif",
+        "padding": "0px 32px"
+      },
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "reference-thumbnail",
+          "selector": ".user-image-list .user-image-item img",
+          "tag": "img",
+          "classes": "user-image-item > img",
+          "text": "",
+          "src": "[owner image]",
+          "box": {
+            "x": 1087,
+            "y": 102,
+            "width": 112,
+            "height": 112
+          },
+          "style": {
+            "border_radius": "12px",
+            "object_fit": "cover"
+          },
+          "notes": "right-aligned row above the bubble (index-module__file-message, height 112)",
+          "icon_svg": null,
+          "children": []
+        },
+        {
+          "name": "user-bubble",
+          "selector": ".chat-user-message",
+          "tag": "div",
+          "classes": "chat-user-message",
+          "text": "[owner text]",
+          "box": {
+            "x": 964,
+            "y": 222,
+            "width": 235,
+            "height": 46
+          },
+          "style": {
+            "font_size": "16px",
+            "font_weight": "400",
+            "line_height": "26px (content 28px)",
+            "color": "#fafbff",
+            "background": "#293652",
+            "border": "0px",
+            "border_radius": "18px",
+            "padding": "9px 16px"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "user-message-content",
+              "selector": ".user-message-content",
+              "classes": "whitespace-pre-wrap user-message-content fade-in",
+              "text": "[owner text]",
+              "box": {
+                "x": 980,
+                "y": 231,
+                "width": 203,
+                "height": 28
+              }
+            }
+          ]
+        },
+        {
+          "name": "user-action-row",
+          "selector": ".user-message-footer .qwen-chat-package-comp-new-action-control",
+          "tag": "div",
+          "box": {
+            "x": 1103,
+            "y": 272,
+            "width": 96,
+            "height": 32
+          },
+          "style": {
+            "gap": "0px (buttons 32x32, icon 16px)"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "copy",
+              "tag": "button",
+              "classes": "qwen-chat-v2-btn qwen-chat-v2-btn-text qwen-chat-v2-btn-m",
+              "aria_label": "Copy",
+              "box": {
+                "x": 1103,
+                "y": 272,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "copy (qwpcicon-copy; Lucide 'copy')"
+            },
+            {
+              "name": "edit",
+              "tag": "button",
+              "aria_label": "Edit",
+              "box": {
+                "x": 1135,
+                "y": 272,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "pencil (qwpcicon-edit; Lucide 'pencil')"
+            },
+            {
+              "name": "delete",
+              "tag": "button",
+              "aria_label": "Delete",
+              "box": {
+                "x": 1167,
+                "y": 272,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "trash (qwpcicon-delete; Lucide 'trash-2')"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "assistant-message",
+      "selector": ".qwen-chat-message.qwen-chat-message-assistant",
+      "tag": "div",
+      "classes": "qwen-chat-message qwen-chat-message-assistant",
+      "text": "[owner text]",
+      "box": {
+        "x": 431,
+        "y": 308,
+        "width": 800,
+        "height": 491
+      },
+      "style": {},
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "text-block-1 (intro)",
+          "selector": ".chat-response-message-render-flow > div:nth-child(1) .qwen-markdown-text",
+          "tag": "span",
+          "classes": "qwen-markdown-text",
+          "text": "[owner text] (~141 chars, 2 lines)",
+          "box": {
+            "x": 463,
+            "y": 312,
+            "width": 715,
+            "height": 47
+          },
+          "style": {
+            "font_size": "16px",
+            "font_weight": "400",
+            "line_height": "28px",
+            "color": "#fafbff",
+            "margin": "0px"
+          },
+          "icon_svg": null,
+          "children": []
+        },
+        {
+          "name": "image-result",
+          "selector": ".chat-response-media-render .image-tool-container",
+          "tag": "div",
+          "classes": "image-tool-container image-tool-container-hover",
+          "text": "",
+          "box": {
+            "x": 463,
+            "y": 396,
+            "width": 400,
+            "height": 223
+          },
+          "style": {},
+          "icon_svg": null,
+          "notes": "overlay controls were rendered while the container had the -hover class; treat them as hover-only",
+          "children": [
+            {
+              "name": "image",
+              "selector": "img.ant-image-img.qwen-image",
+              "tag": "img",
+              "classes": "ant-image-img qwen-image",
+              "src": "[owner image]",
+              "box": {
+                "x": 463,
+                "y": 396,
+                "width": 400,
+                "height": 223
+              },
+              "style": {
+                "border_radius": "20px",
+                "object_fit": "cover"
+              },
+              "natural_size": "807x450",
+              "icon_svg": null,
+              "children": []
+            },
+            {
+              "name": "download-corner-button",
+              "selector": ".control-card-top .upper-right-corner-item",
+              "tag": "div",
+              "classes": "upper-right-corner-item",
+              "aria_label": "",
+              "tooltip": "none in DOM",
+              "box": {
+                "x": 815,
+                "y": 412,
+                "width": 32,
+                "height": 32
+              },
+              "style": {
+                "background": "rgba(0,0,0,0.32)",
+                "border_radius": "50%"
+              },
+              "icon_svg": null,
+              "icon": "download arrow, 20px, white (qwpcicon-download; Lucide 'download')",
+              "children": []
+            },
+            {
+              "name": "bottom-action-pill",
+              "selector": ".lower-center-container.control-card-bottom",
+              "tag": "div",
+              "classes": "lower-center-container control-card-bottom",
+              "box": {
+                "x": 569,
+                "y": 577,
+                "width": 189,
+                "height": 32
+              },
+              "style": {
+                "background": "rgba(0,0,0,0.32)",
+                "border_radius": "16px",
+                "padding": "4px 10px"
+              },
+              "icon_svg": null,
+              "children": [
+                {
+                  "name": "create-video",
+                  "selector": ".lower-center-item:nth-of-type(1)",
+                  "text": "Create Video",
+                  "box": {
+                    "x": 579,
+                    "y": 581,
+                    "width": 104,
+                    "height": 24
+                  },
+                  "icon_svg": null,
+                  "icon": "video (qwpcicon-aiVideo), 20px"
+                },
+                {
+                  "name": "divider",
+                  "selector": ".lower-center-item-divider",
+                  "box": {
+                    "x": 691,
+                    "y": 587,
+                    "width": 1,
+                    "height": 12
+                  },
+                  "style": {
+                    "background": "rgba(255,255,255,0.5)",
+                    "border_radius": "1px"
+                  }
+                },
+                {
+                  "name": "edit",
+                  "selector": ".lower-center-item:nth-of-type(2)",
+                  "text": "Edit",
+                  "box": {
+                    "x": 700,
+                    "y": 581,
+                    "width": 48,
+                    "height": 24
+                  },
+                  "icon_svg": null,
+                  "icon": "pencil (qwpcicon-edit), 20px"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "text-block-2 (follow-up)",
+          "selector": ".chat-response-message-render-flow > div:nth-child(3) .qwen-markdown-text",
+          "tag": "span",
+          "classes": "qwen-markdown-text",
+          "text": "[owner text] (~213 chars, 3 lines)",
+          "box": {
+            "x": 463,
+            "y": 655,
+            "width": 707,
+            "height": 75
+          },
+          "style": {
+            "font_size": "16px",
+            "line_height": "28px",
+            "color": "#fafbff"
+          },
+          "icon_svg": null,
+          "children": []
+        },
+        {
+          "name": "assistant-action-row",
+          "selector": ".response-message-footer-actions",
+          "tag": "div",
+          "box": {
+            "x": 455,
+            "y": 751,
+            "width": 192,
+            "height": 32
+          },
+          "style": {
+            "gap": "0px (buttons 32x32, icons 16px)"
+          },
+          "icon_svg": null,
+          "children": [
+            {
+              "name": "copy",
+              "tag": "button",
+              "aria_label": "Copy",
+              "box": {
+                "x": 455,
+                "y": 751,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "qwpcicon-copy"
+            },
+            {
+              "name": "good",
+              "tag": "button",
+              "aria_label": "Good Response",
+              "box": {
+                "x": 487,
+                "y": 751,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "thumbs up (qwpcicon-thumbsUp)"
+            },
+            {
+              "name": "bad",
+              "tag": "button",
+              "aria_label": "Bad Response",
+              "box": {
+                "x": 519,
+                "y": 751,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "thumbs down (qwpcicon-thumbsDown)"
+            },
+            {
+              "name": "share",
+              "tag": "button",
+              "aria_label": "Share",
+              "box": {
+                "x": 551,
+                "y": 751,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "share (qwpcicon-share2)"
+            },
+            {
+              "name": "regenerate",
+              "tag": "button",
+              "aria_label": "Regenerate",
+              "box": {
+                "x": 583,
+                "y": 751,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "refresh (qwpcicon-refresh)"
+            },
+            {
+              "name": "more",
+              "tag": "button",
+              "aria_label": "More actions",
+              "box": {
+                "x": 615,
+                "y": 751,
+                "width": 32,
+                "height": 32
+              },
+              "icon_svg": null,
+              "icon": "three dots (qwpcicon-more)",
+              "menu": {
+                "box": {
+                  "x": 615,
+                  "y": 787,
+                  "width": 179,
+                  "height": 126
+                },
+                "items": [
+                  {
+                    "text": "Read aloud",
+                    "icon": "sound"
+                  },
+                  {
+                    "text": "Branch in new chat",
+                    "icon": "createBranch"
+                  },
+                  {
+                    "text": "Delete",
+                    "icon": "delete"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "chat-composer",
+      "selector": ".message-input-container",
+      "tag": "div",
+      "classes": "message-input-container",
+      "text": "Fast",
+      "box": {
+        "x": 455,
+        "y": 932,
+        "width": 760,
+        "height": 58
+      },
+      "style": {
+        "background": "#2c2c2c",
+        "border": "0.8px solid rgba(250,251,255,0.2)",
+        "border_radius": "28px",
+        "padding": "12px"
+      },
+      "notes": "back in chat mode after the result: no Create Image pill; hidden 'Upload files' control (0x0)",
+      "icon_svg": null,
+      "children": [
+        {
+          "name": "mode-select-button",
+          "aria_label": "Select Mode",
+          "icon_svg": null,
+          "icon": "bold plus (qwpcicon-addBold)"
+        },
+        {
+          "name": "prompt-input",
+          "selector": "textarea.message-input-textarea",
+          "placeholder": "Ask Qwen",
+          "box": {
+            "x": 506,
+            "y": 944,
+            "width": 534,
+            "height": 32
+          }
+        },
+        {
+          "name": "speed-select",
+          "selector": ".qwen-chat-v2-dropdown-menu-select",
+          "text": "Fast",
+          "box": {
+            "x": 1046,
+            "y": 944,
+            "width": 77,
+            "height": 32
+          },
+          "style": {
+            "font_size": "14px",
+            "color": "#fafbff",
+            "background": "#2c2c2c",
+            "border_radius": "8px",
+            "padding": "4px 12px"
+          },
+          "icon_svg": null,
+          "icon": "chevron-down"
+        },
+        {
+          "name": "voice-input",
+          "aria_label": "Voice Input",
+          "box": "not measured",
+          "icon_svg": null,
+          "icon": "microphone (qwpcicon-mic)"
+        },
+        {
+          "name": "send-button (disabled)",
+          "selector": "button.send-button",
+          "aria_label": "Send",
+          "disabled": true,
+          "box": {
+            "x": 1171,
+            "y": 944,
+            "width": 32,
+            "height": 32
+          },
+          "style": {
+            "background": "rgba(250,251,255,0.24)",
+            "color": "#222222",
+            "border_radius": "50%"
+          },
+          "icon_svg": null,
+          "icon": "up arrow (qwpcicon-sendChat)"
+        }
+      ]
+    },
+    {
+      "name": "footer-statement",
+      "selector": ".chat-left > .chat-container-statement",
+      "tag": "div",
+      "classes": "chat-container-statement",
+      "text": "AI-generated content may not be accurate.",
+      "box": {
+        "x": 240,
+        "y": 989,
+        "width": 1191,
+        "height": 36
+      },
+      "style": {
+        "font_size": "10px",
+        "line_height": "12px",
+        "color": "rgba(250,251,255,0.5)",
+        "display": "flex",
+        "justify_content": "center"
+      },
+      "icon_svg": null,
+      "children": []
+    }
+  ],
+  "root_css_variables": {
+    "_note": "unchanged from home-signed-in@1437"
+  },
+  "loaded_stylesheets": [
+    "unchanged"
+  ],
+  "loaded_fonts": [
+    "none via document.fonts (system stack)"
+  ],
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}

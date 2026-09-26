@@ -1,0 +1,27 @@
+{
+  "state": "job-submitted",
+  "t_since_send_ms": 440,
+  "url_path": "/c/new-chat",
+  "url_path_after": "/c/[chat-id] (swapped in by ~8s)",
+  "viewport": {
+    "width": 1437,
+    "height": 1031
+  },
+  "components": [
+    {
+      "name": "user-message",
+      "selector": ".qwen-chat-message.qwen-chat-message-user",
+      "text": "[owner text]",
+      "notes": "rendered immediately; no reference image"
+    },
+    {
+      "name": "assistant-message (placeholder)",
+      "selector": ".qwen-chat-message.qwen-chat-message-assistant",
+      "text": "",
+      "notes": "present immediately (2 messages at 0.44s); contents read at 8s, see job-generating"
+    }
+  ],
+  "status_text": "none",
+  "sidebar": "new chat row auto-titled 'Red Bicycle Brick Wall' (seen by end of run)",
+  "identity_visible": "sidebar bottom-left, button.user-menu-btn: username [masked], 'Free', avatar [masked]"
+}
