@@ -1,10 +1,10 @@
-# STORY_002 — Every state of the image generation flow is captured as dated screenshots
+# STORY_002 — Every state of the image generation flow is captured as dated screenshots and page snapshots
 
 **Epic:** [EPIC_001](../epic/EPIC_001_the_reference_image_generation_flow_is_captured_as_a_spec.md)
 **Status:** Not started (after STORY_001)
 **Created:** 2026-09-26
 
-As the assistant building the clone, I want a dated screenshot of every state of the reference's image generation flow, at the wide and the narrow width, so that each clone story can cite the exact picture it must match.
+As the assistant building the clone, I want a dated screenshot and a cleaned page snapshot of every state of the reference's image generation flow, at the wide and the narrow width, so that each clone story can cite the exact picture it must match and build from the markup that produced it (owner's decision 2026-09-26: lift what renders, write what runs).
 
 ## Current state
 
@@ -33,20 +33,25 @@ Needs a real generation (part 2 — N = 2 approved 2026-09-26):
   job-cancelled             submit then cancel (the second of the two)
   job-failed / job-moderated  whatever failure states the run actually produces
 
-If the editing flow's generating/done states differ from text-to-image's, they
-need their own generation — ask the owner before spending beyond the two.
+What N = 2 does not capture (stated 2026-09-26):
+  job-failed / job-moderated  only if one of the two runs happens to produce them
+  edit-generating / edit-done  not captured unless the owner approves a third
+                               generation: one edit with the fixture reference
+Every state left uncaptured is designed in EPIC_003 from an ASCII sketch.
 ```
 
 ## Acceptance Criteria
 
 - [ ] `pnpm recon:capture` reuses the STORY_001 session, **refuses to run unless the session reads signed-in**, and captures every part-1 state above to `docs/recon/<YYYY-MM-DD>/<state>@<width>.png`, at 1440 and 390 wide as listed.
+- [ ] Every captured state also saves a **page snapshot** `docs/recon/<YYYY-MM-DD>/<state>@<width>.html` beside its screenshot: the rendered DOM with every script element, inline event handler and `on*` attribute removed, account identifiers masked (the same masking as the screenshot), and image and stylesheet URLs kept as their absolute CDN URLs so STORY_003 can fetch the ones we keep. No cookie, token or query string survives in it.
 - [ ] Each run writes `manifest.json` beside the screenshots: state, width, URL path (never a query string), capture time, and whether the state was reached automatically or by the owner.
 - [ ] The run performs **no generation** unless started with `--generate N`; without the flag the submit control is never clicked and Enter is never pressed in the composer. Part-2 states are a separate run once the owner has approved N (recorded in the Done note).
 - [ ] Before every screenshot, any account identifier the page shows (display name, e-mail, avatar alt) is masked in the page (the site is not changed — only the page in our browser), so committed captures carry no account identity.
 - [ ] Throughout the run, first-party network traffic (method, host, path with ids replaced by placeholders, status, content type; JSON response bodies) is appended to `recon/out/<date>/network.jsonl` as raw material for STORY_004. Analytics, anti-bot and pixel hosts are excluded. Nothing under `recon/out/` is committed.
 - [ ] The composer is left as it was found: typed text removed before the run ends.
 - [ ] Failure and quota walls are matched by their **observed wording**, captured as their own states, and stop the run cleanly ([CLAUDE.md → §4c](../../CLAUDE.md#4c-lessons-carried-over), last lesson).
-- [ ] Unit tests cover the pure helpers (file naming, manifest entries, query-string stripping, id placeholders, noise-host filtering) and pass with `pnpm test`.
+- [ ] The Done note lists every part-2 state in the capture list as captured or not captured, with the reason, so EPIC_003 knows which states it must sketch.
+- [ ] Unit tests cover the pure helpers (file naming, snapshot cleaning, manifest entries, query-string stripping, id placeholders, noise-host filtering) and pass with `pnpm test`.
 
 ## Technical Notes
 
@@ -56,7 +61,7 @@ need their own generation — ask the owner before spending beyond the two.
 
 ## Testing Plan
 
-- **Unit** — `recon/src/capture-plan.test.ts`: screenshot file naming builds `<state>@<width>.png` and rejects names outside `[a-z0-9-]`; manifest entries keep the path and drop the query string and hash; the date stamp formats a local date as `YYYY-MM-DD`. `recon/src/network-log.test.ts`: the noise filter drops the analytics/anti-bot hosts observed on 2026-09-26 and keeps the reference origin; path sanitising replaces UUIDs and long ids with placeholders and drops the query.
+- **Unit** — `recon/src/capture-plan.test.ts`: screenshot file naming builds `<state>@<width>.png` and rejects names outside `[a-z0-9-]`; manifest entries keep the path and drop the query string and hash; the date stamp formats a local date as `YYYY-MM-DD`. `recon/src/snapshot.test.ts`: the snapshot cleaner removes script elements, inline handlers and `on*` attributes; relative image and stylesheet URLs become absolute against the reference origin; query strings are dropped from every URL; masked account text stays masked; a snapshot with nothing to clean comes back unchanged apart from URL absolutising. `recon/src/network-log.test.ts`: the noise filter drops the analytics/anti-bot hosts observed on 2026-09-26 and keeps the reference origin; path sanitising replaces UUIDs and long ids with placeholders and drops the query.
 - **Integration / E2E** — N/A (third-party site behind a login; generations spend quota). Manual: the assistant runs part 1 and reviews every screenshot against the list; the owner reviews the committed set and approves N for part 2.
 
 ## Estimated Complexity
