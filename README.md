@@ -1,6 +1,6 @@
 # Qwen Local
 
-> A self-hosted image generation workstation: a web UI that recreates the image generation surface of [chat.qwen.ai](https://chat.qwen.ai), backed by **Qwen-Image-2.1** served on the owner's NVIDIA DGX Spark.
+> A self-hosted image generation workstation: a web UI that copies the image generation surface of [chat.qwen.ai](https://chat.qwen.ai), backed by **Qwen-Image-2.1** served on the owner's NVIDIA DGX Spark.
 
 > This README is the source of truth for **what the project is**. How we work (tickets, testing bar, gates, guardrails) lives in [CLAUDE.md](CLAUDE.md).
 
@@ -37,7 +37,7 @@ The UI talks to the generation server through configuration only (base URL, opti
 
 Work is planned as two phases:
 
-1. **UI recon and rebuild** — capture the reference's image generation surface with Playwright through the owner's own logged-in session (see [CLAUDE.md → §3e](CLAUDE.md#3e-how-recon-is-recorded) and [§4b](CLAUDE.md#4b-recon-with-playwright)), then recreate it as our own code.
+1. **UI recon and rebuild** — capture the reference's image generation surface with Playwright through the owner's own logged-in session (see [CLAUDE.md → §3e](CLAUDE.md#3e-how-recon-is-recorded) and [§4b](CLAUDE.md#4b-recon-with-playwright)), harvest its stylesheets, icons, fonts and markup, then build it with our own code driving those lifted assets.
 2. **Image model on the Spark** — serve Qwen-Image-2.1 on the Spark behind the job API, with the license question settled first. See [Running the Model](#running-the-model) for the open question this phase starts with.
 
 ## Tech Stack
@@ -61,7 +61,8 @@ docs/
   bug/        BUG_NNN_*.md
   backlog/    BACKLOG_NNN_*.md
   chore/      CHORE_NNN_*.md
-  recon/      dated captures, measured tokens, component inventory, interaction notes
+  recon/      dated captures, DOM snapshots, harvested assets (css, icons, fonts, brand),
+              measured tokens, component inventory, interaction notes
 ```
 
 ## Features
