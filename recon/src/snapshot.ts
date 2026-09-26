@@ -72,6 +72,12 @@ export function readIdentity(root: Node): Identity {
   return { displayName, avatarSrc };
 }
 
+/** Markup the capture extension (Claude in Chrome) adds to a page it drives (BUG_001). */
+export function isCaptureToolMarkup(el: Element): boolean {
+  if ((getAttr(el, "id") ?? "").startsWith("claude-agent")) return true;
+  return (getAttr(el, "class") ?? "").split(/\s+/).some((c) => c.startsWith("claude-agent"));
+}
+
 function isScriptLink(el: Element): boolean {
   if (el.tagName !== "link") return false;
   const rel = (getAttr(el, "rel") ?? "").toLowerCase();
@@ -94,6 +100,10 @@ export function cleanSnapshot(savedHtml: string, options: SnapshotOptions = DEFA
   let removedScripts = 0;
 
   for (const el of elements(doc)) {
+    if (isCaptureToolMarkup(el)) {
+      removeNode(el);
+      continue;
+    }
     if (el.tagName === "script" || el.tagName === "iframe" || isScriptLink(el)) {
       removeNode(el);
       removedScripts += el.tagName === "script" ? 1 : 0;

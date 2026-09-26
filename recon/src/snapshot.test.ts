@@ -16,6 +16,11 @@ describe("cleanSnapshot", () => {
     expect(cleaned.removedScripts).toBe(2);
   });
 
+  it("drops the style and elements the capture extension injected (BUG_001)", () => {
+    expect(cleaned.html).not.toContain("claude-agent");
+    expect(cleaned.html).toContain(".anticon { display: inline-flex; }");
+  });
+
   it("reads the identity from the user button and masks it everywhere it appears", () => {
     expect(cleaned.identity.displayName).toBe("Fixture Person");
     expect(cleaned.identity.avatarSrc.startsWith("data:image/png;base64,")).toBe(true);
