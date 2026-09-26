@@ -1,4 +1,4 @@
-import { Composer } from "@/components/composer/Composer";
+import { ComposerHost } from "@/components/composer/ComposerHost";
 
 /** The home (STORY_009): the reference's welcome area and composer. */
 export default function Home() {
@@ -11,7 +11,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <Composer />
+      <ComposerHost />
     </div>
   );
 }

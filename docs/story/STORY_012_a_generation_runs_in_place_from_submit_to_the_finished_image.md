@@ -1,7 +1,7 @@
 # STORY_012 — A generation runs in place, from submit to the finished image, and can be cancelled
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md)
-**Status:** Not started (after STORY_011)
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the owner, I want sending a prompt to show my message and a generating card, then the finished image in the same place, with download, edit and regenerate on it. I want a clear message when it fails or is moderated, and a Stop that actually stops it. The page stays responsive throughout.
@@ -72,13 +72,13 @@ After STORY_011 the composer collects the mode, model, ratio, text and reference
 
 ## Acceptance Criteria
 
-- [ ] Submitting sends the job **before** changing what the page shows: the POST is in flight, and then the user bubble and skeleton render ([CLAUDE.md → §4c](../../CLAUDE.md#4c-lessons-carried-over)). The URL becomes `/g/<id>` with no reload. The composer clears and stays usable.
-- [ ] JSON is sent without references, and multipart with the files in order with them. The server receives exactly the attached files (sha256 checked in e2e).
-- [ ] Status is polled until terminal, with backoff: 1 s, then 1.5×, capped at 4 s. It stops on terminal, on leaving the page, and on unmount. The polling effect is correct under React StrictMode's double mount ([CLAUDE.md → §6b](../../CLAUDE.md#6b-e2e-test-conventions)).
-- [ ] Done replaces the skeleton with the image from `result.url`. Download links to `result.url?download=1`. Edit puts the result into the composer as a reference, fetched as a File. Regenerate submits the same request again.
-- [ ] Failed and moderated show the messages above, with Try again. A 503 on submit shows the server's message under the composer, and no generation is created.
-- [ ] Stop is shown while queued or running. It sends DELETE, and on 202 the view shows Stopped. A job that was already terminal (409) shows its real final state.
-- [ ] Opening `/g/<id>` directly shows that generation from history and resumes polling if it is still running.
+- [x] Submitting sends the job **before** changing what the page shows: the POST is in flight, and then the user bubble and skeleton render ([CLAUDE.md → §4c](../../CLAUDE.md#4c-lessons-carried-over)). The URL becomes `/g/<id>` with no reload. The composer clears and stays usable.
+- [x] JSON is sent without references, and multipart with the files in order with them. The server receives exactly the attached files (sha256 checked in e2e).
+- [x] Status is polled until terminal, with backoff: 1 s, then 1.5×, capped at 4 s. It stops on terminal, on leaving the page, and on unmount. The polling effect is correct under React StrictMode's double mount ([CLAUDE.md → §6b](../../CLAUDE.md#6b-e2e-test-conventions)).
+- [x] Done replaces the skeleton with the image from `result.url`. Download links to `result.url?download=1`. Edit puts the result into the composer as a reference, fetched as a File. Regenerate submits the same request again.
+- [x] Failed and moderated show the messages above, with Try again. A 503 on submit shows the server's message under the composer, and no generation is created.
+- [x] Stop is shown while queued or running. It sends DELETE, and on 202 the view shows Stopped. A job that was already terminal (409) shows its real final state.
+- [x] Opening `/g/<id>` directly shows that generation from history and resumes polling if it is still running.
 
 ## Technical Notes
 
@@ -106,3 +106,31 @@ After STORY_011 the composer collects the mode, model, ratio, text and reference
 ## Estimated Complexity
 
 L
+
+## Done (2026-09-26)
+
+**Side by side** (ours measured in the gate image with the stub; reference values from the readings):
+
+| Element | Reference | Ours | Delta |
+| --- | --- | --- | --- |
+| User bubble | right edge 1200, y 94, `#293652`, r18, 9px 16px | right edge 1203, y 94, same colour, radius and padding | text width (the font) |
+| Skeleton | 463,196 400×225, `#3e474e`, r20 | 468,194 400×225, `#3e474e`, r20 | x +5, y −2 |
+| Result | 400×229, r20 | 400×225 (the fixture is 16:9 exactly), r20 | the fixture |
+| Hover pill | 10px above the image's bottom, centred | same | ours holds Edit only (departure) |
+| Row under the image | 32px below the image | 32px | none |
+| Stop | 1171,944, 32px | 1171,944, 32px | enabled (departure) |
+| Composer on this page | 455,932 760×58 | 456,931 760×58 | ±1 |
+| Phone result | 17,157 300×171 | 17,205 300×169 | the bubble wraps to two lines in the fallback font |
+
+**Corrections while building:**
+- **The stub script is chosen by Playwright routing** (the spec adds `x-stub-script` to the create request), not by a `window.__stubScript` hook in the page. The product code carries no test hook.
+- **Regenerate needs the files for an edit.** It is offered for an edit only while this page session still holds the reference files (`lib/pending.ts`). After a reload, the edit shows its reference count as placeholder tiles and offers no Regenerate. It would have to resend images the app does not keep.
+- **On desktop, Download sits on the image's hover controls,** as on the reference, so it exists for assistive technology only while the image is hovered. The spec hovers first. On the phone it is in the row under the image.
+
+**Found and fixed on the way:** [BUG_004](../bug/BUG_004_the_gate_hides_the_output_of_a_failing_step.md). The gate's `pnpm run --silent` hid every failing step's own output. It also explains why STORY_011's intermittent integration failure left nothing to read.
+
+**Tests:**
+- unit: `polling`, `submit`, `pending`, `generation-view`, and `use-generation` (StrictMode with fake timers; unmount stops polling; a network error keeps it going; a 404 stops it; stop sends DELETE), plus edge cases in `composer-state` and `history` to keep the branch floor honest;
+- e2e: `generate.spec.ts`, 7 scenarios at both widths: text to image, an edit whose sha256 the server received, moderated, failed, cancel on both sides, a busy server, and reopening after a reload.
+
+Gate green.

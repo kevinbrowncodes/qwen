@@ -141,3 +141,165 @@ html.mobile .file-card-list {
   flex-wrap: nowrap;
   overflow-x: auto;
 }
+
+/* ---- A generation (STORY_012) ---- */
+.clone-chat-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.clone-chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 40px;
+}
+/* The reference's user message sits right; its bubble is fit-content (reading: #293652, r18, 9px 16px, 16px/26px). */
+.clone-messages .chat-user-message {
+  background: #293652;
+  border-radius: 18px;
+  padding: 9px 16px;
+  font-size: 16px;
+  line-height: 26px;
+  color: #fafbff;
+  width: fit-content;
+  max-width: 70%;
+  margin-left: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* The reply starts 56px under the bubble (job-generating@1437: bubble ends at 140, skeleton at 196); on the phone,
+   34px (job-done@393: 123 → 157). The reference's own user action row fills part of that; ours is not rendered. */
+.clone-messages .qwen-chat-message-assistant {
+  margin-top: 56px;
+}
+html.mobile .clone-messages .qwen-chat-message-assistant {
+  margin-top: 2.125rem;
+}
+/* The result and the skeleton are 300 wide on the phone (job-done@393: 300×171). */
+html.mobile .clone-result {
+  width: 300px;
+}
+/* Reference thumbnails above the bubble: 112×112, r12 (edit-done@1437). */
+.clone-user-image {
+  width: 112px;
+  height: 112px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 0 0 8px 8px;
+  background: rgba(250, 251, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: rgba(250, 251, 255, 0.5);
+}
+.clone-user-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* The result: 400 wide at its own ratio, r20, fading in (job-done@1437). */
+.clone-result {
+  width: 400px;
+  max-width: 100%;
+  border-radius: 20px !important;
+}
+.clone-result img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 20px;
+  animation: clone-fade-in 0.3s ease-out;
+}
+@keyframes clone-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.image-tool-container .upper-right-corner-item {
+  color: #fff;
+  font-size: 20px;
+}
+.image-tool-container .upper-right-corner-item:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+.lower-center-container .lower-center-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #fff;
+  font-size: 20px;
+}
+.clone-status-text {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 20px;
+  color: rgba(250, 251, 255, 0.5);
+}
+/* The row under the image: 32px below it on desktop (job-done@1437: 425 → 457), 9px on the phone (328 → 337). */
+.clone-actions {
+  margin-top: 32px;
+}
+html.mobile .clone-actions {
+  margin-top: 9px;
+}
+.clone-action {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: rgba(250, 251, 255, 0.8);
+  font-size: 16px;
+}
+.clone-action:hover {
+  background: rgba(250, 251, 255, 0.05);
+}
+html.mobile .clone-action {
+  width: 44px;
+  height: 44px;
+}
+.clone-generation-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 400px;
+  font-size: 14px;
+  line-height: 22px;
+  color: rgba(250, 251, 255, 0.5);
+}
+.clone-notice-action {
+  color: #fafbff;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+}
+html.mobile .clone-notice-action {
+  min-height: 44px;
+}
+/* Stop, in Send's place (job-generating@1437: 32px circle). Ours is enabled: it cancels (a departure). */
+.chat-prompt-send-button .clone-stop-button {
+  background: #fafbff;
+  color: #222222;
+  border-radius: 50%;
+}
+/* "AI-generated content may not be accurate." (edit-done@1437: 10px/12px, rgba(250,251,255,0.5)). */
+.clone-statement {
+  text-align: center;
+  font-size: 10px;
+  line-height: 12px;
+  padding: 12px 0;
+  color: rgba(250, 251, 255, 0.5);
+}
+html.mobile .clone-statement {
+  display: none;
+}

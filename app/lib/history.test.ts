@@ -13,6 +13,11 @@ describe("history", () => {
     expect(list[1]).toMatchObject({ status: "queued", progress: 0, updatedAt: "2026-09-26T09:00:00Z" });
   });
 
+  it("orders entries created at the same moment by id, so the list is stable", () => {
+    const list = add(add([], "b", "2026-09-26T10:00:00Z"), "a", "2026-09-26T10:00:00Z");
+    expect(list.map((e) => e.id)).toEqual(["a", "b"]);
+  });
+
   it("folds status answers in, with the result and the error", () => {
     let list = add([], "a", "t0");
     list = applyStatus(list, { id: "a", status: "running", progress: 33 }, "t1");

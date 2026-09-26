@@ -16,9 +16,23 @@ import { ReferenceThumbs } from "./ReferenceThumbs";
 const ACCEPT = "image/png,image/jpeg,image/webp";
 let nextKey = 0;
 
+/** Files put into the composer from outside (the result's Edit, STORY_012); a new nonce attaches them again. */
+export interface Injected {
+  readonly files: readonly File[];
+  readonly nonce: number;
+}
+
 export interface ComposerProps {
-  /** Called with the composer's state when the owner sends (STORY_012 creates the job). */
-  readonly onSubmit?: (state: ComposerState) => void;
+  /** Creates the job; resolves true when it was created, so the composer clears (STORY_012). */
+  readonly onSubmit?: (state: ComposerState) => Promise<boolean>;
+  /** The server's answer to the last submit, shown under the composer. */
+  readonly externalError?: string | null;
+  /** A submit is on its way: Send waits. */
+  readonly busy?: boolean;
+  /** The generation on this page is queued or running: Stop replaces Send. */
+  readonly running?: boolean;
+  readonly onStop?: () => void;
+  readonly inject?: Injected | null;
 }
 
 const RATIO_ICON = (id: string): string => `qwpcicon-a-${id.replace(":", "by")}AspectRatio`;
@@ -31,7 +45,7 @@ function readStored(): string | null {
   }
 }
 
-export function Composer({ onSubmit }: ComposerProps) {
+export function Composer({ onSubmit, externalError = null, busy = false, running = false, onStop, inject = null }: ComposerProps) {
   const narrow = useNarrow();
   const iconSet = narrow ? "appicon" : "qwpcicon";
   const [state, dispatch] = useReducer(reduce, FALLBACK_CAPABILITIES, initialState);
@@ -46,6 +60,15 @@ export function Composer({ onSubmit }: ComposerProps) {
     const candidates = await Promise.all(files.map(async (f) => ({ name: f.name, size: f.size, head: new Uint8Array(await f.slice(0, 16).arrayBuffer()) })));
     dispatch({ type: "attach", items: files.map((file) => ({ key: `ref-${String(++nextKey)}`, file })), candidates });
   };
+
+  // Edit on a result puts that image into the composer as a reference, once per nonce.
+  const injectedNonce = useRef<number | null>(null);
+  useEffect(() => {
+    if (inject === null || injectedNonce.current === inject.nonce) return;
+    injectedNonce.current = inject.nonce;
+    void attach(inject.files);
+    textarea.current?.focus();
+  }, [inject]);
 
   // Restore the session's options once, then keep them written (decide-once state lives in a ref: CLAUDE.md §6b).
   useEffect(() => {
@@ -84,11 +107,12 @@ export function Composer({ onSubmit }: ComposerProps) {
   }, []);
 
   const model = caps.models.find((m) => m.id === state.model) ?? caps.models[0];
-  const sendable = canSend(state);
+  const sendable = canSend(state) && !busy;
   const send = (): void => {
-    if (!sendable) return;
-    onSubmit?.(state);
-    dispatch({ type: "sent" });
+    if (!sendable || !onSubmit) return;
+    void onSubmit(state).then((sent) => {
+      if (sent) dispatch({ type: "sent" });
+    });
   };
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>): void => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -114,9 +138,15 @@ export function Composer({ onSubmit }: ComposerProps) {
   const sendButton = (
     <div className="message-input-right-button-send">
       <div className="chat-prompt-send-button">
-        <button type="button" className={`send-button${sendable ? "" : " disabled"}`} aria-label="Send" disabled={!sendable} onClick={send}>
-          <Icon id="qwpcicon-sendChat" className="icon-send" />
-        </button>
+        {running ? (
+          <button type="button" className="stop-button clone-stop-button" aria-label="Stop" onClick={onStop}>
+            <Icon id="qwpcicon-stop-fill" className="icon-stop" />
+          </button>
+        ) : (
+          <button type="button" className={`send-button${sendable ? "" : " disabled"}`} aria-label="Send" disabled={!sendable} onClick={send}>
+            <Icon id="qwpcicon-sendChat" className="icon-send" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -243,9 +273,9 @@ export function Composer({ onSubmit }: ComposerProps) {
             </div>
           )}
         </div>
-        {state.error ? (
+        {state.error ?? externalError ? (
           <div className="clone-composer-error" role="alert">
-            {state.error}
+            {state.error ?? externalError}
           </div>
         ) : null}
       </div>

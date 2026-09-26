@@ -80,9 +80,10 @@ export function parseCapabilities(v: unknown): Capabilities | null {
   const ratios = v["ratios"]
     .filter(isRecord)
     .flatMap((r) => (typeof r["id"] === "string" && typeof r["width"] === "number" && typeof r["height"] === "number" ? [{ id: r["id"], width: r["width"], height: r["height"] }] : []));
-  if (models.length === 0 || ratios.length === 0) return null;
+  const first = ratios[0];
+  if (models.length === 0 || first === undefined) return null;
   const wanted = typeof v["defaultRatio"] === "string" ? v["defaultRatio"] : "";
-  const defaultRatio = ratios.some((r) => r.id === wanted) ? wanted : (ratios[0]?.id ?? "");
+  const defaultRatio = ratios.some((r) => r.id === wanted) ? wanted : first.id;
   const refs = v["referenceImages"];
   const maxReferences = isRecord(refs) && typeof refs["max"] === "number" ? refs["max"] : FALLBACK_CAPABILITIES.maxReferences;
   return { models, ratios, defaultRatio, maxReferences };

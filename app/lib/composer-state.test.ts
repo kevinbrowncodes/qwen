@@ -162,3 +162,15 @@ describe("attach (STORY_011)", () => {
     expect(s.error).toBe("fake.png is not a PNG, JPEG or WebP image.");
   });
 });
+
+describe("edges", () => {
+  it("defaults to the first ratio when the server names none", () => {
+    expect(parseCapabilities({ models: [{ id: "m", label: "M" }], ratios: [{ id: "3:2", width: 3, height: 2 }] })?.defaultRatio).toBe("3:2");
+  });
+
+  it("has no model to choose when the capabilities list none", () => {
+    const none = { ...FALLBACK_CAPABILITIES, models: [] };
+    expect(initialState(none).model).toBe("");
+    expect(reduce({ ...initialState(), model: "gone" }, { type: "capabilities", capabilities: none }).model).toBe("");
+  });
+});

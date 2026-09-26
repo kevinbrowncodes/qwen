@@ -36,7 +36,8 @@ run_step() {  # run_step <step>; returns the step's status explicitly (an if-sta
   if [ -n "${GATE_DRY_RUN:-}" ]; then
     "$GATE_DRY_RUN" "$1" || rc=$?
   else
-    gate pnpm run --silent "$1" || rc=$?
+    # Not --silent: it swallows a failing step's own output (BUG_004).
+    gate pnpm run "$1" || rc=$?
   fi
   if [ "$rc" -eq 0 ] && [ "$1" = "build" ] && [ -z "${GATE_DRY_RUN:-}" ]; then
     # BUG_003: a change can pass `pnpm build` in the bind mount and still break the production image.
