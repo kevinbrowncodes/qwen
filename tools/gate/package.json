@@ -1,0 +1,8 @@
+{
+  "name": "gate",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bash run.test.sh"
+  }
+}

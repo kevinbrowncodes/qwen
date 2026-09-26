@@ -1,7 +1,7 @@
 # STORY_005 — The app skeleton builds and runs inside the gate container
 
 **Epic:** [EPIC_002](../epic/EPIC_002_the_app_has_a_skeleton_a_stub_generation_server_and_a_test_gate.md)
-**Status:** Not started
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the owner, I want a Next.js app that typechecks, lints, unit-tests, builds and serves a placeholder page from a container on the Spark, so that every later story lands on a working toolchain instead of inventing one.
@@ -28,19 +28,19 @@ At narrow width it is the same text, centred.
 
 ## Acceptance Criteria
 
-- [ ] `tools/gate/Dockerfile` builds the image `qwen/gate:1.63.0-node26`: `node:26-bookworm` pinned by digest, pnpm 10.32.1, Playwright 1.63's Chromium and WebKit, and the host user's uid and gid. `tools/gate/build.sh` builds it idempotently.
-- [ ] `compose.yaml` (project `qwen`) defines three services:
+- [x] `tools/gate/Dockerfile` builds the image `qwen/gate:1.63.0-node26`: `node:26-bookworm` pinned by digest, pnpm 10.32.1, Playwright 1.63's Chromium and WebKit, and the host user's uid and gid. `tools/gate/build.sh` builds it idempotently.
+- [x] `compose.yaml` (project `qwen`) defines three services:
   - `gate`: the image with the repo at `/work` and a named pnpm-store volume;
   - `app-dev`: `next dev` on host port **3100**;
   - `app`: the production image from `app/Dockerfile`, on host port 3100 (only one of the two runs at a time).
 
   Nothing binds port 3000, which is minimax's.
-- [ ] `tools/gate/run.sh` runs the gate steps of [CLAUDE.md → §4](../../CLAUDE.md#4-dev-workflow) in order inside the gate container: install, typecheck, lint, test, test:integration, build, test:e2e. It stops at the first failure with that step's number as the exit code, and a step whose root script does not exist yet prints "no lane yet" and passes. `--from N` and named steps run a subset.
-- [ ] `app/` is a Next.js App Router app with `strict: true` and `noUncheckedIndexedAccess`, `output: "standalone"`, and `reactStrictMode`. ESLint uses `typescript-eslint`'s strict type-checked rules, with `no-explicit-any` as an error and object-literal type assertions banned ([CLAUDE.md → §6 rule 6](../../CLAUDE.md#6-key-rules)).
-- [ ] Root scripts `typecheck`, `lint`, `test` and `build` cover `app` and `recon`. `pnpm test` runs the recon tests and the app's unit lane.
-- [ ] The placeholder page renders the mockup above. `GET /api/health` answers `200 {"status":"ok"}`.
-- [ ] `recon/` keeps passing: its typecheck and tests run in the gate too.
-- [ ] README → Running the UI says how to start the dev server and the production container, and names port 3100.
+- [x] `tools/gate/run.sh` runs the gate steps of [CLAUDE.md → §4](../../CLAUDE.md#4-dev-workflow) in order inside the gate container: install, typecheck, lint, test, test:integration, build, test:e2e. It stops at the first failure with that step's number as the exit code, and a step whose root script does not exist yet prints "no lane yet" and passes. `--from N` and named steps run a subset.
+- [x] `app/` is a Next.js App Router app with `strict: true` and `noUncheckedIndexedAccess`, `output: "standalone"`, and `reactStrictMode`. ESLint uses `typescript-eslint`'s strict type-checked rules, with `no-explicit-any` as an error and object-literal type assertions banned ([CLAUDE.md → §6 rule 6](../../CLAUDE.md#6-key-rules)).
+- [x] Root scripts `typecheck`, `lint`, `test` and `build` cover `app` and `recon`. `pnpm test` runs the recon tests and the app's unit lane.
+- [x] The placeholder page renders the mockup above. `GET /api/health` answers `200 {"status":"ok"}`.
+- [x] `recon/` keeps passing: its typecheck and tests run in the gate too.
+- [x] README → Running the UI says how to start the dev server and the production container, and names port 3100.
 
 ## Technical Notes
 
@@ -59,3 +59,11 @@ At narrow width it is the same text, centred.
 ## Estimated Complexity
 
 M
+
+## Done (2026-09-26)
+
+- `tools/gate/build.sh` built `qwen/gate:1.63.0-node26` from the cached sibling layers (node v26.8.2, pnpm 10.32.1, Chromium 1243 and WebKit 2359).
+- `tools/gate/run.sh`: typecheck (app and recon), lint (app), test (recon 98, gate 6, app 1) and build were green in 11 s. Integration and e2e report "no lane yet".
+- `docker compose up -d --build app` serves the placeholder at http://localhost:3100, and `/api/health` answers `{"status":"ok"}`. Checked with curl on the Spark. Port 3100 was free beforehand (`ss -ltnp`).
+- `.dockerignore` keeps `models/` (the 33 GB of weights), `recon/out/` and `docs/` out of every build context.
+- The gate's "is this lane defined" check reads `package.json` with the host's python3, so it doesn't start a container per step. The image needs no jq.

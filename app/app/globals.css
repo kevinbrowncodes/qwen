@@ -1,0 +1,10 @@
+/* STORY_005 placeholder. The reference's page colour and text stack (docs/recon/2026-09-26/tokens.md) so the dev
+   server is not a white flash; EPIC_003 replaces this with the harvested stylesheets. */
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #171717;
+  color: #fafbff;
+  font-family: system-ui, ui-sans-serif, -apple-system, "system-ui", Inter, NotoSansHans, sans-serif;
+}

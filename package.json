@@ -4,7 +4,10 @@
   "packageManager": "pnpm@10.32.1",
   "scripts": {
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm --filter recon --filter gate --filter app test",
+    "build": "pnpm --filter app build",
+    "start": "pnpm --filter app start",
     "recon:login": "pnpm --filter recon login",
     "recon:check": "pnpm --filter recon check"
   },

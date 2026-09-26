@@ -1,0 +1,16 @@
+# Build contexts must never carry weights, raw captures or generated media (CLAUDE.md §4a): models/ alone is 33 GB.
+.git
+models
+recon/out
+recon/.profile
+recon/.cache
+generated
+outputs
+node_modules
+**/node_modules
+**/.next
+**/playwright-report
+**/test-results
+**/coverage
+**/coverage-integration
+docs

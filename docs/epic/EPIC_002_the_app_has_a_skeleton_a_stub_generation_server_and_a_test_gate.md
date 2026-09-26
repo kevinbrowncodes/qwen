@@ -16,7 +16,7 @@ Drafted 2026-09-26 when EPIC_001 closed, and self-approved under the owner's ove
 
 | # | Story | Status |
 | --- | --- | --- |
-| 005 | [The app skeleton builds and runs inside the gate container](../story/STORY_005_the_app_skeleton_builds_and_runs_inside_the_gate_container.md) | Not started |
+| 005 | [The app skeleton builds and runs inside the gate container](../story/STORY_005_the_app_skeleton_builds_and_runs_inside_the_gate_container.md) | Done 2026-09-26 |
 | 006 | [A stub generation server speaks the image job API with scripted outcomes](../story/STORY_006_a_stub_generation_server_speaks_the_image_job_api.md) | Not started |
 | 007 | [The app's own routes speak to the generation server, tested against the stub](../story/STORY_007_the_apps_own_routes_speak_to_the_generation_server.md) | Not started |
 | 008 | [The gate runs end-to-end tests, enforces coverage floors, and guards every push](../story/STORY_008_the_gate_runs_e2e_enforces_coverage_and_guards_every_push.md) | Not started |

@@ -1,0 +1,66 @@
+# compose.yaml — the UI side of Qwen Local on the Spark (STORY_005). Project "qwen".
+#
+#   gate      the toolchain image with the repo bind-mounted: every gate step runs here   -> tools/gate/run.sh
+#   app-dev   the same image running `next dev` with hot reload, on port 3100 for the owner's browser (profile "dev")
+#   app       the production image (app/Dockerfile) serving the built UI on port 3100    -> docker compose up -d app
+#
+# Only one of app-dev / app runs at a time (both publish 3100). Port 3000 on the Spark is the minimax app's; never
+# bind it. The model side is spark/ (EPIC_004); the UI reaches it through MODEL_BASE_URL only. SPARK_UID/SPARK_GID
+# are set by the scripts so files in the bind mount stay the owner's.
+name: qwen
+
+x-gate-image: &gate-image qwen/gate:${GATE_TAG:-1.63.0-node26}
+x-gate-mounts: &gate-mounts
+  - .:/work
+  - pnpm-store:/pnpm-store
+
+services:
+  gate:
+    build:
+      context: tools/gate
+      args:
+        UID: ${SPARK_UID:-1000}
+        GID: ${SPARK_GID:-1000}
+    image: *gate-image
+    profiles: ["tools"]
+    user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
+    working_dir: /work
+    volumes: *gate-mounts
+    environment:
+      HOME: /tmp/gate-home
+
+  app-dev:
+    image: *gate-image
+    profiles: ["dev"]
+    container_name: qwen-app-dev
+    user: "${SPARK_UID:-1000}:${SPARK_GID:-1000}"
+    working_dir: /work
+    command: ["pnpm", "--filter", "app", "dev", "--hostname", "0.0.0.0", "--port", "3100"]
+    ports:
+      - "${APP_PORT:-3100}:3100"
+    volumes: *gate-mounts
+    environment:
+      HOME: /tmp/gate-home
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      HISTORY_FILE: /tmp/gate-home/history.json
+
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    image: qwen/app:${APP_TAG:-dev}
+    container_name: qwen-app
+    ports:
+      - "${APP_PORT:-3100}:3100"
+    environment:
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      HISTORY_FILE: /data/history.json
+    volumes:
+      - app-data:/data
+    restart: unless-stopped
+
+volumes:
+  pnpm-store: {}
+  app-data: {}   # the UI's history (STORY_007)

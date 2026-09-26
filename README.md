@@ -48,7 +48,7 @@ Work is planned as two phases:
 
 ## Project Structure
 
-Present today: `recon/`, `spark/`, `docs/`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds weights on the Spark.
+Present today: `app/`, `tools/gate/`, `recon/`, `spark/`, `docs/`, `compose.yaml`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds weights on the Spark.
 
 ```
 app/          the UI
@@ -102,7 +102,17 @@ Each step makes no network request. Each runs an identity guard first: it reads 
 
 ## Running the UI
 
-TBD (EPIC_002). Dev server on port 3100 on the Spark; port 3000 there belongs to the sibling minimax app.
+Everything runs on the Spark in containers from `compose.yaml` (project `qwen`); the host needs only Docker. Port **3100** is ours, and port 3000 belongs to the sibling minimax app. VS Code forwards 3100 to the Mac.
+
+```bash
+tools/gate/build.sh                              # once: the toolchain image qwen/gate:1.63.0-node26
+tools/gate/run.sh                                # the whole gate: install, typecheck, lint, test, integration, build, e2e
+tools/gate/run.sh --from 4                       # resume from a step after a fix; or name steps: run.sh lint build
+docker compose --profile dev up app-dev          # next dev with hot reload on http://localhost:3100
+docker compose up -d --build app                 # the production image on http://localhost:3100 (stop app-dev first)
+```
+
+The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL_API_KEY` (optional) and `HISTORY_FILE` (where history is kept; `/data/history.json` in the `app-data` volume). Set them in a gitignored `.env` beside `compose.yaml`.
 
 ## Running the Model
 
@@ -130,4 +140,4 @@ Sources: [Qwen/Qwen-Image-2.1 model card](https://huggingface.co/Qwen/Qwen-Image
 
 ## Deployment
 
-Local only. The UI is started on the Mac and the model on the Spark by the scripts under `spark/` and `app/`. There is no CI as of 2026-09-26.
+Local only, on the Spark. The UI is deployed with `docker compose up -d --build app` (the `qwen-app` container on port 3100). The model is started by the scripts under `spark/` (EPIC_004). There is no CI; the gate runs locally (`tools/gate/run.sh`).

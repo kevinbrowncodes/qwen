@@ -34,3 +34,8 @@ test-results/
 
 # Editor workspace files
 *.code-workspace
+
+# Next.js
+.next/
+next-env.d.ts
+*.tsbuildinfo
