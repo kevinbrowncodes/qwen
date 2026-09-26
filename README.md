@@ -14,15 +14,15 @@ Generate images locally on a DGX Spark, through an interface that matches the Qw
 
 ## MVP Scope
 
-**In scope — the text-to-image generation flow, end to end:**
+**In scope — the image generation flow, end to end (owner's decision 2026-09-26: editing is in the MVP):**
 
-- Prompt entry in image generation mode
+- Prompt entry in image generation mode, with reference image attachment (text-to-image and image editing)
 - The generation options the reference exposes (size / aspect ratio and whatever else recon enumerates)
 - Submit, with the job's progress shown while it runs, and cancel
 - Result display in place, and download
 - History / gallery of past generations, with reopen
 
-**Out of scope until the MVP epic is Done** — chat, image *editing* (reference images, masks, local edits — Qwen-Image-2.1 supports them, the MVP does not), video generation, voice mode, artifacts, deep research, anything else chat.qwen.ai does. These live in `docs/backlog/` as they come up ([CLAUDE.md → §3c](CLAUDE.md#3c-how-backlog-is-tracked)) and are never built early.
+**Out of scope until the MVP epic is Done** — chat, video generation, voice mode, artifacts, deep research, anything else chat.qwen.ai does. These live in `docs/backlog/` as they come up ([CLAUDE.md → §3c](CLAUDE.md#3c-how-backlog-is-tracked)) and are never built early.
 
 ## Architecture
 

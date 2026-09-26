@@ -13,9 +13,9 @@ The owner's plan is UI first, model second. The UI is a clone, and a clone witho
 
 ## Scope
 
-**In:** the image generation surface only — the composer in image mode, the option controls, submit, every job state (queued, generating, done, failed, moderated, cancelled), the result shown in place, download, and the history/gallery of generations. Both the wide layout and the narrow layout.
+**In:** the image generation surface only — the composer in image mode, reference image attachment (editing is in the MVP, owner's decision 2026-09-26), the option controls, submit, every job state (queued, generating, done, failed, moderated, cancelled), the result shown in place, download, and the history/gallery of generations. Both the wide layout and the narrow layout.
 
-**Out:** every other surface of chat.qwen.ai — chat, image editing with reference images, video generation, voice mode, artifacts, deep research. If a screenshot of one costs nothing extra during a capture run, it gets one line in the inventory; otherwise nothing. Out-of-MVP surfaces the owner asks about become backlog items ([CLAUDE.md → §3c](../../CLAUDE.md#3c-how-backlog-is-tracked)).
+**Out:** every other surface of chat.qwen.ai — chat, video generation, voice mode, artifacts, deep research. If a screenshot of one costs nothing extra during a capture run, it gets one line in the inventory; otherwise nothing. Out-of-MVP surfaces the owner asks about become backlog items ([CLAUDE.md → §3c](../../CLAUDE.md#3c-how-backlog-is-tracked)).
 
 ## Stories (in implementation order)
 
@@ -49,5 +49,5 @@ Every story above is Done, `docs/recon/` contains the four artefact kinds named 
 ## Open questions
 
 1. **Where does image generation live once signed in?** A mode of the composer (the Auto selector? the + menu?), a dedicated route, or a capability the model selector implies. Also: what replaces the Log in / Sign up controls, and whether a sidebar appears. Answered by STORY_002's first authenticated look, which amends its capture list before implementation.
-2. **How many real generations does a full state capture need?** Proposed by STORY_002 and approved by the owner before the run; generations spend account quota, and the failure/quota states are captured from whatever the reference actually shows.
+2. ~~How many real generations does a full state capture need?~~ **Approved 2026-09-26: N = 2** — one for the text-to-image submit → generating → done → download → history chain, one for submit-then-cancel. If the editing flow's generating/done states turn out to differ from text-to-image's, STORY_002 asks before spending beyond two.
 3. **Which model identifier does the reference use for image generation** (a "Qwen-Image-2.1" chip, a mode name, nothing visible)? Recorded by STORY_002/004 for EPIC_003's Departures sections.

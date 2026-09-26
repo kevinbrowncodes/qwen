@@ -20,17 +20,21 @@ Automatable without a generation (part 1 — this story's first run):
   composer-image-mode       image generation mode entered, however it is entered
   <option>-open             one capture per option control the mode exposes (enumerated on the day)
   composer-typed            our own prompt typed (never sent)
+  composer-reference-attached  our own fixture image attached as an edit reference (never sent)
   history-empty             wherever past generations live, in its empty state
   narrow-*                  the same states at 390px
 
-Needs a real generation (part 2 — after the owner approves N):
+Needs a real generation (part 2 — N = 2 approved 2026-09-26):
   job-submitted             immediately after submit
   job-generating            frames every few seconds while it runs
   job-done                  the result image rendered in place
   result-download           the download affordance
   history-one-image         the history/gallery with the generated image
-  job-cancelled             submit then cancel (only if N allows)
+  job-cancelled             submit then cancel (the second of the two)
   job-failed / job-moderated  whatever failure states the run actually produces
+
+If the editing flow's generating/done states differ from text-to-image's, they
+need their own generation — ask the owner before spending beyond the two.
 ```
 
 ## Acceptance Criteria
