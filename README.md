@@ -85,7 +85,7 @@ The session lives in `recon/.profile/` and raw captures in `recon/out/`; both ar
 
 ## Running the UI
 
-TBD (EPIC_002). Dev server on port 3000.
+TBD (EPIC_002). Dev server on port 3100 on the Spark; port 3000 there belongs to the sibling minimax app.
 
 ## Running the Model
 

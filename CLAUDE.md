@@ -17,7 +17,7 @@ The work is planned as two phases:
 1. **UI recon and rebuild** — capture the reference's image generation surface with Playwright through the owner's own logged-in session, harvest its stylesheets, icons, fonts and markup, then build it with our own code driving those lifted assets ([§3e](#3e-how-recon-is-recorded)).
 2. **Image model on the Spark** — serve the model on the DGX Spark behind an async job API (create a generation → poll its status → fetch the result) and point the UI at it through configuration. **The model's license is part of the epic's first decision** — Qwen-Image-2.1 is non-commercial-only; see [README.md → Running the Model](README.md#running-the-model) for the facts and the open question.
 
-Two machines are involved: the **Mac** (where the assistant runs, and where the UI is developed and tested) and the **Spark** (where the model runs; the owner opens this repo on the Spark for that work). **Nothing in the test gate may depend on the Spark being reachable** — see [§4](#4-dev-workflow).
+Two machines are involved: the **Mac Studio**, where the owner sits and runs VS Code, and the **Spark**, where the model runs **and where the repo lives**. The owner works through a VS Code tunnel from the Mac into the Spark, so the assistant's shell, the repo, the recon profile and the dev server are all on the Spark (stated 2026-09-26). The Spark is shared with the owner's other services, so ports and memory there are not ours to take ([§4a](#4a-two-machines-the-mac-and-the-spark)). **Nothing in the test gate may depend on the Spark being reachable** — see [§4](#4-dev-workflow).
 
 See **[README.md](README.md)** for the full overview, MVP scope, tech stack, and feature list.
 
@@ -137,13 +137,13 @@ See **[README.md → Project Structure](README.md#project-structure)**. The `doc
   git add -A                                                # no
   ```
   `git status --short` before every commit, and read it. The cost of listing paths is seconds; the cost of a blanket add is someone else's work in your commit message. **This matters doubly here because the recon output directory, generated images, and the models directory must never be staged** — a blanket add puts session cookies, generated media, or tens of gigabytes of weights into git.
-- Dev server runs on port 3000. Before starting, kill anything on that port:
+- Dev server runs on **port 3100** on the Spark. **Port 3000 there belongs to the sibling minimax app's container** (seen 2026-09-26). **Never kill whatever holds a port on the Spark.** If 3100 is taken, check what holds it, and if it is not our own stale dev server, pick another free port and tell the owner:
   ```bash
-  lsof -ti :3000 | xargs kill -9 2>/dev/null; true
-  cd /Users/kevinbrown/Documents/GitHub/kevinbrowncodes/qwen/app && pnpm dev
+  ss -ltnp 'sport = :3100'      # read first: is it ours?
+  cd ~/Documents/GitHub/kevinbrowncodes/qwen/app && pnpm dev --port 3100
   ```
-- Confirm the server is running at http://localhost:3000 before proceeding.
-- After every change, open the integrated browser at http://localhost:3000 so the user can verify visually. For clone stories, open the reference capture alongside it.
+- Confirm the server is running at http://localhost:3100 before proceeding (VS Code forwards the port to the Mac).
+- After every change, open the integrated browser at http://localhost:3100 so the user can verify visually. For clone stories, open the reference capture alongside it.
 - Always prefer CLI tools (git, pnpm, ssh, playwright, huggingface-cli, etc.) over asking the user to do anything manually in a UI or dashboard. The one standing exception is the recon browser login — see [§4b](#4b-recon-with-playwright).
 - **An AI assistant's shell does not read `~/.zshrc`.** Non-interactive zsh sources **`~/.zshenv`** only, so a secret or `PATH` entry exported in `.zshrc` is invisible to tooling even though it works fine in the user's own terminal. If a credential or tool "is definitely set" but the assistant cannot see it, check which file it is in before anything else.
 - Always give a clear summary after making changes — what was changed, what commands were run, and what the outcome was.
