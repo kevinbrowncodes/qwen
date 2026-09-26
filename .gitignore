@@ -7,6 +7,9 @@ node_modules/
 # Recon: the owner's browser session and raw captures never enter git (CLAUDE.md §3e, §4b)
 recon/.profile/
 recon/out/
+# pnpm and its store, cached by the recon container (CHORE_001)
+recon/.cache/
+.pnpm-store/
 
 # Model weights live on the Spark's disk, never here (CLAUDE.md §4a)
 models/

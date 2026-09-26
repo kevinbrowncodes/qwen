@@ -75,13 +75,17 @@ TBD — defined by the testing-foundation epic. The bar itself (70/20/10 pyramid
 
 ## Running Recon
 
+On the Spark, where the repo lives, the scripts run inside the official Playwright image. The host needs only Docker.
+
 ```bash
-pnpm install
-pnpm recon:login    # opens a Chromium window; sign in to chat.qwen.ai yourself
-pnpm recon:check    # prints session: signed-in | signed-out | unknown (exit 0 / 1 / 2)
+recon/run.sh login   # opens Chromium on the Spark's desktop (display :1); sign in to chat.qwen.ai yourself
+recon/run.sh check   # prints session: signed-in | signed-out | unknown (exit 0 / 1 / 2)
+recon/run.sh test    # recon unit tests;  recon/run.sh typecheck for the typecheck
 ```
 
-The session lives in `recon/.profile/` and raw captures in `recon/out/`; both are gitignored. Curated captures land in `docs/recon/<date>/`. See [CLAUDE.md → §4b](CLAUDE.md#4b-recon-with-playwright).
+The login window appears on the Spark's own screen, so sign in there or over remote desktop from the Mac. Where pnpm exists, `pnpm recon:login` / `pnpm recon:check` run the same scripts directly.
+
+The session lives in `recon/.profile/`, raw captures in `recon/out/`, and the container's pnpm cache in `recon/.cache/`; all three are gitignored. Curated captures land in `docs/recon/<date>/`. See [CLAUDE.md → §4b](CLAUDE.md#4b-recon-with-playwright).
 
 ## Running the UI
 

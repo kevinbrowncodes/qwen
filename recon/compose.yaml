@@ -1,0 +1,26 @@
+# Runs the recon scripts in the official Playwright image (CHORE_001).
+# Pinned to the Playwright version in recon/package.json so the browser the
+# library expects is the one in the image. Start it through recon/run.sh,
+# which sets the variables below; never by hand.
+services:
+  recon:
+    image: mcr.microsoft.com/playwright:v1.63.0-noble
+    user: "${RECON_UID}:${RECON_GID}"
+    working_dir: ${RECON_REPO}
+    init: true
+    # Chromium needs more shared memory than Docker's 64 MB default.
+    shm_size: "1gb"
+    environment:
+      DISPLAY: ${DISPLAY}
+      XAUTHORITY: /tmp/.Xauthority
+      HOME: /tmp/home
+      # pnpm and its store are cached in a gitignored folder of the repo, so a
+      # run does not re-download them and nothing lands outside the repo.
+      COREPACK_HOME: ${RECON_REPO}/recon/.cache/corepack
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      npm_config_store_dir: ${RECON_REPO}/recon/.cache/pnpm-store
+    volumes:
+      - ${RECON_REPO}:${RECON_REPO}
+      # The Spark's desktop: the X socket and its auth cookie, read-only.
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ${RECON_XAUTH}:/tmp/.Xauthority:ro
