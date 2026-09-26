@@ -1,7 +1,7 @@
 # STORY_006 — A stub generation server speaks the image job API with scripted outcomes
 
 **Epic:** [EPIC_002](../epic/EPIC_002_the_app_has_a_skeleton_a_stub_generation_server_and_a_test_gate.md)
-**Status:** Not started (after STORY_005)
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the assistant building the UI, I want a written job API contract for image generation and a local stub that implements it with deterministic, named outcomes, so that every test can drive queued, running, done, failed, moderated and cancelled jobs without the Spark.
@@ -22,15 +22,15 @@ N/A (no UI change; a contract document and a test server).
 
 ## Acceptance Criteria
 
-- [ ] `docs/contracts/job-api.md` v1 defines:
+- [x] `docs/contracts/job-api.md` v1 defines:
   - `GET /health` and `GET /capabilities`: models, ratios with their output sizes, the default ratio, the prompt limit, and the reference-image count, size and types;
   - `POST /jobs`: JSON, or multipart with 0–10 `referenceImage` parts;
   - `GET /jobs/:id`, `DELETE /jobs/:id` and `GET /jobs/:id/result`;
   - the error shape `{ error: { code, message, field? } }` with codes `validation`, `unsupported_option`, `unauthorized`, `not_found`, `already_terminal`, `not_done`, `too_large`, `unsupported_media_type` and `busy`;
   - optional bearer auth;
   - statuses `queued | running | done | failed | cancelled`, where the terminal ones never change and progress never decreases.
-- [ ] `tools/stub-generation-server/` implements the contract with no runtime dependencies (`node src/main.ts`, with `STUB_PORT`, `STUB_HOST` and `STUB_API_KEY`). Everything is in memory.
-- [ ] **Outcomes by name**, chosen with `X-Stub-Script` or `?script=` on `POST /jobs`. **Progress advances per status poll, never by wall clock.** The scripts are:
+- [x] `tools/stub-generation-server/` implements the contract with no runtime dependencies (`node src/main.ts`, with `STUB_PORT`, `STUB_HOST` and `STUB_API_KEY`). Everything is in memory.
+- [x] **Outcomes by name**, chosen with `X-Stub-Script` or `?script=` on `POST /jobs`. **Progress advances per status poll, never by wall clock.** The scripts are:
 
   | Script | Steps after creation (`queued/0`) |
   | --- | --- |
@@ -41,20 +41,20 @@ N/A (no UI change; a contract document and a test server).
   | `moderated` | failed on the first poll (`moderated`) |
   | `cancel-midway` | running 10, 25, 50, and stays running until `DELETE` |
   | `rejects-upload` | a request with a reference image answers `400 validation`, `field: referenceImage` |
-- [ ] **The result is a committed fixture PNG** (`fixtures/result.png`, 64×36, under 2 KB). `GET /jobs/:id/result` serves it as `image/png` with `Content-Length` for a done job. It answers `409 not_done` otherwise and `404` for an unknown id. `fixtures/reference.png` is the upload fixture for tests.
-- [ ] **Validation matches the contract:**
+- [x] **The result is a committed fixture PNG** (`fixtures/result.png`, 64×36, under 2 KB; 156 bytes as built). `GET /jobs/:id/result` serves it as `image/png` with `Content-Length` for a done job. It answers `409 not_done` otherwise and `404` for an unknown id. `fixtures/reference.png` is the upload fixture for tests.
+- [x] **Validation matches the contract:**
   - a prompt of 1–4000 characters after trimming;
   - the ratio is required without references, one of the seven, and ignored when references are sent;
   - the model is optional and must be offered;
   - an optional integer seed from 0 to 4294967295;
   - 0–10 references of PNG, JPEG or WebP, each up to 20 MB.
-- [ ] **Test hooks outside the contract:**
+- [x] **Test hooks outside the contract:**
   - `POST /__stub/reset`;
   - `GET /__stub/jobs`, listing id, script, status and progress, so a spec can assert that nothing is left running;
   - `GET /__stub/jobs/:id/received`, returning the request and the uploads with filename, type, size and sha256.
 
   Hooks never need the bearer token.
-- [ ] Cancel: `DELETE` on a non-terminal job answers `202` with the job as `cancelled` at its last progress, and the job then stays cancelled. `DELETE` on a terminal job answers `409 already_terminal`.
+- [x] Cancel: `DELETE` on a non-terminal job answers `202` with the job as `cancelled` at its last progress, and the job then stays cancelled. `DELETE` on a terminal job answers `409 already_terminal`.
 
 ## Technical Notes
 
@@ -92,3 +92,10 @@ N/A (no UI change; a contract document and a test server).
 ## Estimated Complexity
 
 M
+
+## Done (2026-09-26)
+
+- `docs/contracts/job-api.md` v1 is written. The stub implements it: 40 tests across `scripts`, `multipart`, `png` and `server`.
+- The fixtures are drawn by `src/png.ts` and rebuilt byte for byte by `pnpm --filter stub-generation-server fixtures`: `result.png` 64×36 at 156 bytes, and `reference.png` 32×32 at 115 bytes. The first draw was a smooth gradient at 5.8 KB, over the AC's 2 KB, so the result is now eight flat bands.
+- Output sizes per ratio in `CAPABILITIES` are the original Qwen-Image's recommended sizes, as placeholders. EPIC_004 replaces them with Qwen-Image-2.1's in the model server; the stub only has to be self-consistent.
+- Gate: `tools/gate/run.sh` green in 11 s, run by hand.
