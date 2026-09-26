@@ -30,8 +30,10 @@ display="${DISPLAY:-:1}"
 xauth="${XAUTHORITY:-/run/user/$(id -u)/gdm/Xauthority}"
 
 if [[ "$script" == "login" ]]; then
-  socket="/tmp/.X11-unix/X${display#:}"
-  socket="${socket%%.*}"
+  # ":1" or ":1.0" -> display number 1 -> /tmp/.X11-unix/X1
+  number="${display#*:}"
+  number="${number%%.*}"
+  socket="/tmp/.X11-unix/X${number}"
   if [[ ! -S "$socket" ]]; then
     echo "recon/run.sh: no X display at $display. Is the Spark's desktop session running?" >&2
     exit 2
