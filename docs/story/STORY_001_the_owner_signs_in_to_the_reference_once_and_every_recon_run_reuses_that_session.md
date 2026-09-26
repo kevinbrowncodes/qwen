@@ -1,7 +1,7 @@
 # STORY_001 — The owner signs in to the reference once and every recon run reuses that session
 
 **Epic:** [EPIC_001](../epic/EPIC_001_the_reference_image_generation_flow_is_captured_as_a_spec.md)
-**Status:** In progress — awaiting the owner's login
+**Status:** Withdrawn (2026-09-26); see [Withdrawal](#withdrawal-2026-09-26)
 **Created:** 2026-09-26
 
 As the owner, I want to sign in to chat.qwen.ai once, in a browser the recon scripts control, so that every later capture runs against my account without the assistant ever handling my credentials.
@@ -52,3 +52,9 @@ session: signed-in
 ## Estimated Complexity
 
 S — two scripts, one pure module, one test file.
+
+## Withdrawal (2026-09-26)
+
+The code landed (0aed345, then CHORE_001 put it in the Playwright container). The manual step could not be completed. When the owner signed in through `recon/run.sh login`, chat.qwen.ai's access verification kept reporting failure in the Playwright-launched Chromium, even after the owner solved it correctly. The reference's anti-bot stack detects the automated browser. [CLAUDE.md → §3e](../../CLAUDE.md#3e-how-recon-is-recorded) says to stop on a challenge rather than work around it, so no stealth or fingerprint changes were tried. The acceptance criteria stay unticked.
+
+The owner chose to capture in their own signed-in Chrome instead: readings by Claude in Chrome, and a "Save Page As" of the home. STORY_002 and STORY_003 were rewritten before implementation to process those files offline. The login and check scripts and their tests stay in `recon/`, because they still pass and cost nothing. No story depends on them.
