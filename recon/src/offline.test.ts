@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 // read the owner's capture from disk and nothing else. This reads their
 // sources and every local module they import, and fails on anything that
 // could reach the network.
-const OFFLINE_ENTRIES = ["curate.ts", "harvest.ts"];
+const OFFLINE_ENTRIES = ["curate.ts", "harvest.ts", "interactions.ts"];
 const NETWORK = [/\bfetch\s*\(/, /from\s+"node:(?:http|https|net|tls|dgram)"/, /from\s+"playwright"/, /\bXMLHttpRequest\b/, /\bWebSocket\b/];
 
 function localImports(file: string): string[] {

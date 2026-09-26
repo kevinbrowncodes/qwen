@@ -37,7 +37,7 @@ The UI talks to the generation server through configuration only (base URL, opti
 
 Work is planned as two phases:
 
-1. **UI recon and rebuild** — capture the reference's image generation surface with Playwright through the owner's own logged-in session (see [CLAUDE.md → §3e](CLAUDE.md#3e-how-recon-is-recorded) and [§4b](CLAUDE.md#4b-recon-with-playwright)), harvest its stylesheets, icons, fonts and markup, then build it with our own code driving those lifted assets.
+1. **UI recon and rebuild**: capture the reference's image generation surface, harvest its stylesheets, icons and markup, then build it with our own code driving those lifted assets. The Playwright session was withdrawn because the reference's access check rejects the automated browser. The 2026-09-26 capture was made in the owner's own Chrome and is processed offline (see [Running Recon](#running-recon) and [CLAUDE.md → §3e](CLAUDE.md#3e-how-recon-is-recorded)).
 2. **Image model on the Spark** — serve Qwen-Image-2.1 on the Spark behind the job API, with the license question settled first. See [Running the Model](#running-the-model) for the open question this phase starts with.
 
 ## Tech Stack
@@ -48,13 +48,13 @@ Work is planned as two phases:
 
 ## Project Structure
 
-Present today: `recon/`, `docs/`, the workspace files. The rest is created by the epics that need it.
+Present today: `recon/`, `spark/`, `docs/`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds weights on the Spark.
 
 ```
 app/          the UI
 tools/        the stub generation server, its fixture image, other dev tooling
 spark/        scripts and unit files that set up and run the model on the Spark
-recon/        Playwright recon scripts (profile and raw output are gitignored)
+recon/        recon scripts (the offline curate/harvest/interactions pipeline; profile and raw output are gitignored)
 docs/
   epic/       EPIC_NNN_*.md
   story/      STORY_NNN_*.md
@@ -67,7 +67,13 @@ docs/
 
 ## Features
 
-TBD — enumerated by the recon component inventory of the image generation surface. The MVP Scope section above is the outline.
+The reference surface is recorded in [docs/recon/2026-09-26/](docs/recon/2026-09-26/):
+- [coverage.md](docs/recon/2026-09-26/coverage.md): which states were captured;
+- [inventory.md](docs/recon/2026-09-26/inventory.md): every component;
+- [interactions.md](docs/recon/2026-09-26/interactions.md): how the flow behaves, and how each option maps onto the local model;
+- [tokens.md](docs/recon/2026-09-26/tokens.md): the design tokens.
+
+Our feature list follows the MVP Scope above.
 
 ## Testing
 
@@ -75,17 +81,24 @@ TBD — defined by the testing-foundation epic. The bar itself (70/20/10 pyramid
 
 ## Running Recon
 
-On the Spark, where the repo lives, the scripts run inside the official Playwright image. The host needs only Docker.
+The reference is captured in the owner's own signed-in browser. The automated Playwright session was withdrawn (STORY_001) because chat.qwen.ai's access check rejects it. The owner's capture goes in `recon/out/<date>/` (gitignored):
+- `extension/<state>@<width>.json`: per-state DOM readings;
+- `extension/notes*.md` and `extension/network-endpoints.json`;
+- `Qwen.html`: Chrome's "Save Page As, complete" of the signed-in home, with its `Qwen_files/` folder;
+- `assets/css/`: the stylesheets.
+
+Three offline steps, run on the Spark inside the official Playwright image (the host needs only Docker), turn that into `docs/recon/<date>/`:
 
 ```bash
-recon/run.sh login   # opens Chromium on the Spark's desktop (display :1); sign in to chat.qwen.ai yourself
-recon/run.sh check   # prints session: signed-in | signed-out | unknown (exit 0 / 1 / 2)
-recon/run.sh test    # recon unit tests;  recon/run.sh typecheck for the typecheck
+recon/run.sh curate 2026-09-26        # readings, cleaned snapshot, manifest, coverage (STORY_002)
+recon/run.sh harvest 2026-09-26       # stylesheets, every sprite icon, logo, tokens (STORY_003)
+recon/run.sh interactions 2026-09-26  # endpoints and component inventory (STORY_004)
+recon/run.sh test                     # recon unit tests; recon/run.sh typecheck for the typecheck
 ```
 
-The login window appears on the Spark's own screen, so sign in there or over remote desktop from the Mac. Where pnpm exists, `pnpm recon:login` / `pnpm recon:check` run the same scripts directly.
+Each step makes no network request. Each runs an identity guard first: it reads the owner's name and avatar from the saved page, and it writes nothing if either, or a link to an image generated on the reference, would land in `docs/recon/`. `interactions.md` in the same folder is written by hand.
 
-The session lives in `recon/.profile/`, raw captures in `recon/out/`, and the container's pnpm cache in `recon/.cache/`; all three are gitignored. Curated captures land in `docs/recon/<date>/`. See [CLAUDE.md → §4b](CLAUDE.md#4b-recon-with-playwright).
+`recon/run.sh login` and `recon/run.sh check` still exist from the withdrawn STORY_001, but nothing depends on them. The container's pnpm cache lives in `recon/.cache/`. See [CLAUDE.md → §3e](CLAUDE.md#3e-how-recon-is-recorded).
 
 ## Running the UI
 

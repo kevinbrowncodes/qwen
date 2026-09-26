@@ -1,0 +1,101 @@
+{
+  "date": "2026-09-26",
+  "source": "performance.getEntriesByType('resource'), read-only; ids replaced with :id; no query strings",
+  "methods": "resource timing doesn't expose HTTP methods; all were XHR, except /users/status, also sent as a beacon",
+  "endpoints": [
+    {
+      "group": "config",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/configs/"
+    },
+    {
+      "group": "config",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/configs/setting-config"
+    },
+    {
+      "group": "config",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/tts/config"
+    },
+    {
+      "group": "auth",
+      "host": "auth.qwen.ai",
+      "path": "/api/v2/auths/"
+    },
+    {
+      "group": "auth",
+      "host": "auth.qwen.ai",
+      "path": "/api/v2/auths/refresh"
+    },
+    {
+      "group": "user_status",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/users/status",
+      "note": "also sent as a beacon"
+    },
+    {
+      "group": "user_status",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/users/user/settings"
+    },
+    {
+      "group": "user_status",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/credits/pricing"
+    },
+    {
+      "group": "models",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/models/"
+    },
+    {
+      "group": "chat",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/chats/",
+      "note": "likely chat list"
+    },
+    {
+      "group": "chat",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/chats/pinned"
+    },
+    {
+      "group": "chat",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/chats/:id",
+      "note": "likely load one chat (messages + images)"
+    },
+    {
+      "group": "organization",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/folders/"
+    },
+    {
+      "group": "organization",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/projects/"
+    },
+    {
+      "group": "library",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/library/list"
+    },
+    {
+      "group": "misc",
+      "host": "chat.qwen.ai",
+      "path": "/api/v2/files/customer-service/entry"
+    }
+  ],
+  "not_observed": [
+    "send / image generation / streaming endpoint",
+    "file upload endpoint",
+    "generation status polling"
+  ],
+  "not_observed_reason": "those ran in earlier page loads, whose timing records were cleared when the page reloaded",
+  "excluded": [
+    "analytics (aplus.qwen.ai)",
+    "anti-bot (ss.qwen.ai)",
+    "CDN assets and images"
+  ]
+}

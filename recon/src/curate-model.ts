@@ -4,7 +4,8 @@
  * committed from them, and describing what the capture covers.
  */
 
-export type Box = { x: number; y: number; width: number; height: number };
+/** Partial boxes occur: a size read without a position, or a position without a size. */
+export type Box = { x?: number; y?: number; width?: number; height?: number };
 
 export type Component = {
   /** Required on top-level components; a nested one may carry only its text. */
