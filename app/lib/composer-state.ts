@@ -1,3 +1,5 @@
+import { validateAddition, type Candidate } from "./upload-validation";
+
 /**
  * The composer's state (STORY_010), as a pure reducer: the mode (resting or image), the model and ratio the owner
  * chose, and the text. Defaults come from the generation server's capabilities, with a static fallback shaped like
@@ -37,11 +39,20 @@ export const FALLBACK_CAPABILITIES: Capabilities = {
   maxReferences: 10,
 };
 
+/** A reference image attached for an edit (STORY_011); `key` is stable for React and removal. */
+export interface ReferenceItem {
+  readonly key: string;
+  readonly file: File;
+}
+
 export interface ComposerState {
   readonly mode: Mode;
   readonly model: string;
   readonly ratio: string;
   readonly text: string;
+  readonly references: readonly ReferenceItem[];
+  /** Why the last attachment was refused, shown under the composer until the next change. */
+  readonly error: string | null;
 }
 
 export type ComposerAction =
@@ -51,6 +62,11 @@ export type ComposerAction =
   | { readonly type: "setRatio"; readonly ratio: string }
   | { readonly type: "setText"; readonly text: string }
   | { readonly type: "capabilities"; readonly capabilities: Capabilities }
+  | { readonly type: "addReferences"; readonly items: readonly ReferenceItem[] }
+  /** Files read by the component (name, size, first bytes), checked here against what is already attached. */
+  | { readonly type: "attach"; readonly items: readonly ReferenceItem[]; readonly candidates: readonly Candidate[] }
+  | { readonly type: "removeReference"; readonly key: string }
+  | { readonly type: "refuse"; readonly message: string }
   | { readonly type: "sent" };
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -73,7 +89,7 @@ export function parseCapabilities(v: unknown): Capabilities | null {
 }
 
 export function initialState(capabilities: Capabilities = FALLBACK_CAPABILITIES): ComposerState {
-  return { mode: "chat", model: capabilities.models[0]?.id ?? "", ratio: capabilities.defaultRatio, text: "" };
+  return { mode: "chat", model: capabilities.models[0]?.id ?? "", ratio: capabilities.defaultRatio, text: "", references: [], error: null };
 }
 
 export function reduce(state: ComposerState, action: ComposerAction): ComposerState {
@@ -88,8 +104,19 @@ export function reduce(state: ComposerState, action: ComposerAction): ComposerSt
       return { ...state, ratio: action.ratio };
     case "setText":
       return { ...state, text: action.text };
+    case "addReferences":
+      // Attaching enters image mode (an edit is an image generation) and clears an earlier refusal.
+      return { ...state, mode: "image", references: [...state.references, ...action.items], error: null };
+    case "attach": {
+      const verdict = validateAddition(state.references.length, action.candidates);
+      return verdict.ok ? reduce(state, { type: "addReferences", items: action.items }) : { ...state, error: verdict.message };
+    }
+    case "removeReference":
+      return { ...state, references: state.references.filter((r) => r.key !== action.key), error: null };
+    case "refuse":
+      return { ...state, error: action.message };
     case "sent":
-      return { ...state, text: "" };
+      return { ...state, text: "", references: [], error: null };
     case "capabilities": {
       const { capabilities } = action;
       const model = capabilities.models.some((m) => m.id === state.model) ? state.model : (capabilities.models[0]?.id ?? "");
@@ -97,6 +124,11 @@ export function reduce(state: ComposerState, action: ComposerAction): ComposerSt
       return { ...state, model, ratio };
     }
   }
+}
+
+/** The ratio does not apply to an edit: it takes its size from the reference (the reference hides the dropdown). */
+export function showsRatio(state: ComposerState): boolean {
+  return state.references.length === 0;
 }
 
 export function canSend(state: ComposerState): boolean {

@@ -5,12 +5,16 @@
  * aspect-ratio dropdowns (docs/recon/2026-09-26/states/composer-image-mode@1437.json). The state is a pure reducer
  * (lib/composer-state.ts); options survive a reload within the session.
  */
-import { useEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
-import { canSend, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
+import { useEffect, useReducer, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from "react";
+import { canSend, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, showsRatio, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
 import { useNarrow } from "@/lib/use-narrow";
 import { Dropdown } from "../Dropdown";
 import { Icon } from "../Icon";
 import { ModeMenu } from "./ModeMenu";
+import { ReferenceThumbs } from "./ReferenceThumbs";
+
+const ACCEPT = "image/png,image/jpeg,image/webp";
+let nextKey = 0;
 
 export interface ComposerProps {
   /** Called with the composer's state when the owner sends (STORY_012 creates the job). */
@@ -34,6 +38,14 @@ export function Composer({ onSubmit }: ComposerProps) {
   const [caps, setCaps] = useState<Capabilities>(FALLBACK_CAPABILITIES);
   const restored = useRef(false);
   const textarea = useRef<HTMLTextAreaElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  /** Reads each file's first bytes; the reducer checks them as the server will (STORY_011). */
+  const attach = async (files: readonly File[]): Promise<void> => {
+    if (files.length === 0) return;
+    const candidates = await Promise.all(files.map(async (f) => ({ name: f.name, size: f.size, head: new Uint8Array(await f.slice(0, 16).arrayBuffer()) })));
+    dispatch({ type: "attach", items: files.map((file) => ({ key: `ref-${String(++nextKey)}`, file })), candidates });
+  };
 
   // Restore the session's options once, then keep them written (decide-once state lives in a ref: CLAUDE.md §6b).
   useEffect(() => {
@@ -95,7 +107,7 @@ export function Composer({ onSubmit }: ComposerProps) {
         textarea.current?.focus();
       }}
       onUpload={() => {
-        dispatch({ type: "enterImage" });
+        fileInput.current?.click();
       }}
     />
   );
@@ -121,15 +133,60 @@ export function Composer({ onSubmit }: ComposerProps) {
         dispatch({ type: "setText", text: e.target.value });
       }}
       onKeyDown={onKeyDown}
+      onPaste={(e: ClipboardEvent<HTMLTextAreaElement>) => {
+        const files = [...e.clipboardData.files];
+        if (files.length > 0) {
+          e.preventDefault();
+          void attach(files);
+        }
+      }}
     />
   );
+  const picker = (
+    <input
+      ref={fileInput}
+      id="filesUpload"
+      type="file"
+      multiple
+      accept={ACCEPT}
+      aria-label="Upload files"
+      tabIndex={-1}
+      hidden
+      onChange={(e) => {
+        const files = [...(e.target.files ?? [])];
+        e.target.value = "";
+        void attach(files);
+      }}
+    />
+  );
+  const onDrop = (e: DragEvent<HTMLDivElement>): void => {
+    const files = [...e.dataTransfer.files];
+    if (files.length === 0) return;
+    e.preventDefault();
+    void attach(files);
+  };
 
   return (
     <div className="message-input">
       <div className="message-input-wrapper message-input-wrapper-position">
-        <div className={`message-input-container${state.mode === "image" ? " clone-image-mode" : ""}`} data-testid="composer" data-mode={state.mode}>
+        <div
+          className={`message-input-container${state.mode === "image" ? " clone-image-mode" : ""}`}
+          data-testid="composer"
+          data-mode={state.mode}
+          onDragOver={(e) => {
+            if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+          }}
+          onDrop={onDrop}
+        >
+          {picker}
           {state.mode === "image" ? (
             <div>
+              <ReferenceThumbs
+                items={state.references}
+                onRemove={(key) => {
+                  dispatch({ type: "removeReference", key });
+                }}
+              />
               {input}
               <div className="message-input-column-footer">
                 <div className="mode-select">
@@ -159,16 +216,18 @@ export function Composer({ onSubmit }: ComposerProps) {
                       }}
                       placement={placement}
                     />
-                    <Dropdown
-                      label="Aspect ratio"
-                      display={<span>{state.ratio}</span>}
-                      items={caps.ratios.map((r) => ({ id: r.id, label: r.id, icon: RATIO_ICON(r.id) }))}
-                      selected={state.ratio}
-                      onSelect={(id) => {
-                        dispatch({ type: "setRatio", ratio: id });
-                      }}
-                      placement={placement}
-                    />
+                    {showsRatio(state) ? (
+                      <Dropdown
+                        label="Aspect ratio"
+                        display={<span>{state.ratio}</span>}
+                        items={caps.ratios.map((r) => ({ id: r.id, label: r.id, icon: RATIO_ICON(r.id) }))}
+                        selected={state.ratio}
+                        onSelect={(id) => {
+                          dispatch({ type: "setRatio", ratio: id });
+                        }}
+                        placement={placement}
+                      />
+                    ) : null}
                   </div>
                 </div>
                 <div className="message-input-right-button">{sendButton}</div>
@@ -184,6 +243,11 @@ export function Composer({ onSubmit }: ComposerProps) {
             </div>
           )}
         </div>
+        {state.error ? (
+          <div className="clone-composer-error" role="alert">
+            {state.error}
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_REFERENCE_BYTES, sniffImage, validateReferences } from "./upload-validation";
+import { MAX_REFERENCE_BYTES, sniffImage, validateAddition, validateReferences } from "./upload-validation";
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
@@ -34,5 +34,16 @@ describe("validateReferences", () => {
   it("accepts 20 MB and refuses one byte more", () => {
     expect(validateReferences([file(jpeg, MAX_REFERENCE_BYTES)])).toEqual({ ok: true });
     expect(validateReferences([file(webp, MAX_REFERENCE_BYTES + 1)])).toMatchObject({ ok: false, status: 413, code: "too_large" });
+  });
+});
+
+describe("validateAddition", () => {
+  it("counts the images already attached", () => {
+    expect(validateAddition(9, [file(png)])).toEqual({ ok: true });
+    expect(validateAddition(9, [file(png), file(png)])).toMatchObject({ ok: false, message: "Attach at most 10 reference images." });
+  });
+
+  it("checks each new file's type and size", () => {
+    expect(validateAddition(0, [file(png), file(gif, 10, "photo.gif")])).toMatchObject({ ok: false, message: "photo.gif is not a PNG, JPEG or WebP image." });
   });
 });

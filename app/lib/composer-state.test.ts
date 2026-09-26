@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canSend, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, type ComposerState } from "./composer-state";
+import { canSend, showsRatio, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, type ComposerState } from "./composer-state";
 
 const caps = parseCapabilities({
   models: [{ id: "qwen-image-2.1", label: "Qwen-Image 2.1" }],
@@ -42,7 +42,7 @@ describe("reduce", () => {
   const start = initialState();
 
   it("starts resting, with the first model and the default ratio", () => {
-    expect(start).toEqual({ mode: "chat", model: "qwen-image-2.1", ratio: "16:9", text: "" });
+    expect(start).toEqual({ mode: "chat", model: "qwen-image-2.1", ratio: "16:9", text: "", references: [], error: null });
     expect(initialState(FALLBACK_CAPABILITIES).ratio).toBe("16:9");
   });
 
@@ -79,7 +79,7 @@ describe("canSend", () => {
 });
 
 describe("session round-trip", () => {
-  const s: ComposerState = { mode: "image", model: "qwen-image-2.1", ratio: "1:1", text: "secret draft" };
+  const s: ComposerState = { mode: "image", model: "qwen-image-2.1", ratio: "1:1", text: "secret draft", references: [], error: null };
 
   it("keeps the mode and options, never the text", () => {
     const raw = serialize(s);
@@ -100,5 +100,65 @@ describe("shortModelLabel", () => {
   it("shortens the model name for the narrow layout", () => {
     expect(shortModelLabel("Qwen-Image 2.1")).toBe("Model 2.1");
     expect(shortModelLabel("Other")).toBe("Other");
+  });
+});
+
+describe("references (STORY_011)", () => {
+  const file = (name: string): File => new File(["x"], name, { type: "image/png" });
+  const a = { key: "a", file: file("a.png") };
+  const b = { key: "b", file: file("b.png") };
+
+  it("adding enters image mode, keeps the order, and hides the ratio", () => {
+    let s = reduce(initialState(), { type: "addReferences", items: [a] });
+    s = reduce(s, { type: "addReferences", items: [b] });
+    expect(s.mode).toBe("image");
+    expect(s.references.map((r) => r.key)).toEqual(["a", "b"]);
+    expect(showsRatio(s)).toBe(false);
+  });
+
+  it("removing the last one shows the ratio again, as it was chosen", () => {
+    let s = reduce({ ...initialState(), ratio: "3:4" }, { type: "addReferences", items: [a] });
+    s = reduce(s, { type: "removeReference", key: "a" });
+    expect(showsRatio(s)).toBe(true);
+    expect(s.ratio).toBe("3:4");
+  });
+
+  it("a refusal keeps what is attached, and the next change clears it", () => {
+    let s = reduce(initialState(), { type: "addReferences", items: [a] });
+    s = reduce(s, { type: "refuse", message: "photo.gif is not a PNG, JPEG or WebP image." });
+    expect(s.references).toHaveLength(1);
+    expect(s.error).toBe("photo.gif is not a PNG, JPEG or WebP image.");
+    expect(reduce(s, { type: "removeReference", key: "a" }).error).toBeNull();
+  });
+
+  it("sending clears the text and the references, never the options", () => {
+    const s = reduce(reduce({ ...initialState(), text: "x", ratio: "1:1" }, { type: "addReferences", items: [a] }), { type: "sent" });
+    expect(s).toMatchObject({ text: "", references: [], ratio: "1:1", mode: "image" });
+  });
+
+  it("never stores the references", () => {
+    const s = reduce(initialState(), { type: "addReferences", items: [a] });
+    expect(serialize(s)).not.toContain("a.png");
+  });
+});
+
+describe("attach (STORY_011)", () => {
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+  const text = new TextEncoder().encode("not an image");
+  const item = (key: string): { key: string; file: File } => ({ key, file: new File(["x"], `${key}.png`) });
+
+  it("attaches files that pass, counting what is already attached", () => {
+    let s = reduce(initialState(), { type: "attach", items: [item("a")], candidates: [{ name: "a.png", size: 4, head: png }] });
+    expect(s.references).toHaveLength(1);
+    const ten = Array.from({ length: 10 }, (_, i) => item(String(i)));
+    s = reduce(s, { type: "attach", items: ten, candidates: ten.map((t) => ({ name: t.file.name, size: 4, head: png })) });
+    expect(s.references).toHaveLength(1);
+    expect(s.error).toBe("Attach at most 10 reference images.");
+  });
+
+  it("refuses a file that is not an image, keeping what is attached", () => {
+    const s = reduce(initialState(), { type: "attach", items: [item("fake")], candidates: [{ name: "fake.png", size: 12, head: text }] });
+    expect(s.references).toHaveLength(0);
+    expect(s.error).toBe("fake.png is not a PNG, JPEG or WebP image.");
   });
 });

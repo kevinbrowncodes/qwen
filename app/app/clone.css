@@ -122,3 +122,22 @@ html.mobile .mms-trigger__name {
   color: inherit;
   display: inline-flex;
 }
+
+/* ---- References (STORY_011) ---- */
+/* A refusal, under the composer, in the reference's secondary text colour. */
+.clone-composer-error {
+  margin: 8px 12px 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: rgba(250, 251, 255, 0.5);
+}
+/* The 14px remove glyph keeps a 44px touch area on the phone layout (CLAUDE.md §6 rule 9). */
+html.mobile .vision-item-container .close-button::before {
+  content: "";
+  position: absolute;
+  inset: -15px;
+}
+html.mobile .file-card-list {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}

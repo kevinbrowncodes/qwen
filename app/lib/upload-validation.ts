@@ -32,3 +32,11 @@ export function validateReferences(files: readonly Candidate[]): Verdict {
   }
   return { ok: true };
 }
+
+/** Checks files being added to `existing` already-attached references: the count over all, the type and size of each new one. */
+export function validateAddition(existing: number, added: readonly Candidate[]): Verdict {
+  if (existing + added.length > MAX_REFERENCES) {
+    return { ok: false, status: 400, code: "validation", message: `Attach at most ${String(MAX_REFERENCES)} reference images.`, field: "referenceImage" };
+  }
+  return validateReferences(added);
+}
