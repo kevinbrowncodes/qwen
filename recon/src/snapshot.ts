@@ -35,6 +35,8 @@ export type SnapshotOptions = {
   cssBase: string;
   /** Where the harvested brand images sit, relative to the snapshot. */
   brandBase: string;
+  /** Stylesheet file names that exist to link to; any other is reported dead (BUG_002). Unset means all. */
+  availableCss?: ReadonlySet<string>;
 };
 
 export const DEFAULT_SNAPSHOT_OPTIONS: SnapshotOptions = { cssBase: "../assets/css/", brandBase: "../assets/brand/" };
@@ -87,7 +89,10 @@ function isScriptLink(el: Element): boolean {
 function relink(value: string, options: SnapshotOptions, deadLinks: string[]): string {
   if (!value.startsWith(SAVED_FILES_PREFIX)) return value;
   const file = value.slice(SAVED_FILES_PREFIX.length).split(/[?#]/)[0] ?? "";
-  if (file.endsWith(".css")) return options.cssBase + file;
+  if (file.endsWith(".css")) {
+    if (options.availableCss && !options.availableCss.has(file)) deadLinks.push(value);
+    return options.cssBase + file;
+  }
   if (LOGO_FILE.test(file)) return options.brandBase + file;
   deadLinks.push(value);
   return value;
@@ -116,6 +121,9 @@ export function cleanSnapshot(savedHtml: string, options: SnapshotOptions = DEFA
       attr.value = attr.value.replace(GENERATED_MEDIA, PLACEHOLDER_IMAGE).replace(UUID, ":id");
       if (attr.name === "href" || attr.name === "src") attr.value = relink(attr.value, options, deadLinks);
     }
+    // A crossorigin link to a local file is refused when the snapshot is opened from disk (BUG_002).
+    const target = getAttr(el, "href") ?? getAttr(el, "src") ?? "";
+    if (target.startsWith("../")) el.attrs = el.attrs.filter((a) => a.name !== "crossorigin");
     if (el.tagName === "img" && hasClass(el, "user-img")) setAttr(el, "src", PLACEHOLDER_AVATAR);
     if (hasClass(el, "user-menu-btn-text")) setText(el, MASKED_NAME);
   }

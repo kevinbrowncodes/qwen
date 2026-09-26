@@ -43,6 +43,16 @@ describe("cleanSnapshot", () => {
     expect(cleaned.html).not.toContain("./Qwen_files/main.css");
   });
 
+  it("drops crossorigin from relinked local files, which a page opened from disk would refuse (BUG_002)", () => {
+    expect(cleaned.html).toContain('<link rel="stylesheet" href="../assets/css/main.css">');
+  });
+
+  it("reports a stylesheet link with no harvested file as dead (BUG_002)", () => {
+    const only = cleanSnapshot(saved, { cssBase: "../assets/css/", brandBase: "../assets/brand/", availableCss: new Set(["main.css"]) });
+    expect(only.deadLinks).toContain("./Qwen_files/index5.css?v=1");
+    expect(only.deadLinks).not.toContain("./Qwen_files/main.css");
+  });
+
   it("points the logo at the harvested brand folder and lists every other local file as dead", () => {
     expect(cleaned.html).toContain('src="../assets/brand/qwen-logo-dark.svg"');
     expect(cleaned.deadLinks).toEqual(["./Qwen_files/O1CN01guide.png"]);

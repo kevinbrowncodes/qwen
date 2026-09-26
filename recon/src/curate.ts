@@ -10,7 +10,7 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "nod
 import path from "node:path";
 import { coverage, EXPECTED_STATES, manifestEntry, type ManifestEntry, parseReadingFileName, renderCoverage, sortManifest, stripQueriesDeep, validateReading } from "./curate-model.ts";
 import { assertNoIdentity } from "./identity-guard.ts";
-import { cleanSnapshot } from "./snapshot.ts";
+import { cleanSnapshot, DEFAULT_SNAPSHOT_OPTIONS } from "./snapshot.ts";
 import { OUT_DIR, RECON_ROOT } from "./config.ts";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -42,7 +42,8 @@ function main(argv: string[]): number {
     captured.add(name);
   }
 
-  const snapshot = cleanSnapshot(readFileSync(path.join(inDir, "Qwen.html"), "utf8"));
+  const savedCss = new Set(readdirSync(path.join(inDir, "assets", "css")).filter((f) => f.endsWith(".css")));
+  const snapshot = cleanSnapshot(readFileSync(path.join(inDir, "Qwen.html"), "utf8"), { ...DEFAULT_SNAPSHOT_OPTIONS, availableCss: savedCss });
   const snapshotFile = "snapshots/home-signed-in@1437.html";
   outputs.set(snapshotFile, snapshot.html);
   const home = manifest.find((m) => m.state === "home-signed-in" && m.width === 1437);
