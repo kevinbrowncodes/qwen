@@ -9,7 +9,8 @@
     "build": "pnpm --filter app build",
     "start": "pnpm --filter app start",
     "recon:login": "pnpm --filter recon login",
-    "recon:check": "pnpm --filter recon check"
+    "recon:check": "pnpm --filter recon check",
+    "test:integration": "pnpm --filter app test:integration"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

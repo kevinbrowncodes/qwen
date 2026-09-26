@@ -107,3 +107,4 @@ Errors:
 | `unsupported_media_type` | 415 | Body type, or a reference type, not accepted |
 | `busy` | 503 | The server cannot take a job now |
 | `bad_gateway` | 502 | App routes only (STORY_007): the upstream answered outside this contract |
+| `not_finished` | 409 | App routes only (STORY_007): `DELETE /api/history/:id` on a job still queued or running |

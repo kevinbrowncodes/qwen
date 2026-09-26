@@ -1,7 +1,7 @@
 # STORY_007 — The app's own routes speak to the generation server, tested against the stub
 
 **Epic:** [EPIC_002](../epic/EPIC_002_the_app_has_a_skeleton_a_stub_generation_server_and_a_test_gate.md)
-**Status:** Not started (after STORY_006)
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the assistant building the UI, I want the browser to talk only to the app's own API routes, which forward to the generation server named by configuration, so that the Spark's address never reaches the browser, the code or a test, and the routes are proven against the stub before any screen uses them.
@@ -16,16 +16,16 @@ N/A (no UI change; server routes and an integration test lane).
 
 ## Acceptance Criteria
 
-- [ ] **Configuration:** `MODEL_BASE_URL` (required, no trailing slash) and `MODEL_API_KEY` (optional) are read in one module. A missing or malformed base URL gives a clear error at request time, answered as `503 busy` with the message "The generation server is not configured", and never a crash. The Spark's hostname appears nowhere in the code, tests or fixtures.
-- [ ] **Routes** under `app/app/api/`, each forwarding to the contract and passing the bearer key when set:
+- [x] **Configuration:** `MODEL_BASE_URL` (required, no trailing slash) and `MODEL_API_KEY` (optional) are read in one module. A missing or malformed base URL gives a clear error at request time, answered as `503 busy` with the message "The generation server is not configured", and never a crash. The Spark's hostname appears nowhere in the code, tests or fixtures.
+- [x] **Routes** under `app/app/api/`, each forwarding to the contract and passing the bearer key when set:
   - `GET /api/capabilities`;
   - `POST /api/jobs`: JSON, or multipart with reference images passed through unchanged;
   - `GET /api/jobs/:id`: the status, with `result.url` rewritten to `/api/jobs/:id/result`;
   - `DELETE /api/jobs/:id`;
   - `GET /api/jobs/:id/result`: the image bytes streamed, with the upstream type and length, and `Content-Disposition: inline; filename="qwen-<id8>.png"`, or `attachment` when `?download=1`.
-- [ ] **Upload validation runs in the app before forwarding:** at most 10 files, PNG, JPEG or WebP, 20 MB each. A refusal carries the contract's error shape and `field: referenceImage`, and nothing is forwarded.
-- [ ] **Errors pass through:** an upstream contract error keeps its status and body. An unreachable upstream answers `503 busy` with "The generation server is not reachable". An upstream reply that breaks the contract answers `502` with code `bad_gateway`.
-- [ ] **History persists in a real local store:**
+- [x] **Upload validation runs in the app before forwarding:** at most 10 files, PNG, JPEG or WebP, 20 MB each. A refusal carries the contract's error shape and `field: referenceImage`, and nothing is forwarded.
+- [x] **Errors pass through:** an upstream contract error keeps its status and body. An unreachable upstream answers `503 busy` with "The generation server is not reachable". An upstream reply that breaks the contract answers `502` with code `bad_gateway`.
+- [x] **History persists in a real local store:**
   - `POST /api/jobs` records the job (id, prompt, ratio, model, reference count, created time) in a JSON file at `HISTORY_FILE`;
   - `GET /api/history` lists entries newest first, with each entry's last known status;
   - every `GET /api/jobs/:id` that reaches a terminal state updates its entry;
@@ -33,7 +33,7 @@ N/A (no UI change; server routes and an integration test lane).
   - `DELETE /api/history/:id` removes a finished entry.
 
   Writes are atomic: write a temp file, then rename.
-- [ ] Root script `test:integration` runs the app's integration lane against the stub, started in-process on an ephemeral port.
+- [x] Root script `test:integration` runs the app's integration lane against the stub, started in-process on an ephemeral port.
 
 ## Technical Notes
 
@@ -68,3 +68,15 @@ N/A (no UI change; server routes and an integration test lane).
 ## Estimated Complexity
 
 M
+
+## Done (2026-09-26)
+
+- Routes are in `app/app/api/`: capabilities, jobs, jobs/:id (GET and DELETE), jobs/:id/result, history, and history/:id. `lib/` holds `config`, `job-api` (the contract's types and checks), `model-client`, `upload-validation`, `history`, `history-store` and `content-disposition`.
+- **Unit:** 25 app tests. **Integration:** 16 tests against the in-process stub and a temp history file, covering every AC. Among them:
+  - an unreachable upstream, where the answer never names the address;
+  - an off-contract 200, which gives a 502;
+  - bearer auth;
+  - rejection of 11 references or a GIF before the stub sees any job.
+- One case was written wrong at first. It pointed the "off-contract" upstream at the stub's `/__stub` prefix, which still answers with a contract 404. It now points at the stub's `/health` (a 200 that is not a job).
+- Removing a running job from history answers `409 not_finished`, a code for the app's routes only, added to the contract's table.
+- Gate: `tools/gate/run.sh` green in 15 s, run by hand.
