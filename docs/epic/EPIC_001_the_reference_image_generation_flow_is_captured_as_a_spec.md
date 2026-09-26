@@ -22,8 +22,8 @@ The owner's plan is UI first, model second. The UI is a clone, and a clone witho
 | # | Story | Status |
 | --- | --- | --- |
 | 001 | [The owner signs in to the reference once and every recon run reuses that session](../story/STORY_001_the_owner_signs_in_to_the_reference_once_and_every_recon_run_reuses_that_session.md) | Withdrawn: the reference's access check rejects the automated browser |
-| 002 | [Every captured state of the image generation flow is filed in the repo as a dated spec](../story/STORY_002_every_captured_state_of_the_image_generation_flow_is_filed_as_a_dated_spec.md) | Not started (rewritten 2026-09-26) |
-| 003 | [The reference's stylesheets, icons, fonts and brand assets are harvested into the repo](../story/STORY_003_the_references_stylesheets_icons_fonts_and_brand_assets_are_harvested_into_the_repo.md) | Not started (rewritten 2026-09-26) |
+| 002 | [Every captured state of the image generation flow is filed in the repo as a dated spec](../story/STORY_002_every_captured_state_of_the_image_generation_flow_is_filed_as_a_dated_spec.md) | Done 2026-09-26 |
+| 003 | [The reference's stylesheets, icons, fonts and brand assets are harvested into the repo](../story/STORY_003_the_references_stylesheets_icons_fonts_and_brand_assets_are_harvested_into_the_repo.md) | Done 2026-09-26, apart from the logo (waits for `Qwen_files/`) |
 | 004 | [The component inventory and interaction notes say what the flow does on the network](../story/STORY_004_the_component_inventory_and_interaction_notes_say_what_the_flow_does_on_the_network.md) | Not started |
 
 ## Hand-off (2026-09-26, revised the same day)
