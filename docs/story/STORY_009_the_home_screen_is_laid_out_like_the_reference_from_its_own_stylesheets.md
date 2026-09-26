@@ -1,7 +1,7 @@
 # STORY_009 — The home screen is laid out like the reference, from the reference's own stylesheets and icons
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md)
-**Status:** Not started
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the owner, I want the app's home to look like chat.qwen.ai's: a dark sidebar, a top bar, "How can I help you?" and the composer in the middle. At phone width I want the sidebar as a drawer. So the clone starts from the reference's own lifted CSS and icons, and every later story fills in behaviour on a screen that already matches.
@@ -66,16 +66,22 @@ The app shows a STORY_005 placeholder, and nothing from the reference is loaded.
 
 ## Acceptance Criteria
 
-- [ ] `tools/reference-assets/sync.ts` copies the harvested stylesheets into `app/public/reference/css/` and builds `app/public/reference/sprite.svg` from the harvested icons. It is run by `pnpm reference:sync` and checked into git. A unit test fails if the copies are out of date with `docs/recon/`.
-- [ ] The root layout links the reference stylesheets in the order the reference page loads them, and sets `<html class="dark">`. An `Icon` component renders `<svg><use href="/reference/sprite.svg#<id>"></use></svg>` inside `span.anticon`.
-- [ ] The home renders the snapshot's structure, using the reference's class names for these elements:
+- [x] `recon/src/reference-sync.ts` (see Corrections) copies the harvested stylesheets into `app/public/reference/css/` and builds `app/public/reference/sprite.svg` from the harvested icons. It is run by `pnpm reference:sync` and checked into git. A unit test fails if the copies are out of date with `docs/recon/`.
+- [x] The root layout links the reference stylesheets in the order the reference page loads them, and sets `<html class="dark">`. An `Icon` component renders `<svg><use href="/reference/sprite.svg#<id>"></use></svg>` inside `span.anticon`.
+- [x] The home renders the snapshot's structure, using the reference's class names for these elements:
   - `desktop-layout`, `sidebar-wrapper`, `sidebar-side`;
   - `header-desktop`, `placeholder-logo-text`;
   - `message-input-wrapper`, `message-input-container`, `message-input-container-area`, `mode-select`, `message-input-textarea`.
 
   Measured: at 1437×1031 the composer is 760 wide, radius 28, background `#2c2c2c`, and the heading reads "How can I help you?" at 24px.
-- [ ] At narrow width, `☰` opens the drawer and the backdrop closes it. The composer is at the bottom of the viewport. Touch targets on the narrow branch are at least 44px ([CLAUDE.md → §6 rule 9](../../CLAUDE.md#6-key-rules)).
-- [ ] The placeholder page and its e2e assertion are replaced. STORY_008's API smoke stays green.
+- [x] At narrow width, `☰` opens the drawer and the backdrop closes it. The composer is at the bottom of the viewport. Touch targets on the narrow branch are at least 44px ([CLAUDE.md → §6 rule 9](../../CLAUDE.md#6-key-rules)).
+- [x] The placeholder page and its e2e assertion are replaced. STORY_008's API smoke stays green.
+
+## Corrections during implementation (2026-09-26)
+
+- **The sync lives in `recon/src/reference-sync.ts`, not in a new `tools/reference-assets/` package.** recon already carries the HTML parser the sync needs, and its tests run in the gate. It writes one concatenated `reference.css` (every stylesheet verbatim, in the page's own order, each under a header naming its file) rather than one copy per file. The AC's intent, a byte-identical copy checked by a test, is unchanged.
+- **The reference's phone layout sizes itself in rem, from a root font size set by JavaScript: `width / 375 × 16px`** (16.768px at 393, exactly the capture's value). Ours sets the same in the boot script, and that is what makes the drawer come out 20rem = 335px at 393.
+- **`public/` must be copied into the standalone server** (the Playwright config and `app/Dockerfile`), or the lifted stylesheet 404s and the page renders unstyled.
 
 ## Technical Notes
 
@@ -100,3 +106,33 @@ The app shows a STORY_005 placeholder, and nothing from the reference is loaded.
 ## Estimated Complexity
 
 M
+
+## Done (2026-09-26)
+
+**Side by side with the capture.** Ours was measured in headless Chromium in the gate image, after settling; the reference values are from the readings.
+
+| Element | Reference | Ours | Delta |
+| --- | --- | --- | --- |
+| Composer (1437) | 455,461 760×58, r28, `#2c2c2c` | 456,461 760×58, r28, `#2c2c2c` | x +1 |
+| Heading (1437) | 732,381 206×40, 24px | 715,381 242×40, 24px | width: the font. The gate image has no Inter or SF, so the system stack falls back (DejaVu); on the owner's Mac the stack resolves as it did on the reference |
+| Top bar (1437) | 240,6 1191×48 | 240,6 1191×48 | none |
+| Sidebar (1437) | 240 wide | 240 wide | none |
+| Header (393 vs our 390) | 58 tall | 57 tall | −1 |
+| Drawer open | 335 at 393 | 333 at 390 (= 20rem at this width) | scale-exact |
+| Composer (phone) | x 17, 359 wide, 16 from the bottom | x 17, 357 wide, 17 from the bottom | the width follows the viewport; bottom +1 |
+
+**`clone.css` (ours):** the logo-text stand-in; a button reset; link colour for the two sidebar links; and at phone width:
+- a full-bleed page with no rounded panel;
+- the heading hidden;
+- the composer pinned (overriding the reference's identity `transform` on `#dropzone-container`, which would otherwise contain it);
+- the drawer frame, the backdrop and a 44px menu target;
+- the header colours.
+
+The reference's `.sidebar-wrapper .mask { display: none }` hid a backdrop that carried its class, so ours uses only `clone-drawer-mask`.
+
+**Tests:**
+- unit: `Icon` and `narrow`, plus `useNarrow` under StrictMode with a fake `matchMedia` and on the server;
+- recon: the `reference-sync` suite, which checks the order, the sprite's 1,113 symbols and that the committed copies are current;
+- e2e: `home.spec.ts`, 3 cases across the two projects, including a check that nothing is fetched from the reference's hosts.
+
+The coverage floor dropped when `use-narrow.ts` first landed untested; the test above closed it, and no floor was lowered. Gate green, including the image build.

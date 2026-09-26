@@ -6,7 +6,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "login": "node src/login.ts",
-    "check": "node src/check.ts"
+    "check": "node src/check.ts",
+    "reference-sync": "node src/reference-sync.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

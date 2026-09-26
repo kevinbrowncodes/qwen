@@ -73,6 +73,22 @@ export async function submitAndWait(page: Page, action: () => Promise<unknown>, 
   return terminal;
 }
 
+/**
+ * A measurement taken only once the element has stopped moving: two consecutive frames with the same box (CLAUDE.md
+ * §6 rule 9: a probe that measures through a slide or fade produces false defects).
+ */
+export async function settledBox(locator: Locator): Promise<{ x: number; y: number; width: number; height: number }> {
+  await locator.page().evaluate(() => document.fonts.ready);
+  let last = await locator.boundingBox();
+  for (let i = 0; i < 20; i++) {
+    await locator.page().evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const next = await locator.boundingBox();
+    if (last && next && Math.abs(last.x - next.x) < 0.5 && Math.abs(last.y - next.y) < 0.5 && Math.abs(last.width - next.width) < 0.5 && Math.abs(last.height - next.height) < 0.5) return next;
+    last = next;
+  }
+  throw new Error("the element never settled");
+}
+
 /** The image has loaded, with a real width, from `src`. */
 export async function expectImageLoaded(image: Locator, src: string | RegExp, naturalWidth?: number): Promise<void> {
   await expect(image).toHaveAttribute("src", src);

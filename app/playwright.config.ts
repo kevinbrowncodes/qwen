@@ -44,7 +44,7 @@ export default defineConfig({
     },
     {
       // The standalone server, exactly what app/Dockerfile ships; `pnpm build` (gate step 5) must have run.
-      command: "cp -r .next/static .next/standalone/app/.next/ && node .next/standalone/app/server.js",
+      command: "cp -r .next/static .next/standalone/app/.next/ && cp -r public .next/standalone/app/ && node .next/standalone/app/server.js",
       url: `${appUrl}/api/health`,
       reuseExistingServer: false,
       timeout: 60_000,

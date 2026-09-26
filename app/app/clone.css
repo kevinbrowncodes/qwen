@@ -1,0 +1,92 @@
+/*
+ * Ours (STORY_009): only what the reference sets from JavaScript, what its phone markup (not captured, only measured)
+ * needs, and what our departures need. Each rule names the reading it matches. The reference's own styling is
+ * public/reference/reference.css.
+ */
+
+/* Departure: the logo waits for the owner's Qwen_files/ (STORY_003); the name stands in its place. */
+.clone-logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fafbff;
+  padding-left: 8px;
+}
+
+/* A reset for buttons that carry a reference class written for a non-button element. */
+.clone-icon-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Our sidebar entries are links; the reference's are divs with role=button. */
+a.sidebar-entry-fixed-list-content,
+a.my-library-head {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---- Phone width (states/home-signed-in@393.json) ---- */
+
+/* The page is full-bleed: no rounded inner panel. */
+html.mobile .desktop-layout-content-inner {
+  padding: 0;
+  border-radius: 0;
+}
+
+/* "no 'How can I help you?' heading ... at this width" */
+html.mobile .placeholder-text-container {
+  visibility: hidden;
+}
+
+/* The composer is pinned at the bottom (reading: x 17, bottom 16 of 852); the reference's own wrapper supplies
+   the 17px inset, so the pinned element sits flush with the viewport. */
+html.mobile .message-input {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+}
+
+/* The drawer sits over the page with a 0.1 black backdrop (capture notes: z-index 999 backdrop). */
+html.mobile .sidebar-wrapper .sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+}
+html.mobile .sidebar.sidebar-collapse {
+  width: 0;
+  overflow: hidden;
+}
+html.mobile .clone-drawer-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 999;
+}
+html.mobile .sidebar-toggle-icon {
+  min-width: 44px;
+  min-height: 44px;
+  margin: -11px 0 -11px -11px;
+}
+
+/* The reference's .placeholder-container carries an (identity) transform, which would make it the pinned
+   composer's containing block; the phone layout needs the viewport. */
+html.mobile #dropzone-container.placeholder-container {
+  transform: none;
+}
+html.mobile .splitter-container,
+html.mobile .splitter-container-left-panel {
+  border-radius: 0;
+}
+/* Header controls in #fafbff (reading: ☰ appicon-menu, model name 15px/600). */
+html.mobile .sidebar-toggle-icon {
+  color: var(--text-primary);
+}
+html.mobile .mms-trigger__name {
+  -webkit-text-fill-color: currentColor;
+}

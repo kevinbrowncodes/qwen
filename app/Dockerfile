@@ -26,6 +26,8 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3100 HOSTNAME=0.0.0.0
 WORKDIR /srv
 COPY --from=build --chown=node:node /work/app/.next/standalone ./
 COPY --from=build --chown=node:node /work/app/.next/static ./app/.next/static
+# public/ is not part of the standalone output: the lifted reference stylesheet and sprite live there (STORY_009).
+COPY --from=build --chown=node:node /work/app/public ./app/public
 RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 USER node

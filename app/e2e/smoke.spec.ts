@@ -1,12 +1,12 @@
 /**
- * STORY_008 smoke: the production build and the stub, end to end, at both widths. There is no generation screen yet
- * (EPIC_003), so the job is created through the app's own API and the result is shown in an image element.
+ * STORY_008 smoke: the production build and the stub, end to end, at both widths: the job is created through the
+ * app's own API and the result is shown in an image element, independent of the generation screen (EPIC_003).
  */
 import { expect, expectImageLoaded, test } from "./fixtures";
 
-test("the placeholder page renders", async ({ page }) => {
+test("the home renders the composer", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Qwen Local" })).toBeVisible();
+  await expect(page.getByPlaceholder("Ask Qwen")).toBeVisible();
 });
 
 test("health is ok", async ({ request }) => {

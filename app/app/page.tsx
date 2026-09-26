@@ -1,10 +1,17 @@
+import { Composer } from "@/components/composer/Composer";
+
+/** The home (STORY_009): the reference's welcome area and composer. */
 export default function Home() {
   return (
-    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", textAlign: "center", padding: "0 16px" }}>
-      <div>
-        <h1 style={{ fontSize: 24, fontWeight: 400, margin: 0 }}>Qwen Local</h1>
-        <p style={{ fontSize: 14, color: "rgba(250, 251, 255, 0.5)" }}>The image generation screen is built in EPIC_003.</p>
+    <div className="placeholder-container" id="dropzone-container">
+      <div className="placeholder-text-container">
+        <div className="placeholder-logo-pc-container">
+          <div className="placeholder-logo-text" role="heading" aria-level={1}>
+            How can I help you?
+          </div>
+        </div>
       </div>
-    </main>
+      <Composer />
+    </div>
   );
 }

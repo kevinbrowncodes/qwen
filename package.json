@@ -12,7 +12,8 @@
     "recon:check": "pnpm --filter recon check",
     "test:integration": "pnpm --filter app test:integration",
     "test:e2e": "pnpm --filter app test:e2e",
-    "prepare": "husky"
+    "prepare": "husky",
+    "reference:sync": "pnpm --filter recon reference-sync"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
