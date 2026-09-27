@@ -1,18 +1,163 @@
 {
-  "about": "Contract v1 request validation, shared by the stub's and the model server's tests (STORY_015) so the two cannot drift. Each case is a JSON create body (no references) and the answer the contract requires.",
+  "about": "Contract v1 request validation, shared by the stub's and the model server's tests (STORY_015) so the two cannot drift. Each case is a create body; `cases` carry no references, `editCases` are sent with one PNG reference (v1.1, STORY_017) and the answer the contract requires.",
   "cases": [
-    { "body": { "prompt": "a cat", "ratio": "1:1" }, "status": 202 },
-    { "body": { "prompt": "  a cat  ", "ratio": "16:9", "model": "qwen-image-2.1", "seed": 4294967295 }, "status": 202 },
-    { "body": { "ratio": "1:1" }, "status": 400, "code": "validation", "field": "prompt" },
-    { "body": { "prompt": "   ", "ratio": "1:1" }, "status": 400, "code": "validation", "field": "prompt" },
-    { "body": { "prompt": "REPEAT_4001", "ratio": "1:1" }, "status": 400, "code": "validation", "field": "prompt" },
-    { "body": { "prompt": "REPEAT_4000", "ratio": "1:1" }, "status": 202 },
-    { "body": { "prompt": "x" }, "status": 400, "code": "validation", "field": "ratio" },
-    { "body": { "prompt": "x", "ratio": "21:9" }, "status": 400, "code": "unsupported_option", "field": "ratio" },
-    { "body": { "prompt": "x", "ratio": "1:1", "model": "qwen-image-3" }, "status": 400, "code": "unsupported_option", "field": "model" },
-    { "body": { "prompt": "x", "ratio": "1:1", "model": 5 }, "status": 400, "code": "validation", "field": "model" },
-    { "body": { "prompt": "x", "ratio": "1:1", "seed": -1 }, "status": 400, "code": "validation", "field": "seed" },
-    { "body": { "prompt": "x", "ratio": "1:1", "seed": 1.5 }, "status": 400, "code": "validation", "field": "seed" },
-    { "body": { "prompt": "x", "ratio": "1:1", "seed": 4294967296 }, "status": 400, "code": "validation", "field": "seed" }
+    {
+      "body": {
+        "prompt": "a cat",
+        "ratio": "1:1"
+      },
+      "status": 202
+    },
+    {
+      "body": {
+        "prompt": "  a cat  ",
+        "ratio": "16:9",
+        "model": "qwen-image-2.1",
+        "seed": 4294967295
+      },
+      "status": 202
+    },
+    {
+      "body": {
+        "ratio": "1:1"
+      },
+      "status": 400,
+      "code": "validation",
+      "field": "prompt"
+    },
+    {
+      "body": {
+        "prompt": "   ",
+        "ratio": "1:1"
+      },
+      "status": 400,
+      "code": "validation",
+      "field": "prompt"
+    },
+    {
+      "body": {
+        "prompt": "REPEAT_4001",
+        "ratio": "1:1"
+      },
+      "status": 400,
+      "code": "validation",
+      "field": "prompt"
+    },
+    {
+      "body": {
+        "prompt": "REPEAT_4000",
+        "ratio": "1:1"
+      },
+      "status": 202
+    },
+    {
+      "body": {
+        "prompt": "x"
+      },
+      "status": 400,
+      "code": "validation",
+      "field": "ratio"
+    },
+    {
+      "body": {
+        "prompt": "x",
+        "ratio": "21:9"
+      },
+      "status": 400,
+      "code": "unsupported_option",
+      "field": "ratio"
+    },
+    {
+      "body": {
+        "prompt": "x",
+        "ratio": "1:1",
+        "model": "qwen-image-3"
+      },
+      "status": 400,
+      "code": "unsupported_option",
+      "field": "model"
+    },
+    {
+      "body": {
+        "prompt": "x",
+        "ratio": "1:1",
+        "model": 5
+      },
+      "status": 400,
+      "code": "validation",
+      "field": "model"
+    },
+    {
+      "body": {
+        "prompt": "x",
+        "ratio": "1:1",
+        "seed": -1
+      },
+      "status": 400,
+      "code": "validation",
+      "field": "seed"
+    },
+    {
+      "body": {
+        "prompt": "x",
+        "ratio": "1:1",
+        "seed": 1.5
+      },
+      "status": 400,
+      "code": "validation",
+      "field": "seed"
+    },
+    {
+      "body": {
+        "prompt": "x",
+        "ratio": "1:1",
+        "seed": 4294967296
+      },
+      "status": 400,
+      "code": "validation",
+      "field": "seed"
+    }
+  ],
+  "editCases": [
+    {
+      "body": {
+        "prompt": "make it blue"
+      },
+      "status": 202,
+      "ratio": null
+    },
+    {
+      "body": {
+        "prompt": "make it blue",
+        "ratio": ""
+      },
+      "status": 202,
+      "ratio": null
+    },
+    {
+      "body": {
+        "prompt": "make it blue",
+        "ratio": "match"
+      },
+      "status": 202,
+      "ratio": null
+    },
+    {
+      "body": {
+        "prompt": "make it blue",
+        "ratio": "1:1"
+      },
+      "status": 202,
+      "ratio": "1:1"
+    },
+    {
+      "body": {
+        "prompt": "make it blue",
+        "ratio": "21:9"
+      },
+      "status": 400,
+      "code": "unsupported_option",
+      "field": "ratio"
+    }
   ]
 }

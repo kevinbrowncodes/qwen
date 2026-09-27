@@ -145,10 +145,14 @@ export function validateRequest(fields: Record<string, unknown>, uploads: readon
   }
 
   let ratio: string | null = null;
+  const raw = fields["ratio"];
   if (refs.length === 0) {
-    const raw = fields["ratio"];
     if (typeof raw !== "string" || raw === "") throw new HttpError(400, "validation", "ratio is required", "ratio");
     if (!CAPABILITIES.ratios.some((r) => r.id === raw)) throw new HttpError(400, "unsupported_option", `ratio ${raw} is not offered by this server`, "ratio");
+    ratio = raw;
+  } else if (raw !== undefined && raw !== null && raw !== "" && raw !== "match") {
+    // Contract v1.1 (STORY_017): an edit may name a ratio; absent or "match" keeps the reference's shape.
+    if (typeof raw !== "string" || !CAPABILITIES.ratios.some((r) => r.id === raw)) throw new HttpError(400, "unsupported_option", typeof raw === "string" ? `ratio ${raw} is not offered by this server` : "ratio must be a string", "ratio");
     ratio = raw;
   }
 

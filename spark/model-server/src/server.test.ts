@@ -105,6 +105,19 @@ describe("the model server", () => {
     expect(await status(id)).toMatchObject({ request: { ratio: null, referenceImages: 2 } });
   });
 
+  it("gives an edit that names a ratio that ratio's size (v1.1, STORY_017)", async () => {
+    await start();
+    const form = new FormData();
+    form.set("prompt", "make it square");
+    form.set("ratio", "1:1");
+    form.append("referenceImage", new Blob([new Uint8Array(reference)], { type: "image/png" }), "a.png");
+    const res = await fetch(`${base}/jobs`, { method: "POST", body: form });
+    const id = String((await json(res))["id"]);
+    await terminal(id);
+    expect(sentToWorker()[0]).toMatchObject({ type: "job", id, width: 1024, height: 1024 });
+    expect(await status(id)).toMatchObject({ request: { ratio: "1:1", referenceImages: 1 } });
+  });
+
   it("queues jobs in order, one at a time", async () => {
     await start();
     const a = await create({ prompt: "slow first", ratio: "1:1" });

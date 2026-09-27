@@ -123,13 +123,13 @@ describe("cancel", () => {
 });
 
 describe("edits", () => {
-  it("records two references by sha256 and ignores the ratio", async () => {
+  it("records two references by sha256, and the ratio the edit named (v1.1)", async () => {
     const other = new Uint8Array([...reference.subarray(0, reference.length - 1), 0]);
     const res = await edit([{ name: "a.png", type: "image/png", bytes: reference }, { name: "b.png", type: "image/png", bytes: other }], undefined, { ratio: "9:16" });
     expect(res.status).toBe(202);
     const { id } = await json(res);
     const received = await json(await fetch(`${base}/__stub/jobs/${String(id)}/received`));
-    expect(received).toMatchObject({ request: { ratio: null, referenceImages: 2 } });
+    expect(received).toMatchObject({ request: { ratio: "9:16", referenceImages: 2 } });
     expect(received["uploads"]).toEqual([
       { filename: "a.png", contentType: "image/png", size: reference.length, sha256: sha(reference) },
       { filename: "b.png", contentType: "image/png", size: other.length, sha256: sha(other) },
@@ -243,5 +243,21 @@ describe("the contract's shared validation vectors (STORY_015)", () => {
     const res = await create(body);
     expect(res.status).toBe(c.status);
     if (c.status !== 202) expect(await json(res)).toMatchObject({ error: { code: c.code, field: c.field } });
+  });
+});
+
+describe("the contract's shared edit vectors (v1.1, STORY_017)", () => {
+  const vectors: unknown = JSON.parse(readFileSync(new URL("../../../docs/contracts/validation-vectors.json", import.meta.url), "utf8"));
+  type EditCase = { body: Record<string, string>; status: number; ratio?: string | null; code?: string; field?: string };
+  const edits: EditCase[] = typeof vectors === "object" && vectors !== null && "editCases" in vectors && Array.isArray(vectors.editCases) ? (vectors.editCases as EditCase[]) : [];
+  it.each(edits)("edit $body → $status", async (c) => {
+    const res = await edit([{ name: "a.png", type: "image/png", bytes: reference }], undefined, Object.fromEntries(Object.entries(c.body).filter(([k]) => k !== "prompt")));
+    expect(res.status).toBe(c.status);
+    if (c.status !== 202) {
+      expect(await json(res)).toMatchObject({ error: { code: c.code, field: c.field } });
+      return;
+    }
+    const id = String((await json(res))["id"]);
+    expect(await json(await fetch(`${base}/__stub/jobs/${id}/received`))).toMatchObject({ request: { ratio: c.ratio ?? null } });
   });
 });

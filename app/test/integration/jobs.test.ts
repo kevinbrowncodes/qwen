@@ -164,7 +164,7 @@ describe("cancel", () => {
 });
 
 describe("edits", () => {
-  it("forwards two references unchanged, and records the edit with no ratio", async () => {
+  it("forwards two references unchanged, and the ratio the edit named (contract v1.1, STORY_017)", async () => {
     const second = new Uint8Array([...reference]);
     second[second.length - 1] = 0;
     const res = await edit([{ name: "a.png", type: "image/png", bytes: reference }, { name: "b.png", type: "image/png", bytes: second }]);
@@ -175,7 +175,21 @@ describe("edits", () => {
       { filename: "a.png", contentType: "image/png", size: reference.length, sha256: sha(reference) },
       { filename: "b.png", contentType: "image/png", size: second.length, sha256: sha(second) },
     ]);
-    expect(stored()[0]).toMatchObject({ id, ratio: null, referenceImages: 2 });
+    expect(stored()[0]).toMatchObject({ id, ratio: "1:1", referenceImages: 2 });
+    expect(field(received, "request")).toMatchObject({ ratio: "1:1" });
+  });
+
+  it("records an edit that matches its reference with no ratio", async () => {
+    const form = new FormData();
+    form.set("prompt", "keep the shape");
+    form.set("ratio", "match");
+    form.append("referenceImage", new Blob([new Uint8Array(reference)], { type: "image/png" }), "a.png");
+    const res = await createJob(new Request("http://app/api/jobs", { method: "POST", body: form }));
+    expect(res.status).toBe(202);
+    const id = String(field(await json(res), "id"));
+    expect(stored()[0]).toMatchObject({ id, ratio: null });
+    const received = await json(await fetch(`${stubUrl}/__stub/jobs/${id}/received`));
+    expect(field(received, "request")).toMatchObject({ ratio: null });
   });
 
   it("refuses eleven references, or a GIF, without reaching the server", async () => {

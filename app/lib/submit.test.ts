@@ -11,6 +11,7 @@ describe("requestFrom", () => {
     expect(requestFrom(base)).toEqual({ prompt: "a cat", ratio: "1:1", model: "qwen-image-2.1", references: [] });
     const edit = { ...base, references: [{ key: "1", file: a }, { key: "2", file: b }] };
     expect(requestFrom(edit)).toMatchObject({ ratio: null, references: [a, b] });
+    expect(requestFrom({ ...edit, editRatio: "9:16" })).toMatchObject({ ratio: "9:16" });
   });
 });
 
@@ -29,6 +30,11 @@ describe("buildBody", () => {
     expect(form.getAll("referenceImage").map((f) => (f instanceof File ? f.name : ""))).toEqual(["a.png", "b.png"]);
     expect(form.has("ratio")).toBe(false);
     expect(form.get("prompt")).toBe("p");
+  });
+
+  it("sends an edit's chosen ratio in the form (STORY_017)", () => {
+    const { body } = buildBody({ prompt: "p", ratio: "1:1", model: "m", references: [a] });
+    expect(body instanceof FormData ? body.get("ratio") : null).toBe("1:1");
   });
 });
 

@@ -52,7 +52,8 @@ export function POST(request: Request): Promise<Response> {
       for (const file of files) out.append("referenceImage", file, file.name);
       const sent: Sent = {
         prompt: str(form.get("prompt")).trim(),
-        ratio: files.length > 0 ? null : str(form.get("ratio")) || null,
+        // An edit's ratio is recorded when it names one (contract v1.1, STORY_017).
+        ratio: files.length > 0 && str(form.get("ratio")) === "match" ? null : str(form.get("ratio")) || null,
         model: str(form.get("model")),
         referenceImages: files.length,
       };

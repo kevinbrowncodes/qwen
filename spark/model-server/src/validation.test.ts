@@ -45,8 +45,9 @@ describe("the contract's shared validation vectors", () => {
 describe("references", () => {
   const file = (contentType: string) => ({ field: "referenceImage", filename: "a", contentType, data: Buffer.from("x") });
 
-  it("an edit needs no ratio, and ignores one", () => {
-    expect(validateRequest(CAPABILITIES, { prompt: "x", ratio: "21:9" }, [file("image/png")], () => 1)).toMatchObject({ ratio: null, referenceImages: 1 });
+  it("an edit needs no ratio, and may name one (v1.1)", () => {
+    expect(validateRequest(CAPABILITIES, { prompt: "x" }, [file("image/png")], () => 1)).toMatchObject({ ratio: null, referenceImages: 1 });
+    expect(validateRequest(CAPABILITIES, { prompt: "x", ratio: "1:1" }, [file("image/png")], () => 1)).toMatchObject({ ratio: "1:1" });
   });
 
   it("refuses eleven, and a type that is not an image", () => {
@@ -57,4 +58,36 @@ describe("references", () => {
   it("reads a seed sent as text in a multipart form", () => {
     expect(validateRequest(CAPABILITIES, { prompt: "x", ratio: "1:1", seed: "42" }, [], () => 1).seed).toBe(42);
   });
+});
+
+describe("the contract's shared edit vectors (v1.1, STORY_017)", () => {
+  interface EditCase {
+    readonly body: Record<string, unknown>;
+    readonly status: number;
+    readonly ratio?: string | null;
+    readonly code?: string;
+    readonly field?: string;
+  }
+  const edits: EditCase[] = typeof vectors === "object" && vectors !== null && "editCases" in vectors && Array.isArray(vectors.editCases) ? (vectors.editCases as EditCase[]) : [];
+  const png = { field: "referenceImage", filename: "a.png", contentType: "image/png", data: Buffer.from("x") };
+
+  it("has edit cases to run", () => {
+    expect(edits.length).toBeGreaterThanOrEqual(5);
+  });
+
+  for (const c of edits) {
+    it(`edit ${JSON.stringify(c.body)} → ${String(c.status)}`, () => {
+      const run = (): unknown => validateRequest(CAPABILITIES, c.body, [png], () => 7);
+      if (c.status === 202) {
+        expect(run()).toMatchObject({ ratio: c.ratio ?? null, referenceImages: 1 });
+        return;
+      }
+      expect(run).toThrow(HttpError);
+      try {
+        run();
+      } catch (e) {
+        expect(e).toMatchObject({ status: c.status, code: c.code, field: c.field });
+      }
+    });
+  }
 });

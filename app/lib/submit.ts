@@ -2,7 +2,7 @@
  * Creating a generation from the browser (STORY_012): JSON without references, multipart with them (files in order,
  * no ratio: an edit takes its size from the reference). The answer is the job's id, or the server's message.
  */
-import type { ComposerState } from "./composer-state";
+import { MATCH_REFERENCE, type ComposerState } from "./composer-state";
 import { isApiError, isCreateJobResponse } from "./job-api";
 
 export interface GenerationRequest {
@@ -16,7 +16,9 @@ export type SubmitOutcome = { readonly ok: true; readonly id: string } | { reado
 
 export function requestFrom(state: ComposerState): GenerationRequest {
   const references = state.references.map((r) => r.file);
-  return { prompt: state.text.trim(), ratio: references.length > 0 ? null : state.ratio, model: state.model, references };
+  // An edit sends a ratio only when one was chosen (contract v1.1, STORY_017); "match" sends none.
+  const ratio = references.length === 0 ? state.ratio : state.editRatio === MATCH_REFERENCE ? null : state.editRatio;
+  return { prompt: state.text.trim(), ratio, model: state.model, references };
 }
 
 export function buildBody(req: GenerationRequest): { readonly body: BodyInit; readonly headers: Record<string, string> } {
@@ -26,6 +28,7 @@ export function buildBody(req: GenerationRequest): { readonly body: BodyInit; re
   const form = new FormData();
   form.set("prompt", req.prompt);
   form.set("model", req.model);
+  if (req.ratio !== null) form.set("ratio", req.ratio);
   for (const file of req.references) form.append("referenceImage", file, file.name);
   return { body: form, headers: {} };
 }

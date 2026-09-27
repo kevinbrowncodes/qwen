@@ -49,6 +49,8 @@ export interface ComposerState {
   readonly mode: Mode;
   readonly model: string;
   readonly ratio: string;
+  /** The ratio for an edit (STORY_017): MATCH_REFERENCE keeps the reference's shape; otherwise a ratio id. */
+  readonly editRatio: string;
   readonly text: string;
   readonly references: readonly ReferenceItem[];
   /** Why the last attachment was refused, shown under the composer until the next change. */
@@ -60,6 +62,7 @@ export type ComposerAction =
   | { readonly type: "leaveImage" }
   | { readonly type: "setModel"; readonly model: string }
   | { readonly type: "setRatio"; readonly ratio: string }
+  | { readonly type: "setEditRatio"; readonly ratio: string }
   | { readonly type: "setText"; readonly text: string }
   | { readonly type: "capabilities"; readonly capabilities: Capabilities }
   | { readonly type: "addReferences"; readonly items: readonly ReferenceItem[] }
@@ -90,7 +93,7 @@ export function parseCapabilities(v: unknown): Capabilities | null {
 }
 
 export function initialState(capabilities: Capabilities = FALLBACK_CAPABILITIES): ComposerState {
-  return { mode: "chat", model: capabilities.models[0]?.id ?? "", ratio: capabilities.defaultRatio, text: "", references: [], error: null };
+  return { mode: "chat", model: capabilities.models[0]?.id ?? "", ratio: capabilities.defaultRatio, editRatio: MATCH_REFERENCE, text: "", references: [], error: null };
 }
 
 export function reduce(state: ComposerState, action: ComposerAction): ComposerState {
@@ -103,6 +106,8 @@ export function reduce(state: ComposerState, action: ComposerAction): ComposerSt
       return { ...state, model: action.model };
     case "setRatio":
       return { ...state, ratio: action.ratio };
+    case "setEditRatio":
+      return { ...state, editRatio: action.ratio };
     case "setText":
       return { ...state, text: action.text };
     case "addReferences":
@@ -122,14 +127,18 @@ export function reduce(state: ComposerState, action: ComposerAction): ComposerSt
       const { capabilities } = action;
       const model = capabilities.models.some((m) => m.id === state.model) ? state.model : (capabilities.models[0]?.id ?? "");
       const ratio = capabilities.ratios.some((r) => r.id === state.ratio) ? state.ratio : capabilities.defaultRatio;
-      return { ...state, model, ratio };
+      const editRatio = capabilities.ratios.some((r) => r.id === state.editRatio) ? state.editRatio : MATCH_REFERENCE;
+      return { ...state, model, ratio, editRatio };
     }
   }
 }
 
-/** The ratio does not apply to an edit: it takes its size from the reference (the reference hides the dropdown). */
-export function showsRatio(state: ComposerState): boolean {
-  return state.references.length === 0;
+/** An edit's default: keep the reference's shape (STORY_017). Never sent to the server; no ratio is sent instead. */
+export const MATCH_REFERENCE = "match";
+
+/** The ratio the composer's dropdown is showing: the edit ratio while references are attached (STORY_017). */
+export function activeRatio(state: ComposerState): string {
+  return state.references.length > 0 ? state.editRatio : state.ratio;
 }
 
 export function canSend(state: ComposerState): boolean {
@@ -145,7 +154,7 @@ export const STORAGE_KEY = "qwen.composer.v1";
 
 /** What survives a reload within the session: the mode and the options, never the text. */
 export function serialize(state: ComposerState): string {
-  return JSON.stringify({ mode: state.mode, model: state.model, ratio: state.ratio });
+  return JSON.stringify({ mode: state.mode, model: state.model, ratio: state.ratio, editRatio: state.editRatio });
 }
 
 export function restore(raw: string | null, base: ComposerState): ComposerState {
@@ -160,5 +169,6 @@ export function restore(raw: string | null, base: ComposerState): ComposerState 
   const mode = v["mode"] === "image" || v["mode"] === "chat" ? v["mode"] : base.mode;
   const model = typeof v["model"] === "string" ? v["model"] : base.model;
   const ratio = typeof v["ratio"] === "string" ? v["ratio"] : base.ratio;
-  return { ...base, mode, model, ratio };
+  const editRatio = typeof v["editRatio"] === "string" ? v["editRatio"] : base.editRatio;
+  return { ...base, mode, model, ratio, editRatio };
 }

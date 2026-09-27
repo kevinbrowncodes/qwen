@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canSend, showsRatio, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, type ComposerState } from "./composer-state";
+import { activeRatio, canSend, MATCH_REFERENCE, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, type ComposerState } from "./composer-state";
 
 const caps = parseCapabilities({
   models: [{ id: "qwen-image-2.1", label: "Qwen-Image 2.1" }],
@@ -42,7 +42,7 @@ describe("reduce", () => {
   const start = initialState();
 
   it("starts resting, with the first model and the default ratio", () => {
-    expect(start).toEqual({ mode: "chat", model: "qwen-image-2.1", ratio: "16:9", text: "", references: [], error: null });
+    expect(start).toEqual({ mode: "chat", model: "qwen-image-2.1", ratio: "16:9", editRatio: "match", text: "", references: [], error: null });
     expect(initialState(FALLBACK_CAPABILITIES).ratio).toBe("16:9");
   });
 
@@ -79,7 +79,7 @@ describe("canSend", () => {
 });
 
 describe("session round-trip", () => {
-  const s: ComposerState = { mode: "image", model: "qwen-image-2.1", ratio: "1:1", text: "secret draft", references: [], error: null };
+  const s: ComposerState = { mode: "image", model: "qwen-image-2.1", ratio: "1:1", editRatio: "3:4", text: "secret draft", references: [], error: null };
 
   it("keeps the mode and options, never the text", () => {
     const raw = serialize(s);
@@ -108,18 +108,18 @@ describe("references (STORY_011)", () => {
   const a = { key: "a", file: file("a.png") };
   const b = { key: "b", file: file("b.png") };
 
-  it("adding enters image mode, keeps the order, and hides the ratio", () => {
+  it("adding enters image mode, keeps the order, and shows the edit's ratio, Match reference by default (STORY_017)", () => {
     let s = reduce(initialState(), { type: "addReferences", items: [a] });
     s = reduce(s, { type: "addReferences", items: [b] });
     expect(s.mode).toBe("image");
     expect(s.references.map((r) => r.key)).toEqual(["a", "b"]);
-    expect(showsRatio(s)).toBe(false);
+    expect(activeRatio(s)).toBe(MATCH_REFERENCE);
   });
 
-  it("removing the last one shows the ratio again, as it was chosen", () => {
+  it("removing the last one shows the text-to-image ratio again, as it was chosen", () => {
     let s = reduce({ ...initialState(), ratio: "3:4" }, { type: "addReferences", items: [a] });
     s = reduce(s, { type: "removeReference", key: "a" });
-    expect(showsRatio(s)).toBe(true);
+    expect(activeRatio(s)).toBe("3:4");
     expect(s.ratio).toBe("3:4");
   });
 
@@ -172,5 +172,25 @@ describe("edges", () => {
     const none = { ...FALLBACK_CAPABILITIES, models: [] };
     expect(initialState(none).model).toBe("");
     expect(reduce({ ...initialState(), model: "gone" }, { type: "capabilities", capabilities: none }).model).toBe("");
+  });
+});
+
+describe("the edit's ratio (STORY_017)", () => {
+  const a = { key: "a", file: new File(["x"], "a.png", { type: "image/png" }) };
+
+  it("is chosen apart from the text-to-image ratio", () => {
+    let s = reduce({ ...initialState(), ratio: "4:3" }, { type: "addReferences", items: [a] });
+    s = reduce(s, { type: "setEditRatio", ratio: "1:1" });
+    expect(activeRatio(s)).toBe("1:1");
+    expect(s.ratio).toBe("4:3");
+    expect(activeRatio(reduce(s, { type: "removeReference", key: "a" }))).toBe("4:3");
+  });
+
+  it("survives a reload, and falls back to Match reference when the server no longer offers it", () => {
+    const s = { ...initialState(), editRatio: "9:16" };
+    expect(restore(serialize(s), initialState()).editRatio).toBe("9:16");
+    const caps = parseCapabilities({ models: [{ id: "qwen-image-2.1", label: "Q" }], ratios: [{ id: "1:1", width: 1, height: 1 }] });
+    if (!caps) throw new Error("caps");
+    expect(reduce(s, { type: "capabilities", capabilities: caps }).editRatio).toBe(MATCH_REFERENCE);
   });
 });

@@ -4,7 +4,7 @@
  * the server receives is asserted in STORY_012's edit spec, where the submit happens.
  */
 import path from "node:path";
-import { expect, settledBox, test } from "./fixtures";
+import { expect, settledBox, submitAndWait, test } from "./fixtures";
 
 // Next.js adds its own (empty) role="alert" route announcer, so the composer's message is found by its class.
 const refusal = (page: import("@playwright/test").Page) => page.locator(".clone-composer-error[role=alert]");
@@ -18,7 +18,7 @@ async function upload(page: import("@playwright/test").Page, files: Parameters<i
   await (await chooser).setFiles(files);
 }
 
-test("attaching an image shows its thumbnail, enters image mode and hides the ratio; removing it brings the ratio back", async ({ page }) => {
+test("attaching an image shows its thumbnail and enters image mode; the ratio offers Match reference, and removing the image brings the plain ratio back", async ({ page }) => {
   await page.goto("/");
   await upload(page, FIXTURE);
   const thumb = page.getByTestId("reference-thumb");
@@ -26,7 +26,9 @@ test("attaching an image shows its thumbnail, enters image mode and hides the ra
   const image = thumb.getByRole("img", { name: "reference.png" });
   await expect.poll(() => image.evaluate((el) => (el instanceof HTMLImageElement ? el.complete && el.naturalWidth : 0))).toBe(32);
   await expect(page.getByTestId("image-pill")).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Aspect ratio" })).toHaveCount(0);
+  // STORY_017 (owner's request, a departure): the ratio stays, reading Match reference by default. This replaces the
+  // STORY_011 assertion that it disappears, which followed the reference.
+  await expect(page.getByRole("combobox", { name: "Aspect ratio" })).toHaveText("Match reference");
   await expect(page.getByRole("combobox", { name: "Image model" })).toBeVisible();
 
   const box = await settledBox(thumb);
@@ -74,4 +76,20 @@ test("narrow: the remove button has a 44px touch area", async ({ page }, info) =
   expect(box.width + 30).toBeGreaterThanOrEqual(44);
   await remove.tap();
   await expect(page.getByTestId("reference-thumb")).toHaveCount(0);
+});
+
+test("an edit can choose a ratio, and the server receives it (STORY_017)", async ({ page, stub }) => {
+  await page.route("**/api/jobs", (route) => (route.request().method() === "POST" ? route.continue({ headers: { ...route.request().headers(), "x-stub-script": "done-after-1-poll" } }) : route.continue()));
+  await page.goto("/");
+  await upload(page, FIXTURE);
+  const trigger = page.getByRole("combobox", { name: "Aspect ratio" });
+  await trigger.click();
+  const options = page.getByRole("listbox", { name: "Aspect ratio" }).getByRole("option");
+  await expect(options).toHaveText(["Match reference", "1:1", "2:3", "3:2", "3:4", "4:3", "16:9", "9:16"]);
+  await page.getByRole("option", { name: "1:1" }).click();
+  await expect(trigger).toHaveText("1:1");
+  await page.getByLabel("Prompt").fill("make it square");
+  await submitAndWait(page, () => page.getByRole("button", { name: "Send" }).click());
+  const id = decodeURIComponent(new URL(page.url()).pathname.replace(/^\/g\//, ""));
+  expect(await stub.received(id)).toMatchObject({ request: { ratio: "1:1", referenceImages: 1 } });
 });

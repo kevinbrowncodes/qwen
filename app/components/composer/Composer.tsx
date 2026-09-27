@@ -6,7 +6,7 @@
  * (lib/composer-state.ts); options survive a reload within the session.
  */
 import { useEffect, useReducer, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent } from "react";
-import { canSend, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, showsRatio, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
+import { activeRatio, canSend, FALLBACK_CAPABILITIES, initialState, MATCH_REFERENCE, parseCapabilities, reduce, restore, serialize, shortModelLabel, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
 import { useNarrow } from "@/lib/use-narrow";
 import { Dropdown } from "../Dropdown";
 import { Icon } from "../Icon";
@@ -78,6 +78,7 @@ export function Composer({ onSubmit, externalError = null, busy = false, running
       if (back.mode === "image") dispatch({ type: "enterImage" });
       dispatch({ type: "setModel", model: back.model });
       dispatch({ type: "setRatio", ratio: back.ratio });
+      dispatch({ type: "setEditRatio", ratio: back.editRatio });
       return;
     }
     try {
@@ -246,18 +247,20 @@ export function Composer({ onSubmit, externalError = null, busy = false, running
                       }}
                       placement={placement}
                     />
-                    {showsRatio(state) ? (
-                      <Dropdown
-                        label="Aspect ratio"
-                        display={<span>{state.ratio}</span>}
-                        items={caps.ratios.map((r) => ({ id: r.id, label: r.id, icon: RATIO_ICON(r.id) }))}
-                        selected={state.ratio}
-                        onSelect={(id) => {
-                          dispatch({ type: "setRatio", ratio: id });
-                        }}
-                        placement={placement}
-                      />
-                    ) : null}
+                    {/* Always shown in image mode (STORY_017); with a reference, "Match reference" leads and is the default. */}
+                    <Dropdown
+                      label="Aspect ratio"
+                      display={<span>{activeRatio(state) === MATCH_REFERENCE ? "Match reference" : activeRatio(state)}</span>}
+                      items={[
+                        ...(state.references.length > 0 ? [{ id: MATCH_REFERENCE, label: "Match reference", icon: "qwpcicon-aiPicture" }] : []),
+                        ...caps.ratios.map((r) => ({ id: r.id, label: r.id, icon: RATIO_ICON(r.id) })),
+                      ]}
+                      selected={activeRatio(state)}
+                      onSelect={(id) => {
+                        dispatch(state.references.length > 0 ? { type: "setEditRatio", ratio: id } : { type: "setRatio", ratio: id });
+                      }}
+                      placement={placement}
+                    />
                   </div>
                 </div>
                 <div className="message-input-right-button">{sendButton}</div>

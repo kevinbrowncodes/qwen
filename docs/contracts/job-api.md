@@ -1,6 +1,6 @@
 # Job API contract: create, then status, then result
 
-**Version 1 (2026-09-26, STORY_006).** This is the one protocol the UI speaks to an image generation server. Two servers implement it:
+**Version 1.1 (2026-09-27, STORY_017; v1 2026-09-26, STORY_006).** v1.1 lets an edit choose its ratio. This is the one protocol the UI speaks to an image generation server. Two servers implement it:
 - the **stub** (`tools/stub-generation-server/`, STORY_006), with scripted outcomes for the test gate;
 - the **model server** on the Spark (`spark/`, EPIC_004), in front of Qwen-Image-2.1.
 
@@ -33,7 +33,7 @@ The browser never calls either directly. It calls the app's own routes (STORY_00
 
 - `ratios` lists the seven ratios in the reference's order: `1:1`, `2:3`, `3:2`, `3:4`, `4:3`, `16:9`, `9:16`.
 - `width` and `height` are what the server produces for a text-to-image job at that ratio. The model server's are about 1 megapixel, chosen from measurements on the Spark (STORY_014); the stub reports the same.
-- An edit takes its size from the first reference image, so `ratio` does not apply to it.
+- An edit takes the shape of its last reference at about 1 MP, unless it names a ratio (v1.1), in which case it is produced at that ratio's size.
 
 ## `POST /jobs`: create a job
 
@@ -48,7 +48,7 @@ or `multipart/form-data`, with the same fields as text parts plus **0–10** `re
 | Field | Rule |
 | --- | --- |
 | `prompt` | string, 1 to `prompt.maxChars` characters after trimming; required |
-| `ratio` | one of `ratios[].id`; required without reference images; ignored, and echoed as `null`, with them |
+| `ratio` | one of `ratios[].id`; required without reference images. With them (v1.1) it is optional: absent, empty or `"match"` takes the last reference's shape and is echoed as `null`; a ratio id produces that ratio's size and is echoed as sent; anything else is `400 unsupported_option` |
 | `model` | one of `models[].id`; optional, defaults to the first |
 | `seed` | integer from 0 to 4294967295; optional. The server draws one when absent and echoes the one used |
 | `referenceImage` | multipart file parts, 0 to `referenceImages.max`, each one of `referenceImages.types` and at most `referenceImages.maxBytes`; order is meaningful |
