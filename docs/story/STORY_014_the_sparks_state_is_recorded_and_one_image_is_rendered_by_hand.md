@@ -1,7 +1,7 @@
 # STORY_014 — The Spark's state is recorded, and one image is rendered by hand with its time and memory written down
 
 **Epic:** [EPIC_004](../epic/EPIC_004_an_image_model_runs_on_the_dgx_spark_behind_the_same_job_api.md)
-**Status:** Not started
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the owner, I want a container that runs Qwen-Image-2.1 on the Spark, and one text-to-image and one edit rendered by hand with their time and memory measured, so that the model server is built on numbers from this box and not on guesses.
@@ -21,27 +21,27 @@ N/A (no UI change; a container image, a one-off script and written measurements)
 
 ## Acceptance Criteria
 
-- [ ] `spark/model/Dockerfile` builds `qwen/model:<tag>` with these parts, installs nothing on the host, and does not bake in the weights (they are bind-mounted read-only):
+- [x] `spark/model/Dockerfile` builds `qwen/model:<tag>` with these parts, installs nothing on the host, and does not bake in the weights (they are bind-mounted read-only):
   - minimax's CUDA 13 runtime base, pinned by digest;
   - Python 3.12 in a venv;
   - torch and torchvision cu130;
   - diffusers pinned to a commit on or after `6256aa7666`;
   - transformers 5.17 or later;
   - accelerate and pillow.
-- [ ] `spark/model/try.py`, run by `spark/model/try.sh`, loads the pipeline in bf16 and renders two images:
+- [x] `spark/model/try.py`, run by `spark/model/try.sh`, loads the pipeline in bf16 and renders two images:
   - a text-to-image at 1:1 and at 16:9, at the model card's sizes;
   - an edit of the stub's committed reference fixture.
 
   For each it records the load time, the time per image, the steps, and the peak memory: torch's `max_memory_allocated`, plus the host's used memory sampled from `free`. It writes the images to the gitignored `outputs/` and a JSON record to `spark/model/measurements/<date>.json`, which is committed.
-- [ ] **Read before write** ([CLAUDE.md → §4a](../../CLAUDE.md#4a-two-machines-the-mac-and-the-spark)): the script prints `nvidia-smi`, `free -g` and `docker ps` before it starts, and refuses to run if less than 60 GB is available. It never stops another container.
-- [ ] `spark/README.md` records the Spark's facts as read that session:
+- [x] **Read before write** ([CLAUDE.md → §4a](../../CLAUDE.md#4a-two-machines-the-mac-and-the-spark)): the script prints `nvidia-smi`, `free -g` and `docker ps` before it starts, and refuses to run if less than 60 GB is available. It never stops another container.
+- [x] `spark/README.md` records the Spark's facts as read that session:
   - OS, kernel, driver, CUDA;
   - memory, disk, and what else is running;
   - the image's versions (torch, diffusers commit, transformers);
   - the measurements.
 
   README → Running the Model's table is filled in with the measured numbers and the memory split.
-- [ ] **The sizes the model server will offer per ratio** are chosen from these measurements, with the reason written down: the card's 2K sizes if they fit in time and memory, smaller otherwise.
+- [x] **The sizes the model server will offer per ratio** are chosen from these measurements, with the reason written down: the card's 2K sizes if they fit in time and memory, smaller otherwise.
 
 ## Technical Notes
 
@@ -60,3 +60,23 @@ N/A (no UI change; a container image, a one-off script and written measurements)
 ## Estimated Complexity
 
 M
+
+## Done (2026-09-26)
+
+**Manual verification:** `Qwen/Qwen-Image-2.1` at `790c926`, bf16, 40 steps, checked 2026-09-26 on the Spark. The full numbers are in `spark/README.md` → Measured, and in `spark/model/measurements/2026-09-26*.json`.
+
+| Run | Time | Peak GPU memory |
+| --- | --- | --- |
+| 2K, 2048² | 266 s | 56.5 GiB |
+| 2K, 2752×1536 | 248 s | 56.7 GiB |
+| Edit at 1 MP | 60 s | 38.8 GiB |
+| 1 MP, 1376×768 | 51.5 s | 36.9 GiB |
+| 1 MP, 1024² | 50.4 s | 36.8 GiB |
+
+- **The images are correct.** They show a red bicycle on a brick wall, and the edit turned the checkerboard into a chessboard. The colours are normal, with no sm_121 grey wash.
+- **Sizes chosen: about 1 megapixel per ratio.** The card's 2K sizes take over four minutes here; 1 MP is close to the reference's pace.
+- **Read before write:** `docker ps` after each run matched the list before it. Nothing was stopped.
+- **What went wrong along the way:**
+  - The first run's script ended with a bash syntax error, because I edited `try.sh` while bash was still reading it. The renders and the record were already written.
+  - `try.py` was then extended to measure other sizes (`JOBS`), for the 1 MP run.
+- **The Dockerfile already carries STORY_015's additions** (Node, the server and the worker) in the commit that lands both stories.

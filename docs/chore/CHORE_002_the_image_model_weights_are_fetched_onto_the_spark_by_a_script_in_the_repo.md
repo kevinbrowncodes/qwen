@@ -1,6 +1,6 @@
 # CHORE_002 — The image model's weights are fetched onto the Spark by a script in the repo
 
-**Status:** In progress (download started 2026-09-26 18:20)
+**Status:** Done (2026-09-26)
 **Relates to:** [EPIC_004](../epic/EPIC_004_an_image_model_runs_on_the_dgx_spark_behind_the_same_job_api.md)
 
 ## Summary
@@ -14,10 +14,14 @@ The owner expected the weights to be on the Spark already. A search of the whole
 ## Changes
 
 - [x] `spark/fetch-weights.sh`: the pinned repo and revision; a detached container named `qwen-weights-fetch`; the HF token file mounted read-only when present and never printed; a `status` subcommand; a refusal when a container of that name already exists.
-- [ ] The download finishes and the transformer, text encoder and VAE shards are all present (checked against the repo's file list).
-- [ ] README → Running the Model records the checkpoint, the revision, the path and the size on disk.
+- [x] The download finishes and the transformer, text encoder and VAE shards are all present (checked against the repo's file list).
+- [x] README → Running the Model records the checkpoint, the revision, the path and the size on disk.
 
 ## Testing
 
 - **Unit / integration / e2e**: N/A. This is a host-side wrapper around `docker run` and `hf download`, with no logic of its own beyond argument handling. Testing it would mean mocking docker, which proves nothing about the fetch. It is linted with `shellcheck` from the official `koalaman/shellcheck` image.
 - **Manual**: `spark/fetch-weights.sh status` reads `fetch: not running`, `docker logs qwen-weights-fetch` ends with `fetch: done`, and every file in the repo's tree is present at the expected size.
+
+## Done (2026-09-26)
+
+The download finished with "fetch: done": 28 files, 33.13 GB. Every file's size matches the repo tree; SHA-256 was not checked. The first attempt failed at once, because `hf` was not on the container's PATH. The script now sets PATH. `README.md` → Running the Model names the checkpoint, the revision and the path.

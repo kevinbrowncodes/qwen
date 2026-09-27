@@ -1,0 +1,6 @@
+# The model image's build context (spark/): code only, never outputs or measurements' images.
+data
+model/measurements
+model-server/node_modules
+model-server/coverage
+**/*.png

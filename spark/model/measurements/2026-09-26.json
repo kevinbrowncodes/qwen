@@ -1,0 +1,58 @@
+{
+  "date": "2026-09-27T00:28:55+00:00",
+  "model": "Qwen/Qwen-Image-2.1",
+  "revision": "790c92633540aa0cb11d9abf19eb46d861714758",
+  "torch": "2.11.0+cu130",
+  "cuda": "13.0",
+  "device": "NVIDIA GB10",
+  "capability": [
+    12,
+    1
+  ],
+  "diffusers_commit": "e0abab83b5df05de9e7abd788643c1a7c1e42e28",
+  "dtype": "bfloat16",
+  "steps": 40,
+  "true_cfg_scale": 1.0,
+  "host_used_gib_before": 14.0,
+  "runs": [
+    {
+      "name": "t2i-1x1",
+      "size": [
+        2048,
+        2048
+      ],
+      "seconds": 265.6,
+      "seconds_per_step": 6.64,
+      "cuda_peak_gib": 56.5,
+      "output": "/outputs/story014-t2i-1x1.png"
+    },
+    {
+      "name": "t2i-16x9",
+      "size": [
+        2752,
+        1536
+      ],
+      "seconds": 248.3,
+      "seconds_per_step": 6.21,
+      "cuda_peak_gib": 56.7,
+      "output": "/outputs/story014-t2i-16x9.png"
+    },
+    {
+      "name": "edit",
+      "size": [
+        1024,
+        1024
+      ],
+      "seconds": 59.9,
+      "seconds_per_step": 1.5,
+      "cuda_peak_gib": 38.8,
+      "output": "/outputs/story014-edit.png"
+    }
+  ],
+  "diffusers": "0.41.0.dev0",
+  "transformers": "5.17.0",
+  "load_seconds": 195.8,
+  "host_used_gib_after_load": 44.7,
+  "cuda_allocated_gib_after_load": 30.2,
+  "host_used_gib_peak": 89.3
+}

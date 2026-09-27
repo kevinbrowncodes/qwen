@@ -1,0 +1,47 @@
+{
+  "date": "2026-09-27T00:42:12+00:00",
+  "model": "Qwen/Qwen-Image-2.1",
+  "revision": "790c92633540aa0cb11d9abf19eb46d861714758",
+  "torch": "2.11.0+cu130",
+  "cuda": "13.0",
+  "device": "NVIDIA GB10",
+  "capability": [
+    12,
+    1
+  ],
+  "diffusers_commit": "e0abab83b5df05de9e7abd788643c1a7c1e42e28",
+  "dtype": "bfloat16",
+  "steps": 40,
+  "true_cfg_scale": 1.0,
+  "host_used_gib_before": 13.2,
+  "runs": [
+    {
+      "name": "t2i-16x9-1mp",
+      "size": [
+        1376,
+        768
+      ],
+      "seconds": 51.5,
+      "seconds_per_step": 1.29,
+      "cuda_peak_gib": 36.9,
+      "output": "/outputs/story014-t2i-16x9-1mp.png"
+    },
+    {
+      "name": "t2i-1x1-1mp",
+      "size": [
+        1024,
+        1024
+      ],
+      "seconds": 50.4,
+      "seconds_per_step": 1.26,
+      "cuda_peak_gib": 36.8,
+      "output": "/outputs/story014-t2i-1x1-1mp.png"
+    }
+  ],
+  "diffusers": "0.41.0.dev0",
+  "transformers": "5.17.0",
+  "load_seconds": 201.5,
+  "host_used_gib_after_load": 45.0,
+  "cuda_allocated_gib_after_load": 30.2,
+  "host_used_gib_peak": 54.3
+}
