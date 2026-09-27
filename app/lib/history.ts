@@ -21,13 +21,18 @@ export interface HistoryEntry {
 
 export type NewEntry = Pick<HistoryEntry, "id" | "prompt" | "ratio" | "model" | "referenceImages" | "createdAt">;
 
+/**
+ * Newest first by creation time. Entries created in the same millisecond keep the order they were added in, newest
+ * added first (the sort is stable and the newest is put in front), never an order decided by their random ids
+ * (BUG_005).
+ */
 function byNewest(a: HistoryEntry, b: HistoryEntry): number {
-  return b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
+  return b.createdAt.localeCompare(a.createdAt);
 }
 
 export function addEntry(entries: readonly HistoryEntry[], entry: NewEntry): HistoryEntry[] {
   const fresh: HistoryEntry = { ...entry, updatedAt: entry.createdAt, status: "queued", progress: 0 };
-  return [...entries.filter((e) => e.id !== entry.id), fresh].sort(byNewest);
+  return [fresh, ...entries.filter((e) => e.id !== entry.id)].sort(byNewest);
 }
 
 /** Folds a status answer into its entry. Unknown ids and answers after a terminal status change nothing. */

@@ -13,9 +13,16 @@ describe("history", () => {
     expect(list[1]).toMatchObject({ status: "queued", progress: 0, updatedAt: "2026-09-26T09:00:00Z" });
   });
 
-  it("orders entries created at the same moment by id, so the list is stable", () => {
-    const list = add(add([], "b", "2026-09-26T10:00:00Z"), "a", "2026-09-26T10:00:00Z");
-    expect(list.map((e) => e.id)).toEqual(["a", "b"]);
+  it("keeps entries created in the same millisecond newest-added first, whatever their ids (BUG_005)", () => {
+    const list = add(add([], "zzz", "2026-09-26T10:00:00.000Z"), "aaa", "2026-09-26T10:00:00.000Z");
+    expect(list.map((e) => e.id)).toEqual(["aaa", "zzz"]);
+    const other = add(add([], "aaa", "2026-09-26T10:00:00.000Z"), "zzz", "2026-09-26T10:00:00.000Z");
+    expect(other.map((e) => e.id)).toEqual(["zzz", "aaa"]);
+  });
+
+  it("keeps that order through a save and a load", () => {
+    const list = add(add([], "zzz", "2026-09-26T10:00:00.000Z"), "aaa", "2026-09-26T10:00:00.000Z");
+    expect(parseEntries(JSON.stringify(list)).map((e) => e.id)).toEqual(["aaa", "zzz"]);
   });
 
   it("folds status answers in, with the result and the error", () => {
