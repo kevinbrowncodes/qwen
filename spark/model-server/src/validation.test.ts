@@ -1,0 +1,60 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { HttpError, validateRequest } from "./validation.ts";
+import { CAPABILITIES } from "./capabilities.ts";
+
+interface Case {
+  readonly body: Record<string, unknown>;
+  readonly status: number;
+  readonly code?: string;
+  readonly field?: string;
+}
+
+function expand(body: Record<string, unknown>): Record<string, unknown> {
+  const p = body["prompt"];
+  const m = typeof p === "string" ? /^REPEAT_(\d+)$/.exec(p) : null;
+  return m?.[1] ? { ...body, prompt: "x".repeat(Number(m[1])) } : body;
+}
+
+const vectors: unknown = JSON.parse(readFileSync(new URL("../../../docs/contracts/validation-vectors.json", import.meta.url), "utf8"));
+const cases: Case[] = typeof vectors === "object" && vectors !== null && "cases" in vectors && Array.isArray(vectors.cases) ? (vectors.cases as Case[]) : [];
+
+describe("the contract's shared validation vectors", () => {
+  it("has cases to run", () => {
+    expect(cases.length).toBeGreaterThan(10);
+  });
+
+  for (const c of cases) {
+    it(`${JSON.stringify(c.body).slice(0, 70)} → ${String(c.status)}`, () => {
+      const run = (): unknown => validateRequest(CAPABILITIES, expand(c.body), [], () => 7);
+      if (c.status === 202) {
+        expect(run()).toMatchObject({ seed: typeof c.body["seed"] === "number" ? c.body["seed"] : 7 });
+        return;
+      }
+      try {
+        run();
+        expect.unreachable("should have refused");
+      } catch (e) {
+        expect(e).toBeInstanceOf(HttpError);
+        expect(e).toMatchObject({ status: c.status, code: c.code, field: c.field });
+      }
+    });
+  }
+});
+
+describe("references", () => {
+  const file = (contentType: string) => ({ field: "referenceImage", filename: "a", contentType, data: Buffer.from("x") });
+
+  it("an edit needs no ratio, and ignores one", () => {
+    expect(validateRequest(CAPABILITIES, { prompt: "x", ratio: "21:9" }, [file("image/png")], () => 1)).toMatchObject({ ratio: null, referenceImages: 1 });
+  });
+
+  it("refuses eleven, and a type that is not an image", () => {
+    expect(() => validateRequest(CAPABILITIES, { prompt: "x" }, Array.from({ length: 11 }, () => file("image/png")), () => 1)).toThrow(/at most 10/);
+    expect(() => validateRequest(CAPABILITIES, { prompt: "x" }, [file("image/gif")], () => 1)).toThrow(HttpError);
+  });
+
+  it("reads a seed sent as text in a multipart form", () => {
+    expect(validateRequest(CAPABILITIES, { prompt: "x", ratio: "1:1", seed: "42" }, [], () => 1).seed).toBe(42);
+  });
+});

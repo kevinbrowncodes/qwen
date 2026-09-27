@@ -23,17 +23,17 @@ export interface Capabilities {
   readonly maxReferences: number;
 }
 
-/** The reference's order (docs/recon/2026-09-26/interactions.md → The options). Sizes are the contract's placeholders. */
+/** The reference's order (docs/recon/2026-09-26/interactions.md → The options), at the model server's sizes (STORY_014). */
 export const FALLBACK_CAPABILITIES: Capabilities = {
   models: [{ id: "qwen-image-2.1", label: "Qwen-Image 2.1" }],
   ratios: [
-    { id: "1:1", width: 1328, height: 1328 },
-    { id: "2:3", width: 1056, height: 1584 },
-    { id: "3:2", width: 1584, height: 1056 },
-    { id: "3:4", width: 1140, height: 1472 },
-    { id: "4:3", width: 1472, height: 1140 },
-    { id: "16:9", width: 1664, height: 928 },
-    { id: "9:16", width: 928, height: 1664 },
+    { id: "1:1", width: 1024, height: 1024 },
+    { id: "2:3", width: 832, height: 1248 },
+    { id: "3:2", width: 1248, height: 832 },
+    { id: "3:4", width: 896, height: 1184 },
+    { id: "4:3", width: 1184, height: 896 },
+    { id: "16:9", width: 1376, height: 768 },
+    { id: "9:16", width: 768, height: 1376 },
   ],
   defaultRatio: "16:9",
   maxReferences: 10,

@@ -2,3 +2,4 @@ packages:
   - app
   - recon
   - tools/*
+  - spark/model-server

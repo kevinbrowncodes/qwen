@@ -24,7 +24,7 @@ The browser never calls either directly. It calls the app's own routes (STORY_00
 ```json
 {
   "models": [{ "id": "qwen-image-2.1", "label": "Qwen-Image 2.1" }],
-  "ratios": [{ "id": "1:1", "width": 1328, "height": 1328 }, { "id": "16:9", "width": 1664, "height": 928 }, "…"],
+  "ratios": [{ "id": "1:1", "width": 1024, "height": 1024 }, { "id": "16:9", "width": 1376, "height": 768 }, "…"],
   "defaultRatio": "16:9",
   "prompt": { "maxChars": 4000 },
   "referenceImages": { "max": 10, "maxBytes": 20971520, "types": ["image/png", "image/jpeg", "image/webp"] }
@@ -32,7 +32,7 @@ The browser never calls either directly. It calls the app's own routes (STORY_00
 ```
 
 - `ratios` lists the seven ratios in the reference's order: `1:1`, `2:3`, `3:2`, `3:4`, `4:3`, `16:9`, `9:16`.
-- `width` and `height` are what the server produces for a text-to-image job at that ratio. The model server's are Qwen-Image-2.1's; the stub's are placeholders.
+- `width` and `height` are what the server produces for a text-to-image job at that ratio. The model server's are about 1 megapixel, chosen from measurements on the Spark (STORY_014); the stub reports the same.
 - An edit takes its size from the first reference image, so `ratio` does not apply to it.
 
 ## `POST /jobs`: create a job
@@ -73,7 +73,7 @@ Errors:
   "updatedAt": "2026-09-26T22:00:35.000Z",
   "request": { "prompt": "…", "ratio": "16:9", "model": "qwen-image-2.1", "seed": 42, "referenceImages": 0 },
   "error": { "code": "moderated", "message": "…" },
-  "result": { "url": "/jobs/…/result", "mimeType": "image/png", "width": 1664, "height": 928, "sizeBytes": 1834221 }
+  "result": { "url": "/jobs/…/result", "mimeType": "image/png", "width": 1376, "height": 768, "sizeBytes": 1461575 }
 }
 ```
 

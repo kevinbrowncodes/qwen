@@ -97,6 +97,30 @@ importers:
         specifier: ^5.0.0
         version: 5.0.2(@types/node@22.20.4)(jsdom@30.1.1)(vite@8.3.1(@types/node@22.20.4))
 
+  spark/model-server:
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.39.5
+        version: 9.39.5
+      '@types/node':
+        specifier: ^22.20.2
+        version: 22.20.4
+      '@vitest/coverage-v8':
+        specifier: 5.0.0
+        version: 5.0.0(vitest@5.0.0)
+      eslint:
+        specifier: 9.39.5
+        version: 9.39.5
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      typescript-eslint:
+        specifier: 8.70.0
+        version: 8.70.0(eslint@9.39.5)(typescript@5.9.3)
+      vitest:
+        specifier: 5.0.0
+        version: 5.0.0(@types/node@22.20.4)(@vitest/coverage-v8@5.0.0)(jsdom@30.1.1)(vite@8.3.1(@types/node@22.20.4))
+
   tools/gate: {}
 
   tools/stub-generation-server:

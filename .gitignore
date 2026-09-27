@@ -24,6 +24,8 @@ models/
 # extension: every generator writes into one of these (CLAUDE.md §4a)
 generated/
 outputs/
+# The model server's results, uploads and job index on the Spark (STORY_015)
+spark/data/
 
 # Build and test output
 coverage/
@@ -40,3 +42,6 @@ test-results/
 .next/
 next-env.d.ts
 *.tsbuildinfo
+
+# Manual verification scripts against the real model (never part of the gate)
+app/.manual/

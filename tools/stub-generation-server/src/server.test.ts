@@ -231,3 +231,17 @@ describe("bearer auth", () => {
     }
   });
 });
+
+describe("the contract's shared validation vectors (STORY_015)", () => {
+  const vectors: unknown = JSON.parse(readFileSync(new URL("../../../docs/contracts/validation-vectors.json", import.meta.url), "utf8"));
+  const cases: Array<{ body: Record<string, unknown>; status: number; code?: string; field?: string }> =
+    typeof vectors === "object" && vectors !== null && "cases" in vectors && Array.isArray(vectors.cases) ? (vectors.cases as Array<{ body: Record<string, unknown>; status: number; code?: string; field?: string }>) : [];
+  it.each(cases)("$body → $status", async (c) => {
+    const p = c.body["prompt"];
+    const m = typeof p === "string" ? /^REPEAT_(\d+)$/.exec(p) : null;
+    const body = m?.[1] ? { ...c.body, prompt: "x".repeat(Number(m[1])) } : c.body;
+    const res = await create(body);
+    expect(res.status).toBe(c.status);
+    if (c.status !== 202) expect(await json(res)).toMatchObject({ error: { code: c.code, field: c.field } });
+  });
+});

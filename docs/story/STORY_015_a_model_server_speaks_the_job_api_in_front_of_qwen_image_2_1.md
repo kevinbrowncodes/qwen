@@ -1,7 +1,7 @@
 # STORY_015 — A model server speaks the job API in front of Qwen-Image-2.1
 
 **Epic:** [EPIC_004](../epic/EPIC_004_an_image_model_runs_on_the_dgx_spark_behind_the_same_job_api.md)
-**Status:** Not started (after STORY_014)
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the owner, I want a server on the Spark that speaks exactly the job API the UI already speaks to the stub, with Qwen-Image-2.1 behind it, so that pointing the app at it is a configuration change and nothing else.
@@ -16,25 +16,25 @@ N/A (no UI change; a server).
 
 ## Acceptance Criteria
 
-- [ ] **Two processes in one container:**
+- [x] **Two processes in one container:**
   - `spark/model-server/` (TypeScript, Node 26, no runtime dependencies) owns the contract: HTTP, validation, the job table, the queue, cancel, results on disk and bearer auth;
   - `spark/model/worker.py` owns the pipeline. It loads it once, then reads jobs as JSON lines on stdin and writes progress, done and failed as JSON lines on stdout.
 
   The server starts the worker and restarts it if it dies, failing any job the worker was running at that moment with `generation_failed`.
-- [ ] **The contract, exactly:**
+- [x] **The contract, exactly:**
   - `GET /health`, and `GET /capabilities`, whose sizes per ratio were chosen in STORY_014;
   - `POST /jobs`: JSON, or multipart with 0–10 references;
   - `GET /jobs/:id`, `DELETE /jobs/:id` and `GET /jobs/:id/result`;
   - the error shape and codes, and optional bearer auth (`MODEL_API_KEY`).
 
   The validation rules match the stub's (shared test vectors).
-- [ ] **One job at a time; the rest wait** in a FIFO as `queued`, and `POST /jobs` answers `503 busy` beyond 8 waiting. Progress is the worker's steps done over steps total, and it never decreases.
-- [ ] **Cancel works on both sides.** A queued job is removed at once. A running job is signalled to the worker, which stops at its next step. Either way, the job is `cancelled` from the `202` on.
-- [ ] **Results persist:**
+- [x] **One job at a time; the rest wait** in a FIFO as `queued`, and `POST /jobs` answers `503 busy` beyond 8 waiting. Progress is the worker's steps done over steps total, and it never decreases.
+- [x] **Cancel works on both sides.** A queued job is removed at once. A running job is signalled to the worker, which stops at its next step. Either way, the job is `cancelled` from the `202` on.
+- [x] **Results persist:**
   - PNGs are written under `OUTPUT_DIR` (gitignored `spark/data/outputs/` on the Spark);
   - a small JSON job index sits beside them, so finished results survive a restart;
   - jobs that were queued or running at a restart are marked `failed` with "The model server restarted".
-- [ ] **Moderation:** the model has no safety checker, so `moderated` is never produced. The contract allows that, and the README states it.
+- [x] **Moderation:** the model has no safety checker, so `moderated` is never produced. The contract allows that, and the README states it.
 
 ## Technical Notes
 
@@ -67,3 +67,15 @@ N/A (no UI change; a server).
 ## Estimated Complexity
 
 L
+
+## Done (2026-09-26)
+
+- **In the gate:** 41 model-server tests, covering the protocol, the job table, validation (the shared vectors, which the stub now runs too), and the server end to end with a fake worker. The fake worker covers queueing, cancel while running and while queued, a worker crash with restart, recovery from a restart, busy, and auth.
+- **Manual verification against the real model**, `Qwen/Qwen-Image-2.1` at `790c926`, 2026-09-26:
+  - text to image, 1376×768, done in 53 s, and the PNG fetched;
+  - a cancel at 25%, answered 202, with the worker free for the next job;
+  - an edit of that image ("make the lighthouse red and white striped") in 61 s, which changed only what was asked and kept the 16:9 shape.
+- **Found on the Spark and fixed:**
+  - The Node binary needs `libatomic1`, which the CUDA base lacks. The first container restart-looped on it; it is now in the image.
+  - A clean shutdown now leaves a running job to be reported as interrupted by the restart ("The model server restarted…"), rather than as "worker stopped".
+- **`moderated` never occurs,** because the model has no safety checker. The README says so.
