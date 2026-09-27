@@ -1,0 +1,41 @@
+# spark/compose.yaml — the model side of Qwen Local on the Spark (STORY_016). Project "qwen-spark".
+#
+#   model   the model server (spark/model-server) in front of Qwen-Image-2.1 (spark/model/worker.py), one GPU job at a
+#           time. On the docker network "qwen" as qwen-model:4120 for the app; on the host only at 127.0.0.1:4120.
+#
+# Start with spark/up.sh (it reads what is running and the memory available first). Weights are read-only; results,
+# uploads and the job index live in the gitignored spark/data/outputs.
+name: qwen-spark
+
+services:
+  model:
+    build:
+      context: .
+      dockerfile: model/Dockerfile
+      args:
+        UID: ${SPARK_UID:-1000}
+        GID: ${SPARK_GID:-1000}
+    image: qwen/model:dev
+    container_name: qwen-model
+    restart: unless-stopped
+    ipc: host
+    ports:
+      - "127.0.0.1:4120:4120"
+    environment:
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+    volumes:
+      - ../models/Qwen-Image-2.1:/weights:ro
+      - ./data/outputs:/outputs
+    networks: [qwen]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+networks:
+  qwen:
+    name: qwen
+    external: true

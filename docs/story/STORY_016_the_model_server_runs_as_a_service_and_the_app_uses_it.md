@@ -1,7 +1,7 @@
 # STORY_016 — The model server runs as a service on the Spark, and the app uses it
 
 **Epic:** [EPIC_004](../epic/EPIC_004_an_image_model_runs_on_the_dgx_spark_behind_the_same_job_api.md)
-**Status:** Not started (after STORY_015)
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the owner, I want the model server to start with the Spark and the app to point at it, so that opening http://localhost:3100 and pressing Send makes a real image.
@@ -16,16 +16,16 @@ N/A (no UI change; configuration and a service).
 
 ## Acceptance Criteria
 
-- [ ] `spark/compose.yaml` (project `qwen-spark`) runs the model server:
+- [x] `spark/compose.yaml` (project `qwen-spark`) runs the model server:
   - with the GPU, and with `restart: unless-stopped`;
   - with the weights mounted read-only and `spark/data/outputs` mounted read-write;
   - on a docker network `qwen` that the app's compose joins;
   - with no host port except `127.0.0.1:4120`, for checks on the Spark.
 
   `spark/up.sh` creates the network if needed, reads before it writes (prints what is running and the memory available, and refuses below 60 GB), and starts the service.
-- [ ] The app's `compose.yaml` joins the `qwen` network and sets `MODEL_BASE_URL=http://qwen-model:4120` by default. The model's address is still configuration, never a literal in the code.
-- [ ] After deploying both, a generation from the UI at http://localhost:3100 completes with a real image. That is recorded, with the time it took, in the Done note.
-- [ ] README → Running the Model says how to start, stop and check the model server, what it holds in memory, and where outputs go. README → Deployment gives the order: the model first, then the app.
+- [x] The app's `compose.yaml` joins the `qwen` network and sets `MODEL_BASE_URL=http://qwen-model:4120` by default. The model's address is still configuration, never a literal in the code.
+- [x] After deploying both, a generation from the UI at http://localhost:3100 completes with a real image. That is recorded, with the time it took, in the Done note.
+- [x] README → Running the Model says how to start, stop and check the model server, what it holds in memory, and where outputs go. README → Deployment gives the order: the model first, then the app.
 
 ## Testing Plan
 
@@ -43,3 +43,18 @@ N/A (no UI change; configuration and a service).
 ## Estimated Complexity
 
 S–M
+
+## Done (2026-09-26)
+
+**Manual verification through the deployed UI** (http://localhost:3100, desktop), `Qwen/Qwen-Image-2.1` at `790c926`, 2026-09-26:
+- a text to image, 1376×768, finished in **52 s**, and Download saved `qwen-<id>.png`;
+- Edit on that result ("make the bicycle bright blue") finished in **60 s**;
+- a generation left running while the owner went to My Library finished in the sidebar on its own, after the BUG_006 fix;
+- Stop during a run showed "Stopped.";
+- My Library listed every finished image.
+
+`docker ps` showed minimax's containers untouched throughout.
+
+**Found here:** [BUG_006](../bug/BUG_006_a_generation_nobody_watches_stays_running_in_history.md). A generation nobody was watching stayed "running" in history. It was invisible against the stub, whose jobs end in one or two polls.
+
+**Cold start:** `spark/up.sh` waits up to 6 minutes for the model to load (it measured 3.3). The app shows the server's "not reachable" or "busy" answer until then.

@@ -48,7 +48,7 @@ Work is planned as two phases:
 
 ## Project Structure
 
-Present today: `app/`, `tools/gate/`, `recon/`, `spark/`, `docs/`, `compose.yaml`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds weights on the Spark.
+Present today: `app/`, `tools/gate/`, `tools/stub-generation-server/`, `recon/`, `spark/` (model image, model server, worker, service), `docs/` (including `docs/contracts/`), `compose.yaml`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds weights on the Spark.
 
 ```
 app/          the UI
@@ -127,17 +127,27 @@ The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL
 
 ## Running the Model
 
-**Status (2026-09-26): nothing is on the Spark yet.** The EPIC_004 stories put a serving stack and weights there and fill in this section with measured numbers. Until then this section records the plan, not the state — verify on the Spark before relying on it.
+**Status (measured on the Spark on 2026-09-26; verify before relying on it):** Qwen-Image-2.1 serves from the `qwen-model` container. The app at http://localhost:3100 generates with it end to end.
 
 | Item | Value |
 | --- | --- |
-| Serving stack | TBD (EPIC_004) — Diffusers has day-0 support; ComfyUI support was not stated on the model card when read |
-| Model / checkpoint | Qwen-Image-2.1, precision to be measured |
-| Licence | Qwen Research License — **non-commercial only**; decided 2026-09-26, see below |
-| Memory split | to be measured (EPIC_004) |
-| Port / env vars | to be set (EPIC_004) |
+| Serving stack | The model server (`spark/model-server`, TypeScript, speaks [the job API contract](docs/contracts/job-api.md)) in front of a Python worker (`spark/model/worker.py`) running diffusers' `QwenImage21Pipeline`, both in the `qwen/model:dev` image (`spark/model/Dockerfile`) |
+| Model / checkpoint | `Qwen/Qwen-Image-2.1` @ `790c926`, bf16, 40 steps, no guidance (the card's default), in `models/Qwen-Image-2.1` (33.1 GB) |
+| Licence | Qwen Research License: **non-commercial only**. Decided 2026-09-26, see below |
+| Sizes served | About 1 megapixel per ratio: 1:1 1024², 16:9 1376×768, 9:16 768×1376, 4:3 1184×896, 3:4 896×1184, 3:2 1248×832, 2:3 832×1248. An edit takes its reference's shape at about 1 MP. |
+| Time per image | About **51–53 s** (text to image) and 60 s (edit) at 1 MP. The card's 2K sizes take 248–266 s, so they are not offered |
+| Memory | Peak **36.9 GiB** on the GPU at 1 MP (56.7 GiB at 2K); the host's used memory rose from 14 to about 54 GiB. A cold start loads for about 3.3 minutes |
+| Port / env vars | `qwen-model:4120` on the docker network `qwen` (host: `127.0.0.1:4120` only). The app reads `MODEL_BASE_URL` (default `http://qwen-model:4120`) and optionally `MODEL_API_KEY` |
+| Moderation | None: the model ships no safety checker, so a job never ends `moderated` |
 
-The Spark facts (OS, CUDA, memory, disk, what was already installed) are recorded in `spark/README.md` by the first EPIC_004 story before anything is changed.
+```bash
+spark/up.sh                            # start the model server (reads what runs first; refuses below 60 GiB free)
+curl -s 127.0.0.1:4120/health          # {"ok":true,...,"ready":true} once loaded
+docker logs -f qwen-model              # the server's and the worker's log
+docker compose -f spark/compose.yaml down   # stop it (frees about 37-54 GiB)
+```
+
+Results, uploads and the job index are in `spark/data/outputs/` (gitignored). The Spark facts and the measurements are in [spark/README.md](spark/README.md).
 
 **The target model is Qwen-Image-2.1** (owner's request, 2026-09-26). Facts read from its Hugging Face model card and LICENSE file on 2026-09-26:
 
@@ -151,4 +161,9 @@ Sources: [Qwen/Qwen-Image-2.1 model card](https://huggingface.co/Qwen/Qwen-Image
 
 ## Deployment
 
-Local only, on the Spark. The UI is deployed with `docker compose up -d --build app` (the `qwen-app` container on port 3100). The model is started by the scripts under `spark/` (EPIC_004). There is no CI; the gate runs locally (`tools/gate/run.sh`).
+Local only, on the Spark, in this order:
+
+1. `spark/up.sh`: the model server (`qwen-model`), which creates the docker network `qwen`.
+2. `docker compose up -d --build app`: the UI (`qwen-app` on port 3100), joined to that network.
+
+There is no CI; the gate runs locally (`tools/gate/run.sh`) and on every push to `develop` (the pre-push hook).

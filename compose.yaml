@@ -5,7 +5,9 @@
 #   app       the production image (app/Dockerfile) serving the built UI on port 3100    -> docker compose up -d app
 #
 # Only one of app-dev / app runs at a time (both publish 3100). Port 3000 on the Spark is the minimax app's; never
-# bind it. The model side is spark/ (EPIC_004); the UI reaches it through MODEL_BASE_URL only. SPARK_UID/SPARK_GID
+# bind it. The model side is spark/compose.yaml (STORY_016): the app joins its docker network "qwen" and reaches the
+# model server as qwen-model:4120 through MODEL_BASE_URL only (start the model first: spark/up.sh). The gate never
+# joins that network: every test targets the stub. SPARK_UID/SPARK_GID
 # are set by the scripts so files in the bind mount stay the owner's.
 name: qwen
 
@@ -41,9 +43,10 @@ services:
     volumes: *gate-mounts
     environment:
       HOME: /tmp/gate-home
-      MODEL_BASE_URL: ${MODEL_BASE_URL:-}
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-http://qwen-model:4120}
       MODEL_API_KEY: ${MODEL_API_KEY:-}
       HISTORY_FILE: /tmp/gate-home/history.json
+    networks: [default, qwen]
 
   app:
     build:
@@ -54,12 +57,19 @@ services:
     ports:
       - "${APP_PORT:-3100}:3100"
     environment:
-      MODEL_BASE_URL: ${MODEL_BASE_URL:-}
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-http://qwen-model:4120}
       MODEL_API_KEY: ${MODEL_API_KEY:-}
       HISTORY_FILE: /data/history.json
     volumes:
       - app-data:/data
+    networks: [default, qwen]
     restart: unless-stopped
+
+networks:
+  # Shared with the model side (spark/compose.yaml); created by spark/up.sh.
+  qwen:
+    name: qwen
+    external: true
 
 volumes:
   pnpm-store: {}

@@ -1,6 +1,6 @@
 # EPIC_004 — An image model runs on the DGX Spark behind the same job API
 
-**Status:** In progress (started 2026-09-26)
+**Status:** Done (2026-09-26). Qwen-Image-2.1 serves at about 1 MP, 51–60 s per image, behind the job API; the app uses it
 
 ## Goal
 
@@ -32,6 +32,6 @@ Drafted 2026-09-26, self-approved under the owner's overnight authorisation. Ser
 
 | # | Story | Status |
 | --- | --- | --- |
-| 014 | [The Spark's state is recorded, and one image is rendered by hand with its time and memory written down](../story/STORY_014_the_sparks_state_is_recorded_and_one_image_is_rendered_by_hand.md) | Not started |
-| 015 | [A model server speaks the job API in front of Qwen-Image-2.1](../story/STORY_015_a_model_server_speaks_the_job_api_in_front_of_qwen_image_2_1.md) | Not started |
-| 016 | [The model server runs as a service on the Spark, and the app uses it](../story/STORY_016_the_model_server_runs_as_a_service_and_the_app_uses_it.md) | Not started |
+| 014 | [The Spark's state is recorded, and one image is rendered by hand with its time and memory written down](../story/STORY_014_the_sparks_state_is_recorded_and_one_image_is_rendered_by_hand.md) | Done 2026-09-26 |
+| 015 | [A model server speaks the job API in front of Qwen-Image-2.1](../story/STORY_015_a_model_server_speaks_the_job_api_in_front_of_qwen_image_2_1.md) | Done 2026-09-26 |
+| 016 | [The model server runs as a service on the Spark, and the app uses it](../story/STORY_016_the_model_server_runs_as_a_service_and_the_app_uses_it.md) | Done 2026-09-26 |
