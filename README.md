@@ -134,7 +134,7 @@ The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL
 | Serving stack | The model server (`spark/model-server`, TypeScript, speaks [the job API contract](docs/contracts/job-api.md)) in front of a Python worker (`spark/model/worker.py`) running diffusers' `QwenImage21Pipeline`, both in the `qwen/model:dev` image (`spark/model/Dockerfile`) |
 | Model / checkpoint | `Qwen/Qwen-Image-2.1` @ `790c926`, bf16, 40 steps, no guidance (the card's default), in `models/Qwen-Image-2.1` (33.1 GB) |
 | Licence | Qwen Research License: **non-commercial only**. Decided 2026-09-26, see below |
-| Sizes served | About 1 megapixel per ratio: 1:1 1024², 16:9 1376×768, 9:16 768×1376, 4:3 1184×896, 3:4 896×1184, 3:2 1248×832, 2:3 832×1248. An edit takes its reference's shape at about 1 MP. |
+| Sizes served | About 1 megapixel per ratio: 1:1 1024², 16:9 1376×768, 9:16 768×1376, 4:3 1184×896, 3:4 896×1184, 3:2 1248×832, 2:3 832×1248. An edit takes its reference's shape at about 1 MP, or the ratio chosen for it (STORY_017). |
 | Time per image | About **51–53 s** (text to image) and 60 s (edit) at 1 MP. The card's 2K sizes take 248–266 s, so they are not offered |
 | Memory | Peak **36.9 GiB** on the GPU at 1 MP (56.7 GiB at 2K); the host's used memory rose from 14 to about 54 GiB. A cold start loads for about 3.3 minutes |
 | Port / env vars | `qwen-model:4120` on the docker network `qwen` (host: `127.0.0.1:4120` only). The app reads `MODEL_BASE_URL` (default `http://qwen-model:4120`) and optionally `MODEL_API_KEY` |
