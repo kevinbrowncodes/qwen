@@ -18,6 +18,9 @@ services:
       # run does not re-download them and nothing lands outside the repo.
       COREPACK_HOME: ${RECON_REPO}/recon/.cache/corepack
       COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      # The gate (tools/gate) installs the same workspace from its own store; when the two disagree pnpm asks before
+      # replacing node_modules, and with no terminal it aborts. CI=true lets it proceed (BUG_007).
+      CI: "true"
       npm_config_store_dir: ${RECON_REPO}/recon/.cache/pnpm-store
     volumes:
       - ${RECON_REPO}:${RECON_REPO}

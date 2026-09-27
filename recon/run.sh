@@ -75,4 +75,4 @@ else
 fi
 
 exec docker compose -f "$here/compose.yaml" run --rm --quiet-pull recon \
-  sh -c "corepack pnpm install --frozen-lockfile --reporter=silent && $run"
+  sh -c "corepack pnpm install --frozen-lockfile --reporter=append-only > /tmp/install.log 2>&1 || { cat /tmp/install.log >&2; exit 1; }; $run"
