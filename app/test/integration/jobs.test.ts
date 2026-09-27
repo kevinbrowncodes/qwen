@@ -237,6 +237,17 @@ describe("bearer auth", () => {
 });
 
 describe("history", () => {
+  it("brings an unwatched generation to its real state when history is read (BUG_006)", async () => {
+    const id = await create("done-after-1-poll");
+    // Nobody polls the job; reading history asks the server.
+    const listed = await json(await getHistory());
+    const entries = field(listed, "entries");
+    const list: unknown[] = Array.isArray(entries) ? entries : [];
+    const mine = list.find((e) => typeof e === "object" && e !== null && "id" in e && e.id === id);
+    expect(mine).toMatchObject({ status: "done" });
+    expect(stored()[0]).toMatchObject({ id, status: "done" });
+  });
+
   it("lists newest first, and removes a finished entry but not a running one", async () => {
     const first = await create("done-after-1-poll");
     const second = await create("cancel-midway");

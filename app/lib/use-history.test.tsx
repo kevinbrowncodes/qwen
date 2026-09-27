@@ -1,7 +1,7 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HistoryEntry } from "./history";
-import { announceHistoryChanged, useHistory, type History } from "./use-history";
+import { announceHistoryChanged, RUNNING_REFRESH_MS, useHistory, type History } from "./use-history";
 
 const entry = (id: string, createdAt = "2026-01-01T00:00:00Z"): HistoryEntry => ({ id, prompt: id, ratio: "1:1", model: "m", referenceImages: 0, createdAt, updatedAt: "t", status: "done", progress: 100 });
 
@@ -111,5 +111,30 @@ describe("useHistory", () => {
     const before = vi.mocked(fetch).mock.calls.length;
     announceHistoryChanged();
     expect(vi.mocked(fetch).mock.calls.length).toBe(before);
+  });
+});
+
+describe("while something runs (BUG_006)", () => {
+  it("reads history again every few seconds until nothing is running", async () => {
+    vi.useFakeTimers();
+    list = [{ ...entry("a"), status: "running" }];
+    const into: { current: History | null } = { current: null };
+    render(<Probe into={into} />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    const reads = (): number => calls.filter((c) => c.method === "GET").length;
+    const first = reads();
+    list = [entry("a")];
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RUNNING_REFRESH_MS);
+    });
+    expect(reads()).toBe(first + 1);
+    expect(into.current?.entries[0]?.status).toBe("done");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RUNNING_REFRESH_MS * 3);
+    });
+    expect(reads()).toBe(first + 1);
+    vi.useRealTimers();
   });
 });

@@ -9,6 +9,9 @@ import { parseEntries, type HistoryEntry } from "./history";
 
 export const HISTORY_CHANGED = "qwen:history-changed";
 
+/** While any generation is queued or running, history is read again this often (BUG_006). */
+export const RUNNING_REFRESH_MS = 5000;
+
 export function announceHistoryChanged(): void {
   window.dispatchEvent(new CustomEvent(HISTORY_CHANGED));
 }
@@ -51,6 +54,18 @@ export function useHistory(): History {
       window.removeEventListener(HISTORY_CHANGED, refresh);
     };
   }, []);
+
+  // A generation left running (the owner navigated away) still reaches its real state in the sidebar (BUG_006).
+  const running = entries.some((e) => e.status === "queued" || e.status === "running");
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(() => {
+      announceHistoryChanged();
+    }, RUNNING_REFRESH_MS);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [running]);
 
   const remove = useCallback(async (id: string): Promise<boolean> => {
     const res = await fetch(`/api/history/${encodeURIComponent(id)}`, { method: "DELETE" });
