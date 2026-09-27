@@ -1,7 +1,7 @@
 # STORY_003 — The reference's stylesheets, icons, fonts and brand assets are harvested into the repo
 
 **Epic:** [EPIC_001](../epic/EPIC_001_the_reference_image_generation_flow_is_captured_as_a_spec.md)
-**Status:** Done (2026-09-26), apart from the logo, which waits for the owner's `Qwen_files/`
+**Status:** Done (2026-09-26; the logo on 2026-09-27)
 **Created:** 2026-09-26, as "The reference's design tokens are measured, not eyeballed". **Rewritten before implementation twice on 2026-09-26.** The first rewrite followed the owner's decision to lift what renders ([CLAUDE.md → §3e](../../CLAUDE.md#3e-how-recon-is-recorded)). The second came when the Playwright session was withdrawn ([STORY_001 → Withdrawal](STORY_001_the_owner_signs_in_to_the_reference_once_and_every_recon_run_reuses_that_session.md#withdrawal-2026-09-26)). The harvest now works offline from what the owner saved in their own browser, not from a walk of the live site.
 
 As the assistant building the clone, I want the reference's stylesheets, icons and brand images copied into the repo, with a readable summary of the design tokens they define, so that clone stories build from the reference's own CSS and assets rather than from impressions of them.
@@ -64,7 +64,7 @@ docs/recon/2026-09-26/
   - the family stack the flow's elements resolve to (from the readings);
   - that it is a system stack with no web font to harvest;
   - that the only `@font-face` rules in the stylesheets are KaTeX's, which are out of scope.
-- [ ] **Brand:**
+- [x] **Brand:**
   - If `recon/out/2026-09-26/Qwen_files/qwen-logo-dark.svg` exists, it is copied to `assets/brand/`.
   - If it does not, the run finishes everything else and prints that the brand step is waiting for the owner to copy `Qwen_files/` over. This AC stays unticked until the file is there.
   - Only image files the page's markup names as a logo are taken. The app-download guide images are not.
@@ -141,3 +141,5 @@ M
 - **Manual render check:** the snapshot, opened from disk in headless Chromium at 1437×1031 with the harvested CSS and all network blocked, renders as the dark signed-in home: sidebar, heading, composer with its icons, "Owner" and a grey avatar. The first attempt rendered unstyled, which is how [BUG_002](../bug/BUG_002_the_snapshot_renders_unstyled_when_opened_from_disk.md) was found and fixed. The screenshot is in `recon/out/2026-09-26/render/` (gitignored).
 - **The owner's comparison with the live reference was deferred by the owner's choice (2026-09-26):** commit and push, then review.
 - Gate: `recon/run.sh typecheck` and `recon/run.sh test` (81 tests) were green, run by hand.
+
+**Logo, 2026-09-27:** the owner copied `Qwen_files/` onto the Spark. The harvest wrote `assets/brand/qwen-logo-dark.svg` (3,780 bytes, no script), and the identity guard reported clean. The Brand AC is ticked, and the app shows the logo (CHORE_003).

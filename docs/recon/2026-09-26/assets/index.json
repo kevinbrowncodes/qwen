@@ -1,6 +1,12 @@
 {
   "files": [
     {
+      "path": "brand/qwen-logo-dark.svg",
+      "source": "Qwen_files/qwen-logo-dark.svg (owner's saved page)",
+      "bytes": 3780,
+      "sha256": "0c23790eb8efc0e92657c2e9515af910c35a07448b0498110e62cac0bbe7c4a0"
+    },
+    {
       "path": "css/index17.css",
       "source": "https://assets.alicdn.com/g/qwenweb/qwen-chat-fe/0.3.11/css/index17.css",
       "bytes": 135,

@@ -22,7 +22,9 @@ export function Sidebar({ iconSet, onToggle, onNavigate }: { readonly iconSet: "
   return (
     <>
       <div className="sidebar-header-wrapper">
-        <span className="clone-logo-text">Qwen Local</span>
+        {/* The reference's own logo (harvested, STORY_003), styled by its .logo-img rule: 75×20. */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- a lifted SVG served as-is from public/ */}
+        <img className="logo-img" src="/reference/qwen-logo-dark.svg" alt="Qwen" />
         <button type="button" className="slide-switch" aria-label="Toggle sidebar" id="sidebar-toggle-button" onClick={onToggle}>
           <Icon id={`${iconSet}-sidebarLeft`} className="slide-switch-icon" />
         </button>

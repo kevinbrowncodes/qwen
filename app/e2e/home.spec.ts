@@ -23,6 +23,10 @@ test("desktop: the sidebar, the heading and the composer match the reference's m
   expect(await composer.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(44, 44, 44)");
 
   expect((await settledBox(page.getByTestId("sidebar"))).width).toBe(240);
+  // The reference's logo (CHORE_003): loaded, at its .logo-img size.
+  const logo = page.getByRole("img", { name: "Qwen" });
+  await expect.poll(() => logo.evaluate((el) => (el instanceof HTMLImageElement ? el.naturalWidth : 0))).toBeGreaterThan(0);
+  expect(await settledBox(logo)).toMatchObject({ width: 75, height: 20 });
   expect(await page.getByRole("heading", { name: "How can I help you?" }).evaluate((el) => getComputedStyle(el).fontSize)).toBe("24px");
   // The lifted stylesheet and sprite are served locally; nothing is fetched from the reference's hosts.
   expect(external).toEqual([]);

@@ -4,14 +4,6 @@
  * public/reference/reference.css.
  */
 
-/* Departure: the logo waits for the owner's Qwen_files/ (STORY_003); the name stands in its place. */
-.clone-logo-text {
-  font-size: 18px;
-  font-weight: 600;
-  color: #fafbff;
-  padding-left: 8px;
-}
-
 /* A reset for buttons that carry a reference class written for a non-button element. */
 .clone-icon-button {
   background: none;
