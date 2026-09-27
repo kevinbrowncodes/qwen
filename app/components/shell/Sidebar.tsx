@@ -1,9 +1,24 @@
 "use client";
+/**
+ * The sidebar (STORY_009 entries, STORY_013 history): New image, My Library with the two newest finished images
+ * (68×68, the reference's `.my-library-content-item`), and every generation grouped by day.
+ */
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { latestFinished, resultUrl } from "@/lib/history-view";
+import { useHistory } from "@/lib/use-history";
 import { Icon } from "../Icon";
+import { HistoryList } from "./HistoryList";
 
-/** The sidebar's MVP entries in the reference's markup (STORY_009); the history list arrives in STORY_013. */
 export function Sidebar({ iconSet, onToggle, onNavigate }: { readonly iconSet: "qwpcicon" | "appicon"; readonly onToggle: () => void; readonly onNavigate: () => void }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { entries, remove, stop } = useHistory();
+  const [now] = useState(() => new Date());
+  const activeId = pathname.startsWith("/g/") ? decodeURIComponent(pathname.slice(3)) : null;
+  const thumbs = latestFinished(entries);
+
   return (
     <>
       <div className="sidebar-header-wrapper">
@@ -27,7 +42,36 @@ export function Sidebar({ iconSet, onToggle, onNavigate }: { readonly iconSet: "
           </div>
         </Link>
       </div>
-      <div className="sidebar-new-list-content" />
+      <div className="sidebar-new-list-content">
+        {thumbs.length > 0 ? (
+          <div className="sidebar-entry-list">
+            <div className="my-library-content clone-library-thumbs">
+              {thumbs.map((e) => (
+                <Link key={e.id} href={`/g/${encodeURIComponent(e.id)}`} className="my-library-content-item" onClick={onNavigate} aria-label={`Open ${e.prompt}`} data-testid="library-thumb">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- a result from our own route */}
+                  <img src={resultUrl(e.id)} alt="" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        <HistoryList
+          entries={entries}
+          activeId={activeId}
+          now={now}
+          iconSet={iconSet}
+          onNavigate={onNavigate}
+          onStop={(id) => void stop(id)}
+          onDelete={(id) => {
+            void remove(id).then((removed) => {
+              if (removed && id === activeId) {
+                onNavigate();
+                router.push("/");
+              }
+            });
+          }}
+        />
+      </div>
     </>
   );
 }

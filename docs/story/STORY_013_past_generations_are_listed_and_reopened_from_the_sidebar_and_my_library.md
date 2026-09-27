@@ -1,7 +1,7 @@
 # STORY_013 — Past generations are listed in the sidebar and in My Library, and can be reopened, downloaded or removed
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md)
-**Status:** Not started (after STORY_012)
+**Status:** Done (2026-09-26)
 **Created:** 2026-09-26 (self-approved under the owner's overnight authorisation, 2026-09-26)
 
 As the owner, I want every generation listed in the sidebar by its prompt, and a My Library page with a grid of every finished image, so that I can get back to, download or delete anything I made.
@@ -63,12 +63,12 @@ After STORY_012 generations run and can be reopened at `/g/<id>`. `GET /api/hist
 
 ## Acceptance Criteria
 
-- [ ] The sidebar lists history newest first, grouped by day, titled by the prompt truncated with an ellipsis, for every status. A running item shows a small spinner. Clicking one opens `/g/<id>`, and the current one is highlighted.
-- [ ] The sidebar's My Library shows up to two thumbnails of the latest finished images. Clicking the head opens `/library`.
-- [ ] `/library` shows every finished image (status done) in a masonry grid: 276px cards on desktop, and 2 columns at narrow. Each card opens its generation, and its Download links to `result?download=1`.
-- [ ] Delete in a row's menu asks for confirmation, calls `DELETE /api/history/:id`, removes the row and card, and moves to `/` if the deleted one was open. A running generation's menu offers "Stop" instead (STORY_012).
-- [ ] The list refreshes after a submit, and when a generation reaches a terminal state, without a page reload. The write starts before the list changes locally ([CLAUDE.md → §4c](../../CLAUDE.md#4c-lessons-carried-over)).
-- [ ] The empty states render as sketched.
+- [x] The sidebar lists history newest first, grouped by day, titled by the prompt truncated with an ellipsis, for every status. A running item shows a small spinner. Clicking one opens `/g/<id>`, and the current one is highlighted.
+- [x] The sidebar's My Library shows up to two thumbnails of the latest finished images. Clicking the head opens `/library`.
+- [x] `/library` shows every finished image (status done) in a masonry grid: 276px cards on desktop, and 2 columns at narrow. Each card opens its generation, and its Download links to `result?download=1`.
+- [x] Delete in a row's menu asks for confirmation, calls `DELETE /api/history/:id`, removes the row and card, and moves to `/` if the deleted one was open. A running generation's menu offers "Stop" instead (STORY_012).
+- [x] The list refreshes after a submit, and when a generation reaches a terminal state, without a page reload. The write starts before the list changes locally ([CLAUDE.md → §4c](../../CLAUDE.md#4c-lessons-carried-over)).
+- [x] The empty states render as sketched.
 
 ## Testing Plan
 
@@ -89,3 +89,26 @@ After STORY_012 generations run and can be reopened at `/g/<id>`. `GET /api/hist
 ## Estimated Complexity
 
 M
+
+## Done (2026-09-26)
+
+**Side by side** (ours measured in the gate image; reference values from `my-library@1437.json` and `@393.json`):
+
+| Element | Reference | Ours | Delta |
+| --- | --- | --- | --- |
+| Sidebar thumbnails | 24,188, 68×68 | 24,152, 68×68 | y −36: ours has no Search row above (a departure) |
+| My Library title | 260,24, 16px/500, in the top bar | 260,21 (text), 16px/500, in the top bar | y −3 |
+| Library grid | 405,148, 860 wide, 276px cards | 406,148, 860 wide, 276px cards | x +1 |
+| Phone grid | 2 columns of 180, 8px gap, Download bar always shown | 2 columns, 8px gap, bar always shown, 44px target | the column width follows the viewport |
+
+**Corrections while building:**
+- **The library page's own stylesheet was not among the files the owner's save loaded,** so its look is ours, built from the readings. The reference's `.item-card` and `.masonry-grid` rules are sized by its JavaScript masonry (CSS variables we do not set), and they halved our phone cards. Our cards use only our own classes.
+- **The reference hides a row's "…" (`display: none`) and shows it from its JavaScript.** Ours shows it on hover or focus, while its menu is open, and always on touch. It sits above the row's link.
+- **Deleting the generation that is open closes the phone drawer** as well as going home.
+- **The integration case "newest first after a second create"** was already covered by STORY_007's history test (`lists newest first…`), so it was not added again.
+
+**Tests:**
+- unit: `history-view` (days derived from the clock, titles, filters), `use-history` (read, refresh on the change event, remove only after the server agreed, stop), `HistoryList` (groups, active row, spinner, Stop, confirm or decline Delete, empty);
+- e2e: `history.spec.ts`, 4 cases at both widths. It empties history first, so its counts are of what it made.
+
+Gate green.

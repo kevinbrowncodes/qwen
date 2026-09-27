@@ -1,6 +1,6 @@
 # EPIC_003 — The image generation screen is rebuilt to match the reference
 
-**Status:** In progress (started 2026-09-26)
+**Status:** Done (2026-09-26), against the stub; the real model arrives in EPIC_004
 
 ## Goal
 
@@ -20,4 +20,4 @@ Every story cites the 2026-09-26 capture (`docs/recon/2026-09-26/`), and the dep
 | 010 | [The composer enters image mode and offers the model and the aspect ratio](../story/STORY_010_the_composer_enters_image_mode_and_offers_the_model_and_aspect_ratio.md) | Done 2026-09-26 |
 | 011 | [Reference images can be attached to the composer for an edit](../story/STORY_011_reference_images_can_be_attached_for_an_edit.md) | Done 2026-09-26 |
 | 012 | [A generation runs in place, from submit to the finished image, and can be cancelled](../story/STORY_012_a_generation_runs_in_place_from_submit_to_the_finished_image.md) | Done 2026-09-26 |
-| 013 | [Past generations are listed in the sidebar and in My Library, and can be reopened, downloaded or removed](../story/STORY_013_past_generations_are_listed_and_reopened_from_the_sidebar_and_my_library.md) | Not started |
+| 013 | [Past generations are listed in the sidebar and in My Library, and can be reopened, downloaded or removed](../story/STORY_013_past_generations_are_listed_and_reopened_from_the_sidebar_and_my_library.md) | Done 2026-09-26 |

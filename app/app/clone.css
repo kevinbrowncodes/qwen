@@ -303,3 +303,195 @@ html.mobile .clone-notice-action {
 html.mobile .clone-statement {
   display: none;
 }
+
+/* ---- History (STORY_013) ---- */
+/* The sidebar's two newest images, 68×68 r8 (my-library@1437: preview-thumb 68×68). */
+.clone-library-thumbs {
+  display: flex;
+  gap: 10px;
+  padding: 4px 12px 12px;
+}
+.clone-library-thumbs .my-library-content-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+html.mobile .clone-library-thumbs .my-library-content-item {
+  width: 76px;
+  height: 76px;
+  min-width: 76px;
+}
+.chat-item-drag .chat-item-drag-link {
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.clone-spinner {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-left: 6px;
+  border: 2px solid rgba(250, 251, 255, 0.24);
+  border-top-color: #fafbff;
+  border-radius: 50%;
+  animation: clone-spin 0.8s linear infinite;
+}
+@keyframes clone-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.clone-row-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+}
+.clone-danger {
+  color: rgb(255, 64, 64);
+}
+.clone-empty-list {
+  opacity: 0.8;
+}
+/* The reference hides a row's "…" (display: none) and reveals it from its JavaScript on hover; ours reveals it on
+   hover or focus, while its menu is open, and always on touch (capture notes, Phase 7). */
+.chat-item-drag .chat-item-drag-web {
+  z-index: 2;
+}
+.chat-item-drag:hover .chat-item-drag-web,
+.chat-item-drag:focus-within .chat-item-drag-web,
+.chat-item-drag .chat-item-drag-web.clone-menu-open,
+html.mobile .chat-item-drag .chat-item-drag-web {
+  display: flex;
+}
+
+/* My Library (my-library@1437: header 16px/500; grid 860 wide of 276px cards; hover bar 64 tall with a gradient). */
+.clone-library {
+  padding: 24px 20px 40px;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+/* The title sits in the top bar (my-library@1437: 260,24, 16px/500); the grid starts at y 148, below where the
+   reference's type tabs are (not rendered: a departure). */
+.clone-library-header .header-title {
+  margin: 0;
+  padding-left: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #fafbff;
+}
+html:not(.mobile) .clone-library {
+  padding-top: 94px;
+}
+.clone-masonry {
+  columns: 3 276px;
+  column-gap: 16px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+/* Ours fills its column: the reference's .item-card sizes come from its JavaScript masonry (CSS variables we do not
+   set), which otherwise shrink the card. */
+.clone-masonry .clone-card {
+  position: relative;
+  overflow: hidden;
+  break-inside: avoid;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 276px;
+}
+/* The reference sizes .item-card-img at 17.25rem for its own grid; ours fills the card. */
+.clone-card .clone-card-img {
+  display: block;
+  width: 100%;
+}
+.clone-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.library-item-operation {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 12px 16px;
+  box-sizing: border-box;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4));
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.clone-card:hover .library-item-operation,
+.clone-card:focus-within .library-item-operation {
+  opacity: 1;
+}
+.library-item-operation-icon {
+  pointer-events: auto;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+}
+html.mobile .clone-library {
+  padding: 13px 13px 40px;
+}
+html.mobile .clone-masonry {
+  columns: 2;
+  column-gap: 8px;
+}
+html.mobile .clone-masonry .clone-card {
+  margin-bottom: 8px;
+  max-width: none;
+}
+/* The phone header names the page on My Library (my-library@393: a centred 18.864px title). */
+html.mobile .header-mobile-title {
+  flex: 1;
+  text-align: center;
+  font-size: 1.179rem;
+  font-weight: 600;
+  color: #f7f8fc;
+  margin-right: 44px;
+}
+html.mobile .library-item-operation {
+  opacity: 1;
+  height: 42px;
+  padding: 8px;
+}
+html.mobile .library-item-operation-icon {
+  width: 44px;
+  height: 44px;
+  margin: -10px;
+}
+.clone-library-empty {
+  text-align: center;
+  margin-top: 20vh;
+  color: rgba(250, 251, 255, 0.5);
+  font-size: 14px;
+}
+.clone-library-empty-title {
+  color: #fafbff;
+  font-size: 16px;
+}
+.clone-library-new {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #2c2c2c;
+  border: 0.8px solid rgba(250, 251, 255, 0.12);
+  color: #fafbff;
+  text-decoration: none;
+}

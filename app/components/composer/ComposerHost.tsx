@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ComposerState } from "@/lib/composer-state";
 import { remember } from "@/lib/pending";
+import { announceHistoryChanged } from "@/lib/use-history";
 import { requestFrom, submitGeneration, type GenerationRequest } from "@/lib/submit";
 import { Composer, type Injected } from "./Composer";
 
@@ -24,7 +25,7 @@ export function useSubmit(): { readonly submit: (req: GenerationRequest) => Prom
       return false;
     }
     remember(outcome.id, req);
-    window.dispatchEvent(new CustomEvent("qwen:history-changed"));
+    announceHistoryChanged();
     router.push(`/g/${encodeURIComponent(outcome.id)}`);
     return true;
   };

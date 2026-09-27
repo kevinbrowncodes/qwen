@@ -9,6 +9,7 @@ import type { Injected } from "@/components/composer/Composer";
 import { resultFileName } from "@/lib/content-disposition";
 import { recall } from "@/lib/pending";
 import { useGeneration } from "@/lib/use-generation";
+import { announceHistoryChanged } from "@/lib/use-history";
 import { GenerationView } from "./GenerationView";
 
 interface Known {
@@ -30,7 +31,7 @@ export function GenerationPage({ id }: { readonly id: string }) {
   const [known] = useState<Known | null>(() => fromPending(id));
   const [inject, setInject] = useState<Injected | null>(null);
   const onTerminal = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("qwen:history-changed"));
+    announceHistoryChanged();
   }, []);
   const { job, problem, stop } = useGeneration(id, onTerminal);
   const { submit } = useSubmit();

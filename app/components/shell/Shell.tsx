@@ -4,6 +4,7 @@
  * sidebar (a drawer at phone width), top bar, main area. Markup from docs/recon/2026-09-26/snapshots/home-signed-in@1437.html
  * and the 393 readings; only the MVP's entries are rendered (see the story's Departures).
  */
+import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { useNarrow } from "@/lib/use-narrow";
 import { Icon } from "../Icon";
@@ -11,6 +12,7 @@ import { Sidebar } from "./Sidebar";
 
 export function Shell({ children }: { readonly children: ReactNode }) {
   const narrow = useNarrow();
+  const onLibrary = usePathname() === "/library";
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const sideHidden = narrow ? !drawerOpen : collapsed;
@@ -48,9 +50,13 @@ export function Shell({ children }: { readonly children: ReactNode }) {
                           <button type="button" className="clone-icon-button sidebar-toggle-icon" aria-label="Open sidebar" onClick={() => { setDrawerOpen(true); }}>
                             <Icon id="appicon-menu" />
                           </button>
-                          <div className="mms-trigger">
-                            <div className="mms-trigger__name">Qwen-Image 2.1</div>
-                          </div>
+                          {onLibrary ? (
+                            <div className="header-mobile-title">My Library</div>
+                          ) : (
+                            <div className="mms-trigger">
+                              <div className="mms-trigger__name">Qwen-Image 2.1</div>
+                            </div>
+                          )}
                         </div>
                         <div className="header-right" />
                       </div>
@@ -64,11 +70,17 @@ export function Shell({ children }: { readonly children: ReactNode }) {
                               <Icon id="qwpcicon-sidebarLeft" className="slide-switch-icon" />
                             </button>
                           ) : null}
-                          <div className="wms-trigger" aria-label="Model">
-                            <div className="wms-trigger__content">
-                              <div className="wms-trigger__text">Qwen-Image 2.1</div>
+                          {onLibrary ? (
+                            <div className="header-route clone-library-header">
+                              <h1 className="header-title">My Library</h1>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="wms-trigger" aria-label="Model">
+                              <div className="wms-trigger__content">
+                                <div className="wms-trigger__text">Qwen-Image 2.1</div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="header-right" id="qwen-chat-header-right" />
                       </div>
