@@ -24,8 +24,9 @@ export function Shell({ children }: { readonly children: ReactNode }) {
         <div className="sidebar-wrapper">
           {narrow && drawerOpen ? <div className="clone-drawer-mask" data-testid="drawer-backdrop" onClick={() => { setDrawerOpen(false); }} /> : null}
           <div className={sideHidden ? "sidebar sidebar-collapse" : "sidebar"} id="sidebar">
-            <div className={`sidebar-side side-mobile-width${sideHidden ? " sidebar-hide-side" : ""}`} data-testid="sidebar" aria-hidden={sideHidden}>
+            <div className={`sidebar-side side-mobile-width${sideHidden ? " sidebar-hide-side" : ""}`} data-testid="sidebar" aria-hidden={narrow && !drawerOpen}>
               <Sidebar
+                rail={!narrow && collapsed}
                 iconSet={iconSet}
                 onToggle={() => {
                   if (narrow) setDrawerOpen(false);
@@ -65,11 +66,6 @@ export function Shell({ children }: { readonly children: ReactNode }) {
                     <header className="header-desktop">
                       <div className="header-content" id="qwen-chat-header-content">
                         <div className="header-left" id="qwen-chat-header-left">
-                          {collapsed ? (
-                            <button type="button" className="slide-switch" aria-label="Toggle sidebar" onClick={() => { setCollapsed(false); }}>
-                              <Icon id="qwpcicon-sidebarLeft" className="slide-switch-icon" />
-                            </button>
-                          ) : null}
                           {onLibrary ? (
                             <div className="header-route clone-library-header">
                               <h1 className="header-title">My Library</h1>

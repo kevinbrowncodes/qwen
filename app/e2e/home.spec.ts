@@ -32,13 +32,19 @@ test("desktop: the sidebar, the heading and the composer match the reference's m
   expect(external).toEqual([]);
 });
 
-test("desktop: the sidebar toggle collapses and restores the sidebar", async ({ page }, info) => {
+test("desktop: the sidebar collapses to the reference's 60px icon rail and expands again (BUG_008)", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop", "desktop layout");
   await page.goto("/");
-  await page.getByRole("button", { name: "Toggle sidebar" }).first().click();
-  await expect(page.getByTestId("sidebar")).toHaveAttribute("aria-hidden", "true");
-  await page.getByRole("button", { name: "Toggle sidebar" }).first().click();
-  await expect(page.getByTestId("sidebar")).toHaveAttribute("aria-hidden", "false");
+  await page.getByRole("button", { name: "Toggle sidebar" }).click();
+  await expect(page.getByTestId("sidebar-rail")).toBeVisible();
+  expect((await settledBox(page.locator("#sidebar"))).width).toBe(60);
+  await expect(page.getByRole("link", { name: "New image" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "My Library" })).toBeVisible();
+  await expect(page.getByText("All images")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Toggle sidebar" })).toHaveCount(1);
+  await page.getByRole("button", { name: "Toggle sidebar" }).click();
+  expect((await settledBox(page.locator("#sidebar"))).width).toBe(240);
+  await expect(page.getByText("All images")).toBeVisible();
 });
 
 test("narrow: the drawer opens from the menu and closes from the backdrop; the composer is pinned at the bottom", async ({ page }, info) => {

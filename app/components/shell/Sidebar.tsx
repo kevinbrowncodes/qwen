@@ -11,13 +11,30 @@ import { useHistory } from "@/lib/use-history";
 import { Icon } from "../Icon";
 import { HistoryList } from "./HistoryList";
 
-export function Sidebar({ iconSet, onToggle, onNavigate }: { readonly iconSet: "qwpcicon" | "appicon"; readonly onToggle: () => void; readonly onNavigate: () => void }) {
+export function Sidebar({ iconSet, onToggle, onNavigate, rail = false }: { readonly iconSet: "qwpcicon" | "appicon"; readonly onToggle: () => void; readonly onNavigate: () => void; readonly rail?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { entries, remove, stop } = useHistory();
   const [now] = useState(() => new Date());
   const activeId = pathname.startsWith("/g/") ? decodeURIComponent(pathname.slice(3)) : null;
   const thumbs = latestFinished(entries);
+
+  // Collapsed on desktop: the reference's 60px icon rail (BUG_008), not the full sidebar clipped.
+  if (rail) {
+    return (
+      <div className="clone-rail" data-testid="sidebar-rail">
+        <button type="button" className="slide-switch" aria-label="Toggle sidebar" id="sidebar-toggle-button" onClick={onToggle}>
+          <Icon id={`${iconSet}-sidebarLeft`} className="slide-switch-icon" />
+        </button>
+        <Link href="/" aria-label="New image" className="clone-rail-item" onClick={onNavigate}>
+          <Icon id={`${iconSet}-newDialogue`} />
+        </Link>
+        <Link href="/library" aria-label="My Library" className="clone-rail-item" onClick={onNavigate}>
+          <Icon id={`${iconSet}-library`} />
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>
