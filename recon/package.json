@@ -7,7 +7,8 @@
     "test": "vitest run",
     "login": "node src/login.ts",
     "check": "node src/check.ts",
-    "reference-sync": "node src/reference-sync.ts"
+    "reference-sync": "node src/reference-sync.ts",
+    "app-icons": "node src/app-icons.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.2",

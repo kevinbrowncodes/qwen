@@ -13,7 +13,8 @@
     "test:integration": "pnpm --filter app test:integration",
     "test:e2e": "pnpm --filter app test:e2e",
     "prepare": "husky",
-    "reference:sync": "pnpm --filter recon reference-sync"
+    "reference:sync": "pnpm --filter recon reference-sync",
+    "reference:icons": "pnpm --filter recon app-icons"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
