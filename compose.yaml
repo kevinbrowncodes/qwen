@@ -3,6 +3,8 @@
 #   gate      the toolchain image with the repo bind-mounted: every gate step runs here   -> tools/gate/run.sh
 #   app-dev   the same image running `next dev` with hot reload, on port 3100 for the owner's browser (profile "dev")
 #   app       the production image (app/Dockerfile) serving the built UI on port 3100    -> docker compose up -d app
+#   proxy     Caddy on port 80: http://qwen.local -> the app, any other name a 404 (CHORE_004)
+#   lan-name  answers mDNS queries for qwen.local with the Spark's LAN address, beside avahi (CHORE_004)
 #
 # Only one of app-dev / app runs at a time (both publish 3100). Port 3000 on the Spark is the minimax app's; never
 # bind it. The model side is spark/compose.yaml (STORY_016): the app joins its docker network "qwen" and reaches the
@@ -63,6 +65,24 @@ services:
     volumes:
       - app-data:/data
     networks: [default, qwen]
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2.11.4-alpine
+    container_name: qwen-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./tools/lan-name/Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped
+
+  lan-name:
+    build: tools/lan-name
+    image: qwen/lan-name:dev
+    container_name: qwen-lan-name
+    network_mode: host
+    environment:
+      LAN_NAME: qwen.local
     restart: unless-stopped
 
 networks:

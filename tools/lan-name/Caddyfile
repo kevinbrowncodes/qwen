@@ -1,0 +1,15 @@
+# tools/lan-name/Caddyfile (CHORE_004): port 80 on the Spark. It routes by name: qwen.local goes to the app, and any
+# other name gets a 404, so this proxy claims only our own name. A sibling project's name can be added as another
+# site block here rather than fighting over the port.
+{
+	auto_https off
+	admin off
+}
+
+http://qwen.local {
+	reverse_proxy qwen-app:3100
+}
+
+:80 {
+	respond "Not found" 404
+}

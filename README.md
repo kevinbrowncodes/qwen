@@ -48,11 +48,11 @@ Work is planned as two phases:
 
 ## Project Structure
 
-Present today: `app/`, `tools/gate/`, `tools/stub-generation-server/`, `recon/`, `spark/` (model image, model server, worker, service), `docs/` (including `docs/contracts/`), `compose.yaml`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds weights on the Spark.
+Present today: `app/`, `tools/gate/`, `tools/stub-generation-server/`, `tools/lan-name/`, `recon/`, `spark/` (model image, model server, worker, service), `docs/` (including `docs/contracts/`), `compose.yaml`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds weights on the Spark.
 
 ```
 app/          the UI
-tools/        the stub generation server, its fixture image, other dev tooling
+tools/        the stub generation server, its fixture image, the qwen.local name and proxy, other dev tooling
 spark/        scripts and unit files that set up and run the model on the Spark
 recon/        recon scripts (the offline curate/harvest/interactions pipeline; profile and raw output are gitignored)
 docs/
@@ -115,6 +115,13 @@ Each step makes no network request. Each runs an identity guard first: it reads 
 
 Everything runs on the Spark in containers from `compose.yaml` (project `qwen`); the host needs only Docker. Port **3100** is ours, and port 3000 belongs to the sibling minimax app. VS Code forwards 3100 to the Mac.
 
+**On the LAN, the app is at http://qwen.local** (CHORE_004). Two small services give it that name:
+
+- **`lan-name`** (`qwen-lan-name`, `tools/lan-name/`) answers mDNS queries for `qwen.local` with the Spark's current LAN address. It runs with host networking beside the host's avahi-daemon. It doesn't publish through avahi, because AppArmor refuses containers the host's D-Bus.
+- **`proxy`** (`qwen-proxy`, Caddy) owns port **80** on the Spark. It sends `qwen.local` to `qwen-app:3100`, and any other name gets a 404. Another project's name can be added as a site in `tools/lan-name/Caddyfile`.
+
+`http://192.168.1.28:3100` and `http://spark-1.local:3100` keep working.
+
 ```bash
 tools/gate/build.sh                              # once: the toolchain image qwen/gate:1.63.0-node26
 tools/gate/run.sh                                # the whole gate: install, typecheck, lint, test, integration, build, e2e
@@ -165,5 +172,6 @@ Local only, on the Spark, in this order:
 
 1. `spark/up.sh`: the model server (`qwen-model`), which creates the docker network `qwen`.
 2. `docker compose up -d --build app`: the UI (`qwen-app` on port 3100), joined to that network.
+3. `docker compose up -d --build proxy lan-name`: the name `qwen.local` and port 80 (CHORE_004). Both restart with Docker.
 
 There is no CI; the gate runs locally (`tools/gate/run.sh`) and on every push to `develop` (the pre-push hook).
