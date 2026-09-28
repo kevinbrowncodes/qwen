@@ -514,3 +514,26 @@ html.mobile .library-item-operation-icon {
 .clone-rail-item:hover {
   background: var(--background-option);
 }
+
+/* STORY_018: the reference's drop overlay. Its captured wash is the light theme's #ffffffb3; ours is the dark
+   background at the same alpha (a departure in the story). The inner text and icon are ours. */
+html.dark .dropzone-overlay .dropzone-overlay-content {
+  background: #171717b3;
+}
+.clone-drop-inner {
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--text-primary, #fff);
+}
+.clone-drop-icon {
+  font-size: 40px;
+}
+.clone-drop-title {
+  font-size: 18px;
+  font-weight: 500;
+}
+.clone-drop-hint {
+  font-size: 13px;
+  opacity: 0.6;
+}

@@ -16,7 +16,7 @@ Generate images locally on a DGX Spark, through an interface that matches the Qw
 
 **In scope — the image generation flow, end to end (owner's decision 2026-09-26: editing is in the MVP):**
 
-- Prompt entry in image generation mode, with reference image attachment (text-to-image and image editing)
+- Prompt entry in image generation mode, with reference image attachment (text-to-image and image editing). Reference images are attached with `+`, or dropped or pasted anywhere on the page (STORY_018)
 - The generation options the reference exposes (size / aspect ratio and whatever else recon enumerates)
 - Submit, with the job's progress shown while it runs, and cancel
 - Result display in place, and download

@@ -3,8 +3,10 @@
  * docs/recon/2026-09-26/states/composer-reference-attached@1437.json. Uses the stub's committed upload fixture; what
  * the server receives is asserted in STORY_012's edit spec, where the submit happens.
  */
+import { readFileSync } from "node:fs";
 import path from "node:path";
-import { expect, settledBox, submitAndWait, test } from "./fixtures";
+import type { JSHandle, Page } from "@playwright/test";
+import { expect, expectImageLoaded, settledBox, submitAndWait, test } from "./fixtures";
 
 // Next.js adds its own (empty) role="alert" route announcer, so the composer's message is found by its class.
 const refusal = (page: import("@playwright/test").Page) => page.locator(".clone-composer-error[role=alert]");
@@ -92,4 +94,76 @@ test("an edit can choose a ratio, and the server receives it (STORY_017)", async
   await submitAndWait(page, () => page.getByRole("button", { name: "Send" }).click());
   const id = decodeURIComponent(new URL(page.url()).pathname.replace(/^\/g\//, ""));
   expect(await stub.received(id)).toMatchObject({ request: { ratio: "1:1", referenceImages: 1 } });
+});
+
+// STORY_018: a drop or paste anywhere on the page. Playwright cannot drag from the OS, so the spec builds a DataTransfer
+// in the page from the committed fixture and dispatches the events a real drag fires.
+type Payload = { files?: { name: string; type: string; base64: string }[]; text?: string };
+
+function transfer(page: Page, payload: Payload): Promise<JSHandle<DataTransfer>> {
+  return page.evaluateHandle(({ files, text }) => {
+    const dt = new DataTransfer();
+    for (const f of files ?? []) dt.items.add(new File([Uint8Array.from(atob(f.base64), (c) => c.charCodeAt(0))], f.name, { type: f.type }));
+    if (text !== undefined) dt.setData("text/plain", text);
+    return dt;
+  }, payload);
+}
+
+const fixturePayload = (): Payload => ({ files: [{ name: "reference.png", type: "image/png", base64: readFileSync(FIXTURE).toString("base64") }] });
+
+test("an image dropped on the page body, not the composer, is attached, with the overlay shown during the drag; the edit reaches the server", async ({ page, stub }) => {
+  await page.route("**/api/jobs", (route) => (route.request().method() === "POST" ? route.continue({ headers: { ...route.request().headers(), "x-stub-script": "done-after-1-poll" } }) : route.continue()));
+  await page.goto("/");
+  const url = page.url();
+  const dataTransfer = await transfer(page, fixturePayload());
+  const body = page.locator("body");
+  await body.dispatchEvent("dragenter", { dataTransfer });
+  await body.dispatchEvent("dragover", { dataTransfer });
+  const overlay = page.getByTestId("drop-overlay");
+  await expect(overlay).toBeVisible();
+  // Full-window, as the lifted rule says (position: fixed; inset: 0), not trapped inside the composer's container.
+  const viewport = page.viewportSize();
+  const box = await settledBox(overlay);
+  expect([box.x, box.y, box.width, box.height]).toEqual([0, 0, viewport?.width, viewport?.height]);
+  await body.dispatchEvent("drop", { dataTransfer });
+  await expect(overlay).toHaveCount(0);
+
+  await expect(page.getByTestId("reference-thumb")).toHaveCount(1);
+  await expect(page.getByTestId("image-pill")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Aspect ratio" })).toHaveText("Match reference");
+  expect(page.url()).toBe(url);
+
+  await page.getByLabel("Prompt").fill("make it blue");
+  await submitAndWait(page, () => page.getByRole("button", { name: "Send" }).click());
+  const id = decodeURIComponent(new URL(page.url()).pathname.replace(/^\/g\//, ""));
+  expect(await stub.received(id)).toMatchObject({ request: { referenceImages: 1 } });
+  await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${id}/result`, 64);
+});
+
+test("a dropped file that is not an image is refused like one chosen with +", async ({ page }) => {
+  await page.goto("/");
+  const dataTransfer = await transfer(page, { files: [{ name: "notes.txt", type: "text/plain", base64: Buffer.from("hello, I am not a PNG").toString("base64") }] });
+  await page.locator("body").dispatchEvent("drop", { dataTransfer });
+  await expect(refusal(page)).toHaveText("notes.txt is not a PNG, JPEG or WebP image.");
+  await expect(page.getByTestId("reference-thumb")).toHaveCount(0);
+});
+
+test("dragging text shows no overlay and attaches nothing", async ({ page }) => {
+  await page.goto("/");
+  const dataTransfer = await transfer(page, { text: "just words" });
+  const body = page.locator("body");
+  await body.dispatchEvent("dragenter", { dataTransfer });
+  await body.dispatchEvent("dragover", { dataTransfer });
+  await expect(page.getByTestId("drop-overlay")).toHaveCount(0);
+  await body.dispatchEvent("drop", { dataTransfer });
+  await expect(page.getByTestId("reference-thumb")).toHaveCount(0);
+});
+
+test("an image pasted with focus on the page, not the prompt, is attached once", async ({ page }) => {
+  await page.goto("/");
+  const dataTransfer = await transfer(page, fixturePayload());
+  await page.evaluate((clipboardData) => {
+    document.body.dispatchEvent(new ClipboardEvent("paste", { clipboardData, bubbles: true, cancelable: true }));
+  }, dataTransfer);
+  await expect(page.getByTestId("reference-thumb")).toHaveCount(1);
 });
