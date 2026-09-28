@@ -110,7 +110,7 @@ S–M
   - The composer's own drop and paste handlers are removed, so there is one path.
   - The dark wash and the inner text are in `clone.css`.
 - **Tests:**
-  - Unit: `use-file-drop.test.tsx`, 13 cases inside `<StrictMode>`. The coverage floor first failed on this file (87.9% of branches); the added cases took the app to 97.73%, and no floor moved.
+  - Unit: `use-file-drop.test.tsx`, 12 cases inside `<StrictMode>`. The coverage floor first failed on this file (87.9% of branches); the added cases took the app to 97.73%, and no floor moved.
   - E2E: `references.spec.ts` gains 4 scenarios, run at both widths: a drop on the body, then submit and the stub receiving one upload; a `.txt` refused; a text drag with no overlay; a paste from the page. 59 e2e pass, and the gate is green.
 - **Side by side:** the overlay was screenshotted on the deployed app at 1437 and at iPhone 13. It fills the window with the reference's 24 px dashed frame at 20 px inset (scaled by the mobile rem on the narrow branch), over the page blurred through `#171717b3`. The reference's own overlay was never captured, so there is nothing of theirs to compare against beyond the lifted rules.
 - **Manual (owner):** a real drag from Finder in Safari at http://qwen.local. Playwright can only send synthetic drag events.
