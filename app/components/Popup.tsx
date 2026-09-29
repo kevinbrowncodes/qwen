@@ -10,11 +10,21 @@ import { createPortal } from "react-dom";
 export interface Anchor {
   readonly left: number;
   readonly top: number;
+  /** The side the popup really opens on (BUG_010), for the reference's -top-left / -bottom-left class. */
+  readonly placement: "bottom" | "top";
+}
+
+/**
+ * Pure: the side a popup opens on. A trigger in the lower half of the window opens upward, whatever was asked for,
+ * so the composer pinned to the bottom of a generation's page never opens a menu off screen (BUG_010).
+ */
+export function placementFor(box: { top: number; bottom: number }, requested: "bottom" | "top", viewportHeight: number): "bottom" | "top" {
+  return (box.top + box.bottom) / 2 > viewportHeight / 2 ? "top" : requested;
 }
 
 /** Pure: where a popup sits for a trigger box. "top" is shifted up by the reference's own translateY(-100%). */
 export function anchorFor(box: { left: number; top: number; bottom: number }, placement: "bottom" | "top", gap = 4): Anchor {
-  return placement === "bottom" ? { left: box.left, top: box.bottom + gap } : { left: box.left, top: box.top - gap };
+  return placement === "bottom" ? { left: box.left, top: box.bottom + gap, placement } : { left: box.left, top: box.top - gap, placement };
 }
 
 /**
@@ -30,7 +40,9 @@ export function Popup({ anchorRef, placement, children }: { readonly anchorRef: 
   useLayoutEffect(() => {
     const place = (): void => {
       const el = anchorRef.current;
-      if (el) setAnchor(anchorFor(el.getBoundingClientRect(), placement));
+      if (!el) return;
+      const box = el.getBoundingClientRect();
+      setAnchor(anchorFor(box, placementFor(box, placement, window.innerHeight)));
     };
     place();
     window.addEventListener("resize", place);

@@ -63,7 +63,7 @@ export function ModeMenu({ iconSet, placement, onCreateImage, onUpload }: { read
       {open ? (
         <Popup anchorRef={trigger} placement={placement}>
           {(anchor) => (
-        <div ref={popup} role="menu" aria-label="Select Mode" style={{ position: "fixed", left: anchor.left, top: anchor.top }} className={`qwen-chat-v2-dropdown-menu-popup qwen-chat-v2-dropdown-menu-popup-${placement}-left clone-mode-menu`}>
+        <div ref={popup} role="menu" aria-label="Select Mode" style={{ position: "fixed", left: anchor.left, top: anchor.top }} className={`qwen-chat-v2-dropdown-menu-popup qwen-chat-v2-dropdown-menu-popup-${anchor.placement}-left clone-mode-menu`}>
           <div className="mode-select-dropdown-menu">
             <div role="menuitem" tabIndex={0} className="qwen-chat-v2-dropdown-menu-item mode-select-common-item" onClick={choose(onUpload)} onKeyDown={(e) => { if (e.key === "Enter") choose(onUpload)(); }}>
               <Icon id={`${iconSet}-upload`} className="qwen-chat-v2-dropdown-menu-item-icon" />

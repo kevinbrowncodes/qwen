@@ -125,7 +125,7 @@ export function Dropdown({ label, display, items, selected, onSelect, placement 
       {open ? (
         <Popup anchorRef={trigger} placement={placement}>
           {(anchor) => (
-        <div ref={listRef} id={listId} role="listbox" aria-label={label} style={{ position: "fixed", left: anchor.left - shift, top: anchor.top }} className={`qwen-chat-v2-dropdown-menu-popup qwen-chat-v2-dropdown-menu-popup-${placement === "top" ? "top" : "bottom"}-left`}>
+        <div ref={listRef} id={listId} role="listbox" aria-label={label} style={{ position: "fixed", left: anchor.left - shift, top: anchor.top }} className={`qwen-chat-v2-dropdown-menu-popup qwen-chat-v2-dropdown-menu-popup-${anchor.placement}-left`}>
           {items.map((item, i) => {
             const isSelected = item.id === selected;
             return (

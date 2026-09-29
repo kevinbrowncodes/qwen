@@ -130,3 +130,28 @@ test("a finished generation reopens from its address after a reload", async ({ p
   await expect(page.getByTestId("user-bubble")).toHaveText("keep me");
   await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${id}/result`, 64);
 });
+
+test("desktop: on a generation's page the composer's menus open upward, inside the window (BUG_010)", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "the phone layout always opened upward");
+  await useScript(page, "done-after-1-poll");
+  await page.goto("/");
+  await imageMode(page);
+  await page.getByLabel("Prompt").fill("a menu test");
+  await submitAndWait(page, () => page.getByRole("button", { name: "Send" }).click());
+  await expect(page.getByTestId("result-image")).toBeVisible();
+  const height = page.viewportSize()?.height ?? 0;
+  const inside = async (popup: import("@playwright/test").Locator): Promise<void> => {
+    const box = await popup.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box?.y ?? -1).toBeGreaterThanOrEqual(0);
+    expect((box?.y ?? 0) + (box?.height ?? Infinity)).toBeLessThanOrEqual(height);
+  };
+  for (const name of ["Image model", "Aspect ratio", "Add-on"]) {
+    await page.getByRole("combobox", { name }).click();
+    await inside(page.getByRole("listbox", { name }));
+    await page.keyboard.press("Escape");
+  }
+  await page.getByRole("button", { name: "Select Mode" }).click();
+  await inside(page.getByRole("menu", { name: "Select Mode" }));
+  await page.getByRole("menuitem", { name: "Create Image" }).click();
+});
