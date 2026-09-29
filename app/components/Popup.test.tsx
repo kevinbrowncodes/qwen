@@ -10,6 +10,13 @@ describe("anchorFor", () => {
   });
 });
 
+describe("anchorFor under the interface zoom (STORY_020)", () => {
+  it("turns a measured box into the CSS pixels the popup is placed in", () => {
+    expect(anchorFor({ left: 300, top: 200, bottom: 264 }, "bottom", 4, 2)).toEqual({ left: 150, top: 136, placement: "bottom" });
+    expect(anchorFor({ left: 300, top: 200, bottom: 264 }, "top", 4, 2)).toEqual({ left: 150, top: 96, placement: "top" });
+  });
+});
+
 describe("placementFor (BUG_010)", () => {
   it("opens upward from a trigger in the lower half of the window, whatever was asked", () => {
     expect(placementFor({ top: 1040, bottom: 1072 }, "bottom", 1080)).toBe("top");

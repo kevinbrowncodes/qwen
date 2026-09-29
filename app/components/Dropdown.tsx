@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "./Icon";
+import { currentZoom } from "@/lib/ui-zoom";
 import { clampLeft, Popup } from "./Popup";
 
 export interface DropdownItem {
@@ -41,10 +42,12 @@ export function Dropdown({ label, display, items, selected, onSelect, placement 
       setShift(0);
       return;
     }
+    // Measured pixels are the zoom times the CSS pixels `left` is set in (STORY_020): clamp in the first, shift in the second.
     const box = el.getBoundingClientRect();
+    const zoom = currentZoom();
     setShift((current) => {
-      const natural = box.left + current;
-      return natural - clampLeft(natural, box.width, window.innerWidth);
+      const natural = box.left + current * zoom;
+      return (natural - clampLeft(natural, box.width, window.innerWidth, 8 * zoom)) / zoom;
     });
   }, []);
 

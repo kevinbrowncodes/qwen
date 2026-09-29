@@ -5,9 +5,10 @@
  * and the 393 readings; only the MVP's entries are rendered (see the story's Departures).
  */
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useNarrow } from "@/lib/use-narrow";
 import { Icon } from "../Icon";
+import { SettingsDialog } from "../settings/SettingsDialog";
 import { Sidebar } from "./Sidebar";
 
 export function Shell({ children }: { readonly children: ReactNode }) {
@@ -15,11 +16,21 @@ export function Shell({ children }: { readonly children: ReactNode }) {
   const onLibrary = usePathname() === "/library";
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsButton = useRef<HTMLButtonElement>(null);
   const sideHidden = narrow ? !drawerOpen : collapsed;
   const iconSet = narrow ? "appicon" : "qwpcicon";
 
   return (
     <div className="app">
+      {settingsOpen ? (
+        <SettingsDialog
+          returnFocus={settingsButton}
+          onClose={() => {
+            setSettingsOpen(false);
+          }}
+        />
+      ) : null}
       <div className="desktop-layout">
         <div className="sidebar-wrapper">
           {narrow && drawerOpen ? <div className="clone-drawer-mask" data-testid="drawer-backdrop" onClick={() => { setDrawerOpen(false); }} /> : null}
@@ -35,6 +46,10 @@ export function Shell({ children }: { readonly children: ReactNode }) {
                 onNavigate={() => {
                   if (narrow) setDrawerOpen(false);
                 }}
+                onSettings={() => {
+                  setSettingsOpen(true);
+                }}
+                settingsRef={settingsButton}
               />
             </div>
           </div>

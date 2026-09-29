@@ -75,6 +75,10 @@ The reference surface is recorded in [docs/recon/2026-09-26/](docs/recon/2026-09
 
 Our feature list follows the MVP Scope above.
 
+Beyond the MVP (after its epics were Done):
+- **Settings** (⚙ at the bottom of the sidebar): the interface zoom, 1× to 4×, remembered per browser (STORY_020).
+- **Add-ons** in the composer: community LoRAs chosen per generation (STORY_019; see Running the Model).
+
 ## Testing
 
 The bar (the 70/20/10 pyramid, and no test may depend on the real model) is in [CLAUDE.md → §3](CLAUDE.md#3-how-features-are-built-important). The lanes, all run inside the gate container by `tools/gate/run.sh`:

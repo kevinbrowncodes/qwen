@@ -1,24 +1,29 @@
 "use client";
 import { useSyncExternalStore } from "react";
-import { applyNarrowClass, NARROW_QUERY } from "./narrow";
+import { applyNarrowClass, isNarrow } from "./narrow";
+import { currentZoom, ZOOM_EVENT } from "./ui-zoom";
+
+/** Narrow at the effective width: the window's divided by the interface zoom (STORY_020). */
+function narrowNow(): boolean {
+  return isNarrow(window.innerWidth, currentZoom());
+}
 
 function subscribe(onChange: () => void): () => void {
-  const mq = window.matchMedia(NARROW_QUERY);
   const handler = (): void => {
-    applyNarrowClass(document.documentElement, mq.matches, window.innerWidth);
+    const zoom = currentZoom();
+    applyNarrowClass(document.documentElement, isNarrow(window.innerWidth, zoom), window.innerWidth / zoom);
     onChange();
   };
-  mq.addEventListener("change", handler);
+  // Resizing the window and choosing a zoom step are the two things that change the effective width.
+  window.addEventListener("resize", handler);
+  window.addEventListener(ZOOM_EVENT, handler);
   return () => {
-    mq.removeEventListener("change", handler);
+    window.removeEventListener("resize", handler);
+    window.removeEventListener(ZOOM_EVENT, handler);
   };
 }
 
 /** True at phone width. The server renders the desktop layout; the boot script has already set html.mobile. */
 export function useNarrow(): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () => window.matchMedia(NARROW_QUERY).matches,
-    () => false,
-  );
+  return useSyncExternalStore(subscribe, narrowNow, () => false);
 }

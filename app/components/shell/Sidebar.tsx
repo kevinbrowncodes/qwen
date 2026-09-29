@@ -5,13 +5,28 @@
  */
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 import { latestFinished, resultUrl } from "@/lib/history-view";
 import { useHistory } from "@/lib/use-history";
 import { Icon } from "../Icon";
 import { HistoryList } from "./HistoryList";
 
-export function Sidebar({ iconSet, onToggle, onNavigate, rail = false }: { readonly iconSet: "qwpcicon" | "appicon"; readonly onToggle: () => void; readonly onNavigate: () => void; readonly rail?: boolean }) {
+export function Sidebar({
+  iconSet,
+  onToggle,
+  onNavigate,
+  onSettings,
+  settingsRef,
+  rail = false,
+}: {
+  readonly iconSet: "qwpcicon" | "appicon";
+  readonly onToggle: () => void;
+  readonly onNavigate: () => void;
+  /** Opens Settings (STORY_020); the entry is pinned to the bottom of the sidebar and the rail. */
+  readonly onSettings?: () => void;
+  readonly settingsRef?: RefObject<HTMLButtonElement | null>;
+  readonly rail?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { entries, remove, stop } = useHistory();
@@ -32,6 +47,9 @@ export function Sidebar({ iconSet, onToggle, onNavigate, rail = false }: { reado
         <Link href="/library" aria-label="My Library" className="clone-rail-item" onClick={onNavigate}>
           <Icon id={`${iconSet}-library`} />
         </Link>
+        <button type="button" ref={settingsRef} aria-label="Settings" className="clone-rail-item clone-rail-settings" onClick={onSettings}>
+          <Icon id={`${iconSet}-setting`} />
+        </button>
       </div>
     );
   }
@@ -90,6 +108,12 @@ export function Sidebar({ iconSet, onToggle, onNavigate, rail = false }: { reado
             });
           }}
         />
+      </div>
+      <div className="sidebar-entry-fixed-list clone-sidebar-footer">
+        <button type="button" ref={settingsRef} className="sidebar-entry-fixed-list-content clone-settings-entry" onClick={onSettings}>
+          <Icon id={`${iconSet}-setting`} className="sidebar-entry-fixed-list-icon" />
+          <div className="sidebar-entry-fixed-list-text">Settings</div>
+        </button>
       </div>
     </>
   );

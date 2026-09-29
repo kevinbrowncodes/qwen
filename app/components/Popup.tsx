@@ -6,6 +6,7 @@
  */
 import { useLayoutEffect, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
+import { currentZoom } from "@/lib/ui-zoom";
 
 export interface Anchor {
   readonly left: number;
@@ -22,9 +23,13 @@ export function placementFor(box: { top: number; bottom: number }, requested: "b
   return (box.top + box.bottom) / 2 > viewportHeight / 2 ? "top" : requested;
 }
 
-/** Pure: where a popup sits for a trigger box. "top" is shifted up by the reference's own translateY(-100%). */
-export function anchorFor(box: { left: number; top: number; bottom: number }, placement: "bottom" | "top", gap = 4): Anchor {
-  return placement === "bottom" ? { left: box.left, top: box.bottom + gap, placement } : { left: box.left, top: box.top - gap, placement };
+/**
+ * Pure: where a popup sits for a trigger box. "top" is shifted up by the reference's own translateY(-100%). The box is
+ * measured, so under the interface zoom it is `zoom` times the CSS pixels the popup is placed in (STORY_020).
+ */
+export function anchorFor(box: { left: number; top: number; bottom: number }, placement: "bottom" | "top", gap = 4, zoom = 1): Anchor {
+  const left = box.left / zoom;
+  return placement === "bottom" ? { left, top: box.bottom / zoom + gap, placement } : { left, top: box.top / zoom - gap, placement };
 }
 
 /**
@@ -42,7 +47,7 @@ export function Popup({ anchorRef, placement, children }: { readonly anchorRef: 
       const el = anchorRef.current;
       if (!el) return;
       const box = el.getBoundingClientRect();
-      setAnchor(anchorFor(box, placementFor(box, placement, window.innerHeight)));
+      setAnchor(anchorFor(box, placementFor(box, placement, window.innerHeight), 4, currentZoom()));
     };
     place();
     window.addEventListener("resize", place);
