@@ -192,6 +192,38 @@ describe("edits", () => {
     expect(field(received, "request")).toMatchObject({ ratio: null });
   });
 
+  it("passes the stub's add-ons through in the capabilities (contract v1.2, STORY_019)", async () => {
+    expect(await json(await getCapabilities())).toMatchObject({ loras: [{ id: "fake-detail", label: "Fake detail" }, { id: "fake-style", label: "Fake style" }] });
+  });
+
+  it("forwards an add-on in JSON and in an edit's form, and records it; none records null (STORY_019)", async () => {
+    const withAddOn = await post({ prompt: "a portrait", ratio: "1:1", model: "qwen-image-2.1", lora: "fake-detail" });
+    expect(withAddOn.status).toBe(202);
+    const a = String(field(await json(withAddOn), "id"));
+    expect(field(await json(await fetch(`${stubUrl}/__stub/jobs/${a}/received`)), "request")).toMatchObject({ lora: "fake-detail" });
+    expect(stored().find((e) => e.id === a)).toMatchObject({ lora: "fake-detail" });
+
+    const form = new FormData();
+    form.set("prompt", "make it blue");
+    form.set("lora", "fake-style");
+    form.append("referenceImage", new Blob([new Uint8Array(reference)], { type: "image/png" }), "a.png");
+    const edited = await createJob(new Request("http://app/api/jobs", { method: "POST", body: form }));
+    expect(edited.status).toBe(202);
+    const b = String(field(await json(edited), "id"));
+    expect(field(await json(await fetch(`${stubUrl}/__stub/jobs/${b}/received`)), "request")).toMatchObject({ lora: "fake-style" });
+    expect(stored().find((e) => e.id === b)).toMatchObject({ lora: "fake-style" });
+
+    const plain = await post({ prompt: "a portrait", ratio: "1:1", model: "qwen-image-2.1", lora: "none" });
+    const c = String(field(await json(plain), "id"));
+    expect(stored().find((e) => e.id === c)).toMatchObject({ lora: null });
+  });
+
+  it("relays the server's refusal of an add-on it does not offer, and records nothing", async () => {
+    const res = await post({ prompt: "a portrait", ratio: "1:1", model: "qwen-image-2.1", lora: "not-installed" });
+    expect(res.status).toBe(400);
+    expect(await json(res)).toMatchObject({ error: { code: "unsupported_option", field: "lora" } });
+  });
+
   it("refuses eleven references, or a GIF, without reaching the server", async () => {
     const png = { name: "a.png", type: "image/png", bytes: reference };
     const eleven = await edit(Array.from({ length: 11 }, () => png));

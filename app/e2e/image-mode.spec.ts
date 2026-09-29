@@ -2,7 +2,7 @@
  * STORY_010: the composer enters image mode and offers the model and the aspect ratio. Reference readings:
  * docs/recon/2026-09-26/states/composer-image-mode@1437.json, aspect-ratio-open@1437.json, composer-typed@1437.json.
  */
-import { expect, settledBox, test } from "./fixtures";
+import { expect, expectImageLoaded, settledBox, submitAndWait, test } from "./fixtures";
 
 const RATIOS = ["1:1", "2:3", "3:2", "3:4", "4:3", "16:9", "9:16"];
 
@@ -84,4 +84,41 @@ test("image mode and the ratio survive a reload within the session", async ({ pa
   await page.reload();
   await expect(page.getByTestId("image-pill")).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Aspect ratio" })).toHaveText("3:4");
+});
+
+test("an add-on is chosen from the composer and the server receives it (STORY_019)", async ({ page, stub }, info) => {
+  await page.route("**/api/jobs", (route) => (route.request().method() === "POST" ? route.continue({ headers: { ...route.request().headers(), "x-stub-script": "done-after-1-poll" } }) : route.continue()));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Select Mode" }).click();
+  await page.getByRole("menuitem", { name: "Create Image" }).click();
+  const trigger = page.getByRole("combobox", { name: "Add-on" });
+  // Desktop shows the choice; narrow shows the icon alone, like the model's short label.
+  if (info.project.name === "desktop") await expect(trigger).toHaveText("None");
+  await trigger.click();
+  const list = page.getByRole("listbox", { name: "Add-on" });
+  await expect(list.getByRole("option")).toHaveText(["None", "Fake detail", "Fake style"]);
+  await expect(list.getByRole("option", { selected: true })).toHaveText("None");
+  if (info.project.name === "narrow") {
+    // The popup opened from the icon near the right edge stays on screen, and the footer still fits beside Send.
+    const box = await settledBox(list);
+    expect(box.x + box.width).toBeLessThanOrEqual((page.viewportSize()?.width ?? 0) - 8);
+    const footer = page.locator(".message-input-column-footer");
+    expect(await footer.evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
+    const send = await settledBox(page.getByRole("button", { name: "Send" }));
+    const composer = await settledBox(page.getByTestId("composer"));
+    expect(send.x + send.width).toBeLessThanOrEqual(composer.x + composer.width);
+    // Every trigger label stays on one line (the model's is 32 tall, like the others).
+    expect((await settledBox(page.getByRole("combobox", { name: "Image model" }))).height).toBeLessThanOrEqual(32);
+    // The icon-only trigger keeps a 44px touch area: its ::before reaches 10px each side and 6px above and below.
+    const icon = await settledBox(trigger);
+    expect(icon.width + 20).toBeGreaterThanOrEqual(44);
+    expect(icon.height + 12).toBeGreaterThanOrEqual(44);
+  }
+  await list.getByRole("option", { name: "Fake detail" }).click();
+  if (info.project.name === "desktop") await expect(trigger).toHaveText("Fake detail");
+  await page.getByLabel("Prompt").fill("a portrait in a garden");
+  await submitAndWait(page, () => page.getByRole("button", { name: "Send" }).click());
+  const id = decodeURIComponent(new URL(page.url()).pathname.replace(/^\/g\//, ""));
+  expect(await stub.received(id)).toMatchObject({ request: { lora: "fake-detail", prompt: "a portrait in a garden" } });
+  await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${id}/result`, 64);
 });

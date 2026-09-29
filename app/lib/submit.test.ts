@@ -8,7 +8,7 @@ const b = new File(["b"], "b.png", { type: "image/png" });
 describe("requestFrom", () => {
   it("trims the prompt, keeps the ratio without references and drops it with them", () => {
     const base = { ...initialState(), text: "  a cat ", ratio: "1:1" };
-    expect(requestFrom(base)).toEqual({ prompt: "a cat", ratio: "1:1", model: "qwen-image-2.1", references: [] });
+    expect(requestFrom(base)).toEqual({ prompt: "a cat", ratio: "1:1", model: "qwen-image-2.1", lora: null, references: [] });
     const edit = { ...base, references: [{ key: "1", file: a }, { key: "2", file: b }] };
     expect(requestFrom(edit)).toMatchObject({ ratio: null, references: [a, b] });
     expect(requestFrom({ ...edit, editRatio: "9:16" })).toMatchObject({ ratio: "9:16" });
@@ -17,13 +17,13 @@ describe("requestFrom", () => {
 
 describe("buildBody", () => {
   it("sends JSON without references", () => {
-    const { body, headers } = buildBody({ prompt: "p", ratio: "16:9", model: "m", references: [] });
+    const { body, headers } = buildBody({ prompt: "p", ratio: "16:9", model: "m", lora: null, references: [] });
     expect(headers).toEqual({ "content-type": "application/json" });
     expect(JSON.parse(typeof body === "string" ? body : "{}")).toEqual({ prompt: "p", ratio: "16:9", model: "m" });
   });
 
   it("sends multipart with the files in order and no ratio", () => {
-    const { body, headers } = buildBody({ prompt: "p", ratio: null, model: "m", references: [a, b] });
+    const { body, headers } = buildBody({ prompt: "p", ratio: null, model: "m", lora: null, references: [a, b] });
     expect(headers).toEqual({});
     expect(body).toBeInstanceOf(FormData);
     const form = body instanceof FormData ? body : new FormData();
@@ -33,13 +33,31 @@ describe("buildBody", () => {
   });
 
   it("sends an edit's chosen ratio in the form (STORY_017)", () => {
-    const { body } = buildBody({ prompt: "p", ratio: "1:1", model: "m", references: [a] });
+    const { body } = buildBody({ prompt: "p", ratio: "1:1", model: "m", lora: null, references: [a] });
     expect(body instanceof FormData ? body.get("ratio") : null).toBe("1:1");
   });
 });
 
+describe("add-ons (STORY_019)", () => {
+  it("None sends no lora, in JSON and in a form", () => {
+    expect(requestFrom({ ...initialState(), text: "x" }).lora).toBeNull();
+    const json = buildBody({ prompt: "p", ratio: "1:1", model: "m", lora: null, references: [] }).body;
+    expect(JSON.parse(typeof json === "string" ? json : "{}")).not.toHaveProperty("lora");
+    const form = buildBody({ prompt: "p", ratio: null, model: "m", lora: null, references: [a] }).body;
+    expect(form instanceof FormData ? form.has("lora") : true).toBe(false);
+  });
+
+  it("an add-on sends its id, in JSON and in a form", () => {
+    expect(requestFrom({ ...initialState(), text: "x", lora: "uncensored" }).lora).toBe("uncensored");
+    const json = buildBody({ prompt: "p", ratio: "1:1", model: "m", lora: "uncensored", references: [] }).body;
+    expect(JSON.parse(typeof json === "string" ? json : "{}")).toMatchObject({ lora: "uncensored" });
+    const form = buildBody({ prompt: "p", ratio: null, model: "m", lora: "uncensored", references: [a] }).body;
+    expect(form instanceof FormData ? form.get("lora") : null).toBe("uncensored");
+  });
+});
+
 describe("submitGeneration", () => {
-  const req = { prompt: "p", ratio: "1:1", model: "m", references: [] };
+  const req = { prompt: "p", ratio: "1:1", model: "m", lora: null, references: [] };
   const respond = (status: number, body: unknown) => vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(body), { status }));
 
   it("answers the job's id on 202", async () => {

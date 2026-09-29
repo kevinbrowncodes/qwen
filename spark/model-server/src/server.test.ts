@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RESTARTED } from "./jobs.ts";
+import type { Lora } from "./loras.ts";
 import { createModelServer, WORKER_STOPPED, type ModelServer } from "./server.ts";
 
 const FAKE = fileURLToPath(new URL("./fake-worker.ts", import.meta.url));
@@ -18,7 +19,7 @@ let log = "";
 let model: ModelServer | null = null;
 let base = "";
 
-async function start(extra: { apiKey?: string; maxQueued?: number } = {}): Promise<void> {
+async function start(extra: { apiKey?: string; maxQueued?: number; loras?: readonly Lora[] } = {}): Promise<void> {
   process.env["FAKE_LOG"] = log;
   model = createModelServer({ outputDir: dir, workerCommand: ["node", FAKE], restartDelayMs: 50, log: () => undefined, ...extra });
   base = `http://127.0.0.1:${String(await model.listen(0))}`;
@@ -27,6 +28,7 @@ async function start(extra: { apiKey?: string; maxQueued?: number } = {}): Promi
 const auth = (key?: string): Record<string, string> => (key ? { authorization: `Bearer ${key}` } : {});
 
 beforeEach(() => {
+  delete process.env["FAKE_LORA_FAIL"];
   dir = mkdtempSync(path.join(tmpdir(), "qwen-model-"));
   log = path.join(dir, "worker.log");
 });
@@ -207,5 +209,53 @@ describe("the model server", () => {
     expect((await post(JSON.stringify({ prompt: "x", ratio: "21:9" }), "application/json")).status).toBe(400);
     for (const p of ["/jobs/nope", "/jobs/nope/result", "/nowhere"]) expect((await fetch(`${base}${p}`)).status, p).toBe(404);
     expect((await fetch(`${base}/jobs/nope`, { method: "DELETE" })).status).toBe(404);
+  });
+});
+
+describe("add-ons (STORY_019)", () => {
+  const detail: Lora = { id: "fake-detail", label: "Fake detail", path: "/loras/fake-detail/d.safetensors", scale: 0.8, trigger: "sharp focus" };
+  const style: Lora = { id: "fake-style", label: "Fake style", path: "/loras/fake-style/s.safetensors", scale: 1 };
+  const jobs = (): Array<Record<string, unknown>> => sentToWorker().filter((m) => m["type"] === "job");
+
+  it("tells the worker what to load, and offers only what it reports loaded", async () => {
+    process.env["FAKE_LORA_FAIL"] = "fake-style";
+    await start({ loras: [detail, style] });
+    await until(async () => (await json(await fetch(`${base}/capabilities`)))["loras"] !== undefined);
+    expect(sentToWorker()[0]).toEqual({ type: "init", loras: [{ id: "fake-detail", path: detail.path }, { id: "fake-style", path: style.path }] });
+    await until(async () => JSON.stringify((await json(await fetch(`${base}/capabilities`)))["loras"]) === JSON.stringify([{ id: "fake-detail", label: "Fake detail" }]));
+    const res = await fetch(`${base}/jobs`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "x", ratio: "1:1", lora: "fake-style" }) });
+    expect(res.status).toBe(400);
+    expect(await json(res)).toMatchObject({ error: { code: "unsupported_option", field: "lora" } });
+  });
+
+  it("sends a job its add-on with the manifest's strength and trigger words, and the next job none", async () => {
+    await start({ loras: [detail] });
+    await until(async () => JSON.stringify((await json(await fetch(`${base}/capabilities`)))["loras"]) === JSON.stringify([{ id: "fake-detail", label: "Fake detail" }]));
+    const a = await create({ prompt: "a portrait", ratio: "1:1", lora: "fake-detail" });
+    expect(await terminal(a)).toMatchObject({ status: "done", request: { prompt: "a portrait", lora: "fake-detail" } });
+    const b = await create({ prompt: "a portrait", ratio: "1:1" });
+    expect(await terminal(b)).toMatchObject({ status: "done", request: { lora: null } });
+    const [first, second] = jobs();
+    expect(first).toMatchObject({ id: a, prompt: "a portrait, sharp focus", lora: { id: "fake-detail", scale: 0.8 } });
+    expect(second).toMatchObject({ id: b, prompt: "a portrait" });
+    expect(second?.["lora"]).toBeUndefined();
+  });
+
+  it("offers none and sends no init without add-ons", async () => {
+    await start();
+    expect(await json(await fetch(`${base}/capabilities`))).toMatchObject({ loras: [] });
+    await terminal(await create({ prompt: "x", ratio: "1:1" }));
+    expect(sentToWorker().some((m) => m["type"] === "init")).toBe(false);
+  });
+
+  it("fails a waiting job whose add-on did not load again after the worker restarted", async () => {
+    await start({ loras: [detail] });
+    await until(async () => JSON.stringify((await json(await fetch(`${base}/capabilities`)))["loras"]) === JSON.stringify([{ id: "fake-detail", label: "Fake detail" }]));
+    process.env["FAKE_LORA_FAIL"] = "fake-detail"; // the restarted worker inherits it
+    const crash = await create({ prompt: "crash now", ratio: "1:1" });
+    const waiting = await create({ prompt: "a portrait", ratio: "1:1", lora: "fake-detail" });
+    expect(await terminal(crash)).toMatchObject({ status: "failed" });
+    expect(await terminal(waiting)).toMatchObject({ status: "failed", error: { message: "The add-on fake-detail is not loaded on the model server." } });
+    expect(jobs().some((m) => m["id"] === waiting)).toBe(false);
   });
 });

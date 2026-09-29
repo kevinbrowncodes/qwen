@@ -18,11 +18,13 @@ interface Known {
   readonly model: string;
   readonly referenceCount: number;
   readonly files: readonly File[];
+  /** Regenerate uses the same add-on (STORY_019). */
+  readonly lora: string | null;
 }
 
 function fromPending(id: string): Known | null {
   const req = recall(id);
-  return req ? { prompt: req.prompt, ratio: req.ratio, model: req.model, referenceCount: req.references.length, files: req.references } : null;
+  return req ? { prompt: req.prompt, ratio: req.ratio, model: req.model, referenceCount: req.references.length, files: req.references, lora: req.lora } : null;
 }
 
 let nonce = 0;
@@ -38,7 +40,7 @@ export function GenerationPage({ id }: { readonly id: string }) {
 
   // Reopened from history (or after a reload): the prompt and options come from the job's own echo.
   const echo = job?.request;
-  const shown: Known | null = known ?? (echo ? { prompt: echo.prompt, ratio: echo.ratio, model: echo.model, referenceCount: echo.referenceImages, files: [] } : null);
+  const shown: Known | null = known ?? (echo ? { prompt: echo.prompt, ratio: echo.ratio, model: echo.model, referenceCount: echo.referenceImages, files: [], lora: echo.lora ?? null } : null);
 
   const running = job !== null && (job.status === "queued" || job.status === "running");
   const canResend = shown !== null && (shown.referenceCount === 0 || shown.files.length === shown.referenceCount);
@@ -61,7 +63,7 @@ export function GenerationPage({ id }: { readonly id: string }) {
                   setInject({ files: [new File([blob], resultFileName(id), { type: blob.type || "image/png" })], nonce: ++nonce });
                 });
             }}
-            onRegenerate={canResend ? () => void submit({ prompt: shown.prompt, ratio: shown.ratio, model: shown.model, references: shown.files }) : undefined}
+            onRegenerate={canResend ? () => void submit({ prompt: shown.prompt, ratio: shown.ratio, model: shown.model, lora: shown.lora, references: shown.files }) : undefined}
           />
         ) : problem ? (
           <div className="qwen-chat-message">

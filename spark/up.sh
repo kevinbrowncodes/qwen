@@ -22,7 +22,7 @@ else
 fi
 [ -f "$ROOT/models/Qwen-Image-2.1/model_index.json" ] || { echo "[up] no weights; run spark/fetch-weights.sh" >&2; exit 1; }
 docker network inspect qwen > /dev/null 2>&1 || docker network create qwen > /dev/null
-mkdir -p "$HERE/data/outputs"
+mkdir -p "$HERE/data/outputs" "$ROOT/models/loras"   # add-ons: spark/fetch-loras.sh (STORY_019)
 docker compose -f "$HERE/compose.yaml" up -d --build model
 echo "[up] waiting for the model to load (up to about 4 minutes cold) ..."
 for _ in $(seq 1 180); do  # a cold load measured 3.3 minutes (STORY_014)

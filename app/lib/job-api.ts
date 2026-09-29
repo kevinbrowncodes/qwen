@@ -14,6 +14,8 @@ export interface JobRequestEcho {
   readonly model: string;
   readonly seed: number;
   readonly referenceImages: number;
+  /** v1.2 (STORY_019); a server before it sends none. */
+  readonly lora?: string | null;
 }
 export interface JobResult {
   readonly url: string;
@@ -63,7 +65,7 @@ function isResult(v: unknown): v is JobResult {
 }
 
 function isRequestEcho(v: unknown): v is JobRequestEcho {
-  return isRecord(v) && typeof v["prompt"] === "string" && (typeof v["ratio"] === "string" || v["ratio"] === null) && typeof v["model"] === "string" && typeof v["seed"] === "number" && typeof v["referenceImages"] === "number";
+  return isRecord(v) && typeof v["prompt"] === "string" && (typeof v["ratio"] === "string" || v["ratio"] === null) && typeof v["model"] === "string" && typeof v["seed"] === "number" && typeof v["referenceImages"] === "number" && (v["lora"] === undefined || v["lora"] === null || typeof v["lora"] === "string");
 }
 
 export function isJobStatusResponse(v: unknown): v is JobStatusResponse {

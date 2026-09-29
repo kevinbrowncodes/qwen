@@ -1,6 +1,6 @@
 # Stub generation server
 
-A local, deterministic fake of the job API in [docs/contracts/job-api.md](../../docs/contracts/job-api.md) (STORY_006). Every unit, integration and e2e test targets it; the real server is the model server on the Spark (EPIC_004). Zero runtime dependencies; runs on Node 26 with type stripping (`node src/main.ts`).
+A local, deterministic fake of the job API in [docs/contracts/job-api.md](../../docs/contracts/job-api.md) (STORY_006). Every unit, integration and e2e test targets it; the real server is the model server on the Spark (EPIC_004). Zero runtime dependencies; runs on Node 26 with type stripping (`node src/main.ts`). It offers two fake add-ons, `fake-detail` and `fake-style` (contract v1.2, STORY_019), and `received` echoes the one a job named.
 
 ```bash
 pnpm --filter stub-generation-server start      # STUB_PORT (4110), STUB_HOST (0.0.0.0), STUB_API_KEY

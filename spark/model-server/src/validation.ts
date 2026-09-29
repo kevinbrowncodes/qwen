@@ -1,5 +1,5 @@
 /**
- * Contract v1 request validation for the model server (STORY_015). The rules are the stub's; both suites run the
+ * Contract v1.2 request validation for the model server (STORY_015). The rules are the stub's; both suites run the
  * shared vectors in docs/contracts/validation-vectors.json so they cannot drift.
  */
 import type { MultipartFile } from "./multipart.ts";
@@ -11,6 +11,8 @@ export interface Capabilities {
   readonly defaultRatio: string;
   readonly prompt: { readonly maxChars: number };
   readonly referenceImages: { readonly max: number; readonly maxBytes: number; readonly types: readonly string[] };
+  /** The add-ons installed and loaded (v1.2, STORY_019); empty when there are none. */
+  readonly loras: ReadonlyArray<{ readonly id: string; readonly label: string }>;
 }
 
 export class HttpError extends Error {
@@ -57,6 +59,16 @@ export function validateRequest(caps: Capabilities, fields: Record<string, unkno
   if (typeof model !== "string") throw new HttpError(400, "validation", "model must be a string", "model");
   if (!caps.models.some((m) => m.id === model)) throw new HttpError(400, "unsupported_option", `model ${model} is not offered by this server`, "model");
 
+  // Contract v1.2 (STORY_019): absent, empty or "none" is no add-on; anything else must be one the server offers.
+  const rawLora = fields["lora"];
+  let lora: string | null = null;
+  if (rawLora !== undefined && rawLora !== null && rawLora !== "" && rawLora !== "none") {
+    if (typeof rawLora !== "string" || !caps.loras.some((l) => l.id === rawLora)) {
+      throw new HttpError(400, "unsupported_option", typeof rawLora === "string" ? `add-on ${rawLora} is not offered by this server` : "lora must be a string", "lora");
+    }
+    lora = rawLora;
+  }
+
   const rawSeed = fields["seed"];
   let seed: number;
   if (rawSeed === undefined || rawSeed === "" || rawSeed === null) seed = drawSeed();
@@ -65,5 +77,5 @@ export function validateRequest(caps: Capabilities, fields: Record<string, unkno
     if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > MAX_SEED) throw new HttpError(400, "validation", `seed must be an integer from 0 to ${String(MAX_SEED)}`, "seed");
     seed = n;
   }
-  return { prompt: prompt.trim(), ratio, model, seed, referenceImages: refs.length };
+  return { prompt: prompt.trim(), ratio, model, seed, referenceImages: refs.length, lora };
 }

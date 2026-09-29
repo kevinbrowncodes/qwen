@@ -537,3 +537,22 @@ html.dark .dropzone-overlay .dropzone-overlay-content {
   font-size: 13px;
   opacity: 0.6;
 }
+
+/* STORY_019: with a third dropdown in the phone footer, a label must not wrap ("Model 2.1" broke onto two lines). */
+.clone-dropdown .qwen-chat-v2-dropdown-menu-select {
+  white-space: nowrap;
+}
+/* The phone's add-on trigger is its icon alone: no chevron, so the footer still fits beside Send (STORY_019). */
+html.mobile .clone-dropdown-icon-only .qwen-chat-v2-dropdown-menu-select-arrow {
+  display: none;
+}
+/* Its 24×32 icon keeps a 44×44 touch area (CLAUDE.md §6 rule 9); the 10px each side reaches only the ratio's trailing
+   padding and the gap before Send (measured at iPhone 13). */
+html.mobile .clone-dropdown-icon-only .qwen-chat-v2-dropdown-menu-select {
+  position: relative;
+}
+html.mobile .clone-dropdown-icon-only .qwen-chat-v2-dropdown-menu-select::before {
+  content: "";
+  position: absolute;
+  inset: -6px -10px;
+}

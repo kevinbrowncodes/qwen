@@ -1,7 +1,9 @@
 /**
  * A stand-in for spark/model/worker.py in the gate (STORY_015): the same line protocol, no GPU. It copies the stub's
  * fixture PNG as its "result", steps every FAKE_STEP_MS, and behaves by keyword in the prompt: "crash" exits,
- * "fail" reports a failure, "slow" takes 200 steps. Every job message it receives is appended to FAKE_LOG.
+ * "fail" reports a failure, "slow" takes 200 steps. Every message it receives is appended to FAKE_LOG. It reports
+ * ready with the add-ons from `init` (STORY_019), except any named in FAKE_LORA_FAIL (comma-separated), which it
+ * reports as failing to load, as the real worker does.
  */
 import { appendFileSync, copyFileSync } from "node:fs";
 import { createInterface } from "node:readline";
@@ -15,9 +17,11 @@ const say = (m: object): void => {
 const cancelled = new Set<string>();
 let busy = false;
 
+const failing = new Set((process.env["FAKE_LORA_FAIL"] ?? "").split(",").filter((s) => s !== ""));
+let loras: string[] = [];
 console.log("fake worker: loading (log noise the server must ignore)");
 setTimeout(() => {
-  say({ type: "ready" });
+  say({ type: "ready", loras });
 }, 20);
 
 async function run(job: { id: string; prompt: string; steps: number; output: string; width?: number; height?: number }): Promise<void> {
@@ -45,6 +49,12 @@ createInterface({ input: process.stdin }).on("line", (line) => {
   const m: unknown = JSON.parse(line);
   if (typeof m !== "object" || m === null || !("type" in m)) return;
   if (process.env["FAKE_LOG"]) appendFileSync(process.env["FAKE_LOG"], `${line}\n`);
+  if (m.type === "init" && "loras" in m && Array.isArray(m.loras)) {
+    loras = m.loras.flatMap((l: unknown) => (typeof l === "object" && l !== null && "id" in l && typeof l.id === "string" && !failing.has(l.id) ? [l.id] : []));
+    for (const id of failing) console.log(`fake worker: add-on ${id} failed to load`);
+    say({ type: "ready", loras }); // init may arrive after the first ready; a second ready corrects it
+    return;
+  }
   if (m.type === "cancel" && "id" in m && typeof m.id === "string") cancelled.add(m.id);
   if (m.type === "job" && !busy) void run(m as unknown as Parameters<typeof run>[0]);
 });

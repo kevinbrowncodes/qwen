@@ -5,9 +5,9 @@
  * with `-item-selected` and its check. Behaviour is ours: click or Enter/Space opens, arrows move, Enter picks,
  * Escape or an outside click closes, and focus returns to the trigger.
  */
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "./Icon";
-import { Popup } from "./Popup";
+import { clampLeft, Popup } from "./Popup";
 
 export interface DropdownItem {
   readonly id: string;
@@ -33,6 +33,20 @@ export function Dropdown({ label, display, items, selected, onSelect, placement 
   const trigger = useRef<HTMLDivElement>(null);
   const popup = useRef<HTMLDivElement>(null);
   const listId = useId();
+  /** How far the open popup is pulled left so it stays on screen (STORY_019); measured when the list mounts. */
+  const [shift, setShift] = useState(0);
+  const listRef = useCallback((el: HTMLDivElement | null) => {
+    popup.current = el;
+    if (!el) {
+      setShift(0);
+      return;
+    }
+    const box = el.getBoundingClientRect();
+    setShift((current) => {
+      const natural = box.left + current;
+      return natural - clampLeft(natural, box.width, window.innerWidth);
+    });
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -111,7 +125,7 @@ export function Dropdown({ label, display, items, selected, onSelect, placement 
       {open ? (
         <Popup anchorRef={trigger} placement={placement}>
           {(anchor) => (
-        <div ref={popup} id={listId} role="listbox" aria-label={label} style={{ position: "fixed", left: anchor.left, top: anchor.top }} className={`qwen-chat-v2-dropdown-menu-popup qwen-chat-v2-dropdown-menu-popup-${placement === "top" ? "top" : "bottom"}-left`}>
+        <div ref={listRef} id={listId} role="listbox" aria-label={label} style={{ position: "fixed", left: anchor.left - shift, top: anchor.top }} className={`qwen-chat-v2-dropdown-menu-popup qwen-chat-v2-dropdown-menu-popup-${placement === "top" ? "top" : "bottom"}-left`}>
           {items.map((item, i) => {
             const isSelected = item.id === selected;
             return (

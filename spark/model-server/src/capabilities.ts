@@ -11,6 +11,7 @@ export const MODEL_ID = "qwen-image-2.1";
  * against 248–266 s and 56.7 GiB for the card's 2K sizes (spark/model/measurements/2026-09-26*.json, STORY_014).
  * An edit takes its size from its reference at the same ~1 MP (the pipeline's output_resolution=1024).
  */
+/** Without add-ons; the server adds the ones the worker loaded (STORY_019). */
 export const CAPABILITIES: Capabilities = {
   models: [{ id: MODEL_ID, label: "Qwen-Image 2.1" }],
   ratios: [
@@ -25,6 +26,7 @@ export const CAPABILITIES: Capabilities = {
   defaultRatio: "16:9",
   prompt: { maxChars: 4000 },
   referenceImages: { max: 10, maxBytes: 20 * 1024 * 1024, types: ["image/png", "image/jpeg", "image/webp"] },
+  loras: [],
 };
 
 export const STEPS = 40;

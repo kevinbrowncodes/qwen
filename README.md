@@ -48,7 +48,7 @@ Work is planned as two phases:
 
 ## Project Structure
 
-Present today: `app/`, `tools/gate/`, `tools/stub-generation-server/`, `tools/lan-name/`, `recon/`, `spark/` (model image, model server, worker, service), `docs/` (including `docs/contracts/`), `compose.yaml`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds weights on the Spark.
+Present today: `app/`, `tools/gate/`, `tools/stub-generation-server/`, `tools/lan-name/`, `recon/`, `spark/` (model image, model server, worker, service), `docs/` (including `docs/contracts/`), `compose.yaml`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds the weights, and the add-ons in `models/loras/`, on the Spark.
 
 ```
 app/          the UI
@@ -146,9 +146,12 @@ The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL
 | Memory | Peak **36.9 GiB** on the GPU at 1 MP (56.7 GiB at 2K); the host's used memory rose from 14 to about 54 GiB. A cold start loads for about 3.3 minutes |
 | Port / env vars | `qwen-model:4120` on the docker network `qwen` (host: `127.0.0.1:4120` only). The app reads `MODEL_BASE_URL` (default `http://qwen-model:4120`) and optionally `MODEL_API_KEY` |
 | Moderation | None: the model ships no safety checker, so a job never ends `moderated` |
+| Add-ons (LoRAs) | Listed in `spark/loras.json` and fetched by `spark/fetch-loras.sh` into `models/loras/`. The worker loads them unfused at start (needs `peft` 0.21.1, in the image), and each job picks one or none from the composer's Add-on dropdown (STORY_019). Installed 2026-09-29: **NSFW (f23gg)** (`f23gg/NSFW-LORA-Qwen-Image-2.1` @ `ed1acb1`, 159 MB, **no licence stated**, installed by the owner's decision for private use) and **Uncensored** (`JoyFusionAI/Qwen-Image-2.1-Uncensored-LoRA` @ `112f15b`, 34 MB, Qwen Research License). Both loaded add 3 GiB to the worker's peak (40.0 GiB). An add-on costs about 12% per image, measured with the GPU shared (see STORY_019) |
 
 ```bash
 spark/up.sh                            # start the model server (reads what runs first; refuses below 60 GiB free)
+spark/fetch-loras.sh                   # fetch the add-ons in spark/loras.json; then spark/up.sh to load them
+spark/fetch-loras.sh status            # which add-ons are on disk
 curl -s 127.0.0.1:4120/health          # {"ok":true,...,"ready":true} once loaded
 docker logs -f qwen-model              # the server's and the worker's log
 docker compose -f spark/compose.yaml down   # stop it (frees about 37-54 GiB)

@@ -1,19 +1,25 @@
 """The Qwen-Image-2.1 worker (STORY_015): loads the pipeline once, then runs jobs sent by the model server.
 
 Protocol: one JSON object per line (spark/model-server/src/protocol.ts).
-  stdin:  {"type":"job", id, prompt, seed, steps, width?, height?, references:[paths], output}
+  stdin:  {"type":"init", loras:[{id, path}]}   (first, when the server has add-ons; STORY_019)
+          {"type":"job", id, prompt, seed, steps, width?, height?, references:[paths], output, lora?:{id, scale}}
           {"type":"cancel", id}
-  stdout: {"type":"ready"} | {"type":"progress", id, step, steps}
+  stdout: {"type":"ready", loras:[ids that loaded]} | {"type":"progress", id, step, steps}
           {"type":"done", id, path, width, height} | {"type":"failed", id, message} | {"type":"cancelled", id}
 
 stdout carries protocol lines only: the libraries' own prints and progress bars are sent to stderr, which the server
 logs. A cancel is honoured at the next denoising step: the step callback raises, the pipeline unwinds, and the worker
 is free for the next job.
+
+Add-ons (LoRAs, STORY_019) are loaded once, after the pipeline, and left unfused: each job enables the one it names
+at its strength, or disables them all, so switching costs nothing. One that fails to load is logged and left out, and
+the server never offers it.
 """
 
 import json
 import os
 import queue
+import select
 import sys
 import threading
 
@@ -67,7 +73,54 @@ def load_image(path: str) -> Image.Image:
     return image.convert("RGBA") if has_alpha else image.convert("RGB")
 
 
-def run(pipe, job: dict) -> None:
+def read_init(timeout: float = 2.0) -> list:
+    """The add-ons the server asked for. It writes `init` as soon as the worker starts, so after the minutes the
+    pipeline takes to load it is already waiting; no line within the timeout means the server has none."""
+    ready, _, _ = select.select([sys.stdin], [], [], timeout)
+    if not ready:
+        return []
+    line = sys.stdin.readline().strip()
+    try:
+        message = json.loads(line) if line else {}
+    except json.JSONDecodeError:
+        message = {}
+    if message.get("type") == "init":
+        return [l for l in message.get("loras") or [] if isinstance(l, dict) and l.get("id") and l.get("path")]
+    if message.get("type") == "job":
+        _jobs.put(message)  # not expected before ready, but never dropped
+    return []
+
+
+def load_loras(pipe, wanted: list) -> list:
+    """Loads each add-on under its id; returns the ids that loaded."""
+    loaded = []
+    for lora in wanted:
+        try:
+            pipe.load_lora_weights(
+                os.path.dirname(lora["path"]), weight_name=os.path.basename(lora["path"]), adapter_name=lora["id"]
+            )
+            loaded.append(lora["id"])
+            print(f"worker: add-on {lora['id']} loaded", file=sys.stderr)
+        except Exception as error:  # a bad file must not keep the model from serving
+            print(f"worker: add-on {lora['id']} failed to load: {type(error).__name__}: {error}"[:400], file=sys.stderr)
+    if loaded:
+        pipe.disable_lora()
+    return loaded
+
+
+def use_lora(pipe, job: dict, loaded: list) -> None:
+    """Exactly the job's add-on at its strength, or none."""
+    lora = job.get("lora")
+    if lora and lora.get("id") in loaded:
+        pipe.enable_lora()
+        pipe.set_adapters([lora["id"]], adapter_weights=[float(lora.get("scale", 1.0))])
+    elif lora:
+        raise RuntimeError(f"the add-on {lora.get('id')} is not loaded")
+    elif loaded:
+        pipe.disable_lora()
+
+
+def run(pipe, job: dict, loaded: list) -> None:
     job_id = job["id"]
     steps = int(job.get("steps", 40))
 
@@ -91,6 +144,7 @@ def run(pipe, job: dict) -> None:
     if references:
         kwargs["image"] = references if len(references) > 1 else references[0]
     try:
+        use_lora(pipe, job, loaded)
         image = pipe(**kwargs).images[0]
         image.save(job["output"])
         say({"type": "done", "id": job_id, "path": job["output"], "width": image.width, "height": image.height})
@@ -112,8 +166,9 @@ def main() -> int:
 
     pipe = QwenImage21Pipeline.from_pretrained(WEIGHTS, torch_dtype=torch.bfloat16).to("cuda")
     pipe.set_progress_bar_config(disable=True)
+    loaded = load_loras(pipe, read_init())
     threading.Thread(target=read_stdin, daemon=True).start()
-    say({"type": "ready"})
+    say({"type": "ready", "loras": loaded})
     while True:
         job = _jobs.get()
         if job.get("type") == "exit":
@@ -123,7 +178,7 @@ def main() -> int:
                 _cancelled.discard(job["id"])
                 say({"type": "cancelled", "id": job["id"]})
                 continue
-        run(pipe, job)
+        run(pipe, job, loaded)
 
 
 if __name__ == "__main__":

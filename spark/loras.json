@@ -1,0 +1,27 @@
+{
+  "about": "Community add-ons (LoRAs) for Qwen-Image-2.1 (STORY_019). Fetched by spark/fetch-loras.sh into models/loras/<id>/ (gitignored); the model server offers those fetched and loaded. Each licence was read from the repo on readOn, before the fetch.",
+  "loras": [
+    {
+      "id": "nsfw-f23gg",
+      "label": "NSFW (f23gg)",
+      "repo": "f23gg/NSFW-LORA-Qwen-Image-2.1",
+      "revision": "ed1acb15578a4d16d26032e8b8c10ca439843ecf",
+      "file": "NSFW Qwen Lora.safetensors",
+      "scale": 1.0,
+      "license": "none stated",
+      "readOn": "2026-09-29",
+      "note": "The repo states no licence. Installed by the owner's decision on 2026-09-29, for personal, private, non-commercial use only."
+    },
+    {
+      "id": "uncensored",
+      "label": "Uncensored",
+      "repo": "JoyFusionAI/Qwen-Image-2.1-Uncensored-LoRA",
+      "revision": "112f15b699d8071ae7e79640fe4a35c4acfac7d0",
+      "file": "qwen-image-2.1-uncensored-lora.safetensors",
+      "sha256": "00ee2cb7f00a37b097640c1880ed0d17e368e30599f34bb348fee0e8c2cc4ca1",
+      "scale": 1.0,
+      "license": "Qwen Research License (non-commercial), per the repo's card",
+      "readOn": "2026-09-29"
+    }
+  ]
+}

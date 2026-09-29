@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { useRef } from "react";
 import { describe, expect, it } from "vitest";
-import { anchorFor, Popup } from "./Popup";
+import { anchorFor, clampLeft, Popup } from "./Popup";
 
 describe("anchorFor", () => {
   it("sits below the trigger with a gap, or above it for the pinned composer", () => {
@@ -31,5 +31,17 @@ describe("Popup", () => {
     expect(popup).not.toBeNull();
     expect(container.contains(popup)).toBe(false);
     expect(popup?.parentElement).toBe(document.body);
+  });
+});
+
+describe("clampLeft (STORY_019)", () => {
+  it("leaves a popup that fits where it is", () => {
+    expect(clampLeft(100, 200, 390)).toBe(100);
+  });
+  it("pulls one that would run off the right edge back in, 8px from it", () => {
+    expect(clampLeft(300, 200, 390)).toBe(182);
+  });
+  it("never pushes one past the left edge, even when it is wider than the viewport", () => {
+    expect(clampLeft(300, 500, 390)).toBe(8);
   });
 });

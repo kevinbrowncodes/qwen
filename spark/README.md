@@ -35,6 +35,17 @@ docker build -t qwen/model:dev --build-arg UID=$(id -u) --build-arg GID=$(id -g)
 spark/model/try.sh      # STORY_014: renders by hand, records time and memory in spark/model/measurements/<date>.json
 ```
 
+## Add-ons (STORY_019)
+
+Community LoRAs for Qwen-Image-2.1 (never ones for the older 20B Qwen-Image, which don't fit).
+
+- **`spark/loras.json` is the record.** Each entry has its repo, pinned revision, file, strength, optional trigger words, licence, and the date the licence was read. An entry with no licence also records the owner's decision to install it.
+- **`spark/fetch-loras.sh`** fetches them into `models/loras/<id>/` (gitignored) in a `python:3.12-slim` container, and checks a `sha256` where the manifest gives one. `status` lists what's on disk.
+- **Mounts:** `spark/compose.yaml` mounts the manifest at `/srv/loras.json` and the files at `/loras`, both read-only.
+- **At start,** the model server sends the worker an `init` line naming the add-ons that are on disk. The worker loads each with `load_lora_weights` (this needs `peft`, pinned in the image), unfused, and reports in `ready` the ones that loaded. One that fails to load is logged and never offered.
+- **Per job:** `set_adapters([id], [scale])` for the one the job names, or `disable_lora()`.
+- **Verified 2026-09-29:** both installed add-ons load. diffusers converts the Kohya/Comfy keys (`diffusion_model.…`) and the PEFT keys alike. The worker's peak is 40.0 GiB with both loaded, against 36.9 GiB without.
+
 ## Measured on 2026-09-26 (STORY_014)
 
 `spark/model/measurements/2026-09-26.json` and `2026-09-26-1mp.json`. Qwen-Image-2.1, bf16, 40 steps, `true_cfg_scale` 1.0, seed 42. torch 2.11.0+cu130, diffusers `e0abab83`, transformers 5.17.0, device GB10 (capability 12.1).

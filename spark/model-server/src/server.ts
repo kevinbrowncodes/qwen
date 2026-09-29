@@ -1,5 +1,5 @@
 /**
- * The model server (STORY_015): docs/contracts/job-api.md v1 in front of Qwen-Image-2.1. This process owns the
+ * The model server (STORY_015): docs/contracts/job-api.md v1.2 in front of Qwen-Image-2.1. This process owns the
  * contract (HTTP, validation, the queue, cancel, results on disk); the Python worker (spark/model/worker.py) owns
  * the pipeline. One job runs at a time. Zero runtime dependencies, like the stub.
  */
@@ -10,8 +10,9 @@ import path from "node:path";
 import { CAPABILITIES, STEPS } from "./capabilities.ts";
 import { BusyError, isTerminal, Jobs, type JobRecord } from "./jobs.ts";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
+import { withTrigger, type Lora } from "./loras.ts";
 import { progressFor, type FromWorker } from "./protocol.ts";
-import { HttpError, validateRequest } from "./validation.ts";
+import { HttpError, validateRequest, type Capabilities } from "./validation.ts";
 import { Worker } from "./worker.ts";
 
 export const VERSION = "1.0.0";
@@ -27,6 +28,8 @@ export interface ModelServerOptions {
   readonly maxQueued?: number;
   readonly restartDelayMs?: number;
   readonly log?: (line: string) => void;
+  /** The add-ons fetched onto disk (loras.ts); offered once the worker reports them loaded (STORY_019). */
+  readonly loras?: readonly Lora[];
 }
 
 export interface ModelServer {
@@ -79,6 +82,10 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
   let current: string | null = null;
   /** A clean shutdown leaves a running job as it is, so the restart reports it as interrupted (RESTARTED). */
   let closing = false;
+  const installed = options.loras ?? [];
+  /** The add-ons the worker reported loaded in its last `ready`; one that failed to load is never offered. */
+  let loaded: readonly Lora[] = [];
+  const capabilities = (): Capabilities => ({ ...CAPABILITIES, loras: loaded.map((l) => ({ id: l.id, label: l.label })) });
 
   const save = (): void => {
     const temp = `${indexFile}.tmp`;
@@ -111,6 +118,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       },
     },
     options.restartDelayMs,
+    installed.length > 0 ? { type: "init", loras: installed.map((l) => ({ id: l.id, path: l.path })) } : undefined,
   );
 
   const pump = (): void => {
@@ -118,15 +126,25 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
     const job = jobs.next();
     if (!job) return;
     const size = job.request.ratio === null ? undefined : CAPABILITIES.ratios.find((r) => r.id === job.request.ratio);
+    const lora = job.request.lora === null ? undefined : loaded.find((l) => l.id === job.request.lora);
+    if (job.request.lora !== null && !lora) {
+      // The worker restarted and this add-on did not load again: fail the job rather than run it without.
+      jobs.fail(job.id, `The add-on ${job.request.lora} is not loaded on the model server.`);
+      cleanup(job);
+      save();
+      pump();
+      return;
+    }
     const sent = worker.send({
       type: "job",
       id: job.id,
-      prompt: job.request.prompt,
+      prompt: withTrigger(job.request.prompt, lora),
       seed: job.request.seed,
       steps: STEPS,
       ...(size ? { width: size.width, height: size.height } : {}),
       references: job.references,
       output: path.join(outputDir, `${job.id}.png`),
+      ...(lora ? { lora: { id: lora.id, scale: lora.scale } } : {}),
     });
     if (!sent) return;
     current = job.id;
@@ -136,7 +154,9 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
 
   const handle = (m: FromWorker): void => {
     if (m.type === "ready") {
-      log("[model] worker ready");
+      loaded = installed.filter((l) => m.loras.includes(l.id));
+      log(`[model] worker ready${loaded.length > 0 ? ` with add-ons ${loaded.map((l) => l.id).join(", ")}` : ""}`);
+      for (const l of installed) if (!loaded.includes(l)) log(`[model] add-on ${l.id} did not load; it is not offered`);
       pump();
       return;
     }
@@ -210,7 +230,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
         throw error;
       }
     }
-    const request = validateRequest(CAPABILITIES, fields, uploads, () => randomInt(0, 2 ** 32 - 1));
+    const request = validateRequest(capabilities(), fields, uploads, () => randomInt(0, 2 ** 32 - 1));
     const id = randomUUID();
     const refs = uploads.filter((u) => u.field === "referenceImage");
     const dir = path.join(uploadsDir, id);
@@ -247,7 +267,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       return;
     }
     if (method === "GET" && p === "/capabilities") {
-      sendJson(res, 200, CAPABILITIES);
+      sendJson(res, 200, capabilities());
       return;
     }
     if (method === "POST" && p === "/jobs") {

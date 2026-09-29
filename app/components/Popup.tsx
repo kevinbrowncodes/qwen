@@ -17,6 +17,14 @@ export function anchorFor(box: { left: number; top: number; bottom: number }, pl
   return placement === "bottom" ? { left: box.left, top: box.bottom + gap } : { left: box.left, top: box.top - gap };
 }
 
+/**
+ * Pure: the left edge that keeps a popup of `width` inside the viewport, `margin` from its right edge (and never past
+ * the left one). A popup opened from a trigger near the right edge shifts left instead of running off (STORY_019).
+ */
+export function clampLeft(left: number, width: number, viewport: number, margin = 8): number {
+  return Math.max(margin, Math.min(left, viewport - width - margin));
+}
+
 export function Popup({ anchorRef, placement, children }: { readonly anchorRef: RefObject<HTMLElement | null>; readonly placement: "bottom" | "top"; readonly children: (anchor: Anchor) => ReactNode }) {
   const [anchor, setAnchor] = useState<Anchor | null>(null);
   useLayoutEffect(() => {

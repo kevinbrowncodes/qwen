@@ -19,6 +19,7 @@ const ago = (days: number): string => {
 };
 const entry = (id: string, days: number, status: HistoryEntry["status"] = "done"): HistoryEntry => ({
   id,
+  lora: null,
   prompt: `a prompt for ${id}\nsecond line`,
   ratio: "1:1",
   model: "m",

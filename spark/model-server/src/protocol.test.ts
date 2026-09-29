@@ -4,10 +4,13 @@ import { encode, LineSplitter, parseWorkerLine, progressFor } from "./protocol.t
 describe("worker protocol", () => {
   it("encodes one JSON object per line", () => {
     expect(encode({ type: "cancel", id: "a" })).toBe('{"type":"cancel","id":"a"}\n');
+    expect(JSON.parse(encode({ type: "init", loras: [{ id: "x", path: "/loras/x/x.safetensors" }] }))).toEqual({ type: "init", loras: [{ id: "x", path: "/loras/x/x.safetensors" }] });
   });
 
   it("parses every message the worker sends", () => {
-    expect(parseWorkerLine('{"type":"ready"}')).toEqual({ type: "ready" });
+    // A worker from before STORY_019 reports no add-ons; one after lists those that loaded, ignoring non-strings.
+    expect(parseWorkerLine('{"type":"ready"}')).toEqual({ type: "ready", loras: [] });
+    expect(parseWorkerLine('{"type":"ready","loras":["uncensored",3,""]}')).toEqual({ type: "ready", loras: ["uncensored"] });
     expect(parseWorkerLine('{"type":"progress","id":"a","step":3,"steps":40}')).toEqual({ type: "progress", id: "a", step: 3, steps: 40 });
     expect(parseWorkerLine('{"type":"done","id":"a","path":"/o/a.png","width":64,"height":36}')).toMatchObject({ type: "done", width: 64 });
     expect(parseWorkerLine('{"type":"failed","id":"a","message":"OOM"}')).toEqual({ type: "failed", id: "a", message: "OOM" });

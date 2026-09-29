@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BusyError, Jobs, RESTARTED } from "./jobs.ts";
 
-const req = { prompt: "p", ratio: "1:1", model: "qwen-image-2.1", seed: 1, referenceImages: 0 };
+const req = { prompt: "p", ratio: "1:1", model: "qwen-image-2.1", seed: 1, referenceImages: 0, lora: null };
 let tick = 0;
 const clock = (): string => `2026-09-26T00:00:${String(tick++).padStart(2, "0")}.000Z`;
 
@@ -81,5 +81,12 @@ describe("Jobs", () => {
     expect(Jobs.fromIndex("{").all()).toEqual([]);
     expect(Jobs.fromIndex('{"a":1}').all()).toEqual([]);
     expect(Jobs.fromIndex('[1, {"id":"x"}, {"id":"y","request":{},"status":"weird"}]').all()).toEqual([]);
+  });
+
+  it("reads a job saved before add-ons existed as having none, and keeps one that named an add-on (STORY_019)", () => {
+    const old = '[{"id":"o","request":{"prompt":"p","ratio":"1:1","model":"m","seed":1,"referenceImages":0},"status":"done","progress":100}]';
+    expect(Jobs.fromIndex(old).get("o")?.request.lora).toBeNull();
+    const withAddOn = '[{"id":"n","request":{"prompt":"p","ratio":"1:1","model":"m","seed":1,"referenceImages":0,"lora":"uncensored"},"status":"done","progress":100}]';
+    expect(Jobs.fromIndex(withAddOn).get("n")?.request.lora).toBe("uncensored");
   });
 });

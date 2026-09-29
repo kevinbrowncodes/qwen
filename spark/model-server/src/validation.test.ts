@@ -60,6 +60,42 @@ describe("references", () => {
   });
 });
 
+describe("the contract's shared add-on vectors (v1.2, STORY_019)", () => {
+  interface LoraCase {
+    readonly body: Record<string, unknown>;
+    readonly status: number;
+    readonly lora?: string | null;
+    readonly code?: string;
+    readonly field?: string;
+  }
+  const loraCases: LoraCase[] = typeof vectors === "object" && vectors !== null && "loraCases" in vectors && Array.isArray(vectors.loraCases) ? (vectors.loraCases as LoraCase[]) : [];
+  const caps = { ...CAPABILITIES, loras: [{ id: "fake-detail", label: "Fake detail" }] };
+
+  it("has add-on cases to run", () => {
+    expect(loraCases.length).toBeGreaterThanOrEqual(5);
+  });
+
+  for (const c of loraCases) {
+    it(`add-on ${JSON.stringify(c.body["lora"] ?? "(absent)")} → ${String(c.status)}`, () => {
+      const run = (): unknown => validateRequest(caps, c.body, [], () => 7);
+      if (c.status === 202) {
+        expect(run()).toMatchObject({ lora: c.lora ?? null });
+        return;
+      }
+      expect(run).toThrow(HttpError);
+      try {
+        run();
+      } catch (e) {
+        expect(e).toMatchObject({ status: c.status, code: c.code, field: c.field });
+      }
+    });
+  }
+
+  it("offers nothing when no add-on is installed", () => {
+    expect(() => validateRequest(CAPABILITIES, { prompt: "x", ratio: "1:1", lora: "fake-detail" }, [], () => 1)).toThrow(/not offered/);
+  });
+});
+
 describe("the contract's shared edit vectors (v1.1, STORY_017)", () => {
   interface EditCase {
     readonly body: Record<string, unknown>;

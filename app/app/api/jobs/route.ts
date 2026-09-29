@@ -10,9 +10,12 @@ interface Sent {
   readonly ratio: string | null;
   readonly model: string;
   readonly referenceImages: number;
+  /** The add-on named (contract v1.2, STORY_019); "none" and absent are null. */
+  readonly lora: string | null;
 }
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
+const loraOf = (v: unknown): string | null => (str(v) === "none" ? null : str(v) || null);
 
 /** After the server accepted the job, it is recorded in history BEFORE the browser hears back (CLAUDE.md §4c). */
 async function recorded(response: Response, sent: Sent): Promise<Response> {
@@ -38,7 +41,7 @@ export function POST(request: Request): Promise<Response> {
         // the server validates and answers 400
       }
       const fields = typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? new Map(Object.entries(parsed)) : new Map<string, unknown>();
-      const sent: Sent = { prompt: str(fields.get("prompt")).trim(), ratio: str(fields.get("ratio")) || null, model: str(fields.get("model")), referenceImages: 0 };
+      const sent: Sent = { prompt: str(fields.get("prompt")).trim(), ratio: str(fields.get("ratio")) || null, model: str(fields.get("model")), referenceImages: 0, lora: loraOf(fields.get("lora")) };
       return recorded(await forward(path, { method: "POST", headers: { "content-type": "application/json" }, body: text }), sent);
     }
     if (contentType.startsWith("multipart/form-data")) {
@@ -56,6 +59,7 @@ export function POST(request: Request): Promise<Response> {
         ratio: files.length > 0 && str(form.get("ratio")) === "match" ? null : str(form.get("ratio")) || null,
         model: str(form.get("model")),
         referenceImages: files.length,
+        lora: loraOf(form.get("lora")),
       };
       return recorded(await forward(path, { method: "POST", body: out }), sent);
     }

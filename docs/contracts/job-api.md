@@ -1,6 +1,6 @@
 # Job API contract: create, then status, then result
 
-**Version 1.1 (2026-09-27, STORY_017; v1 2026-09-26, STORY_006).** v1.1 lets an edit choose its ratio. This is the one protocol the UI speaks to an image generation server. Two servers implement it:
+**Version 1.2 (2026-09-29, STORY_019; v1.1 2026-09-27, STORY_017; v1 2026-09-26, STORY_006).** v1.1 lets an edit choose its ratio; v1.2 adds community add-ons (LoRAs). This is the one protocol the UI speaks to an image generation server. Two servers implement it:
 - the **stub** (`tools/stub-generation-server/`, STORY_006), with scripted outcomes for the test gate;
 - the **model server** on the Spark (`spark/`, EPIC_004), in front of Qwen-Image-2.1.
 
@@ -27,13 +27,15 @@ The browser never calls either directly. It calls the app's own routes (STORY_00
   "ratios": [{ "id": "1:1", "width": 1024, "height": 1024 }, { "id": "16:9", "width": 1376, "height": 768 }, "…"],
   "defaultRatio": "16:9",
   "prompt": { "maxChars": 4000 },
-  "referenceImages": { "max": 10, "maxBytes": 20971520, "types": ["image/png", "image/jpeg", "image/webp"] }
+  "referenceImages": { "max": 10, "maxBytes": 20971520, "types": ["image/png", "image/jpeg", "image/webp"] },
+  "loras": [{ "id": "uncensored", "label": "Uncensored" }]
 }
 ```
 
 - `ratios` lists the seven ratios in the reference's order: `1:1`, `2:3`, `3:2`, `3:4`, `4:3`, `16:9`, `9:16`.
 - `width` and `height` are what the server produces for a text-to-image job at that ratio. The model server's are about 1 megapixel, chosen from measurements on the Spark (STORY_014); the stub reports the same.
 - An edit takes the shape of its last reference at about 1 MP, unless it names a ratio (v1.1), in which case it is produced at that ratio's size.
+- `loras` (v1.2) lists the add-ons the server has loaded and can apply, by id and a label for the UI. It is `[]` when there are none. The strength each is applied at is the server's own setting.
 
 ## `POST /jobs`: create a job
 
@@ -50,6 +52,7 @@ or `multipart/form-data`, with the same fields as text parts plus **0–10** `re
 | `prompt` | string, 1 to `prompt.maxChars` characters after trimming; required |
 | `ratio` | one of `ratios[].id`; required without reference images. With them (v1.1) it is optional: absent, empty or `"match"` takes the last reference's shape and is echoed as `null`; a ratio id produces that ratio's size and is echoed as sent; anything else is `400 unsupported_option` |
 | `model` | one of `models[].id`; optional, defaults to the first |
+| `lora` | (v1.2) optional. Absent, empty or `"none"` uses no add-on and is echoed as `null`; one of `loras[].id` applies that add-on and is echoed as sent; anything else is `400 unsupported_option` |
 | `seed` | integer from 0 to 4294967295; optional. The server draws one when absent and echoes the one used |
 | `referenceImage` | multipart file parts, 0 to `referenceImages.max`, each one of `referenceImages.types` and at most `referenceImages.maxBytes`; order is meaningful |
 
@@ -71,7 +74,7 @@ Errors:
   "progress": 100,
   "createdAt": "2026-09-26T22:00:00.000Z",
   "updatedAt": "2026-09-26T22:00:35.000Z",
-  "request": { "prompt": "…", "ratio": "16:9", "model": "qwen-image-2.1", "seed": 42, "referenceImages": 0 },
+  "request": { "prompt": "…", "ratio": "16:9", "model": "qwen-image-2.1", "seed": 42, "referenceImages": 0, "lora": null },
   "error": { "code": "moderated", "message": "…" },
   "result": { "url": "/jobs/…/result", "mimeType": "image/png", "width": 1376, "height": 768, "sizeBytes": 1461575 }
 }

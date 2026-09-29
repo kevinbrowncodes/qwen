@@ -246,6 +246,25 @@ describe("the contract's shared validation vectors (STORY_015)", () => {
   });
 });
 
+describe("the contract's shared add-on vectors (v1.2, STORY_019)", () => {
+  const vectors: unknown = JSON.parse(readFileSync(new URL("../../../docs/contracts/validation-vectors.json", import.meta.url), "utf8"));
+  type LoraCase = { body: Record<string, unknown>; status: number; lora?: string | null; code?: string; field?: string };
+  const loraCases: LoraCase[] = typeof vectors === "object" && vectors !== null && "loraCases" in vectors && Array.isArray(vectors.loraCases) ? (vectors.loraCases as LoraCase[]) : [];
+  it("offers the two fake add-ons", async () => {
+    expect(await json(await fetch(`${base}/capabilities`))).toMatchObject({ loras: [{ id: "fake-detail" }, { id: "fake-style" }] });
+  });
+  it.each(loraCases)("add-on $body.lora → $status", async (c) => {
+    const res = await create(c.body);
+    expect(res.status).toBe(c.status);
+    if (c.status !== 202) {
+      expect(await json(res)).toMatchObject({ error: { code: c.code, field: c.field } });
+      return;
+    }
+    const id = String((await json(res))["id"]);
+    expect(await json(await fetch(`${base}/__stub/jobs/${id}/received`))).toMatchObject({ request: { lora: c.lora ?? null } });
+  });
+});
+
 describe("the contract's shared edit vectors (v1.1, STORY_017)", () => {
   const vectors: unknown = JSON.parse(readFileSync(new URL("../../../docs/contracts/validation-vectors.json", import.meta.url), "utf8"));
   type EditCase = { body: Record<string, string>; status: number; ratio?: string | null; code?: string; field?: string };

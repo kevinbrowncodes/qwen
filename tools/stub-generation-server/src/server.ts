@@ -33,6 +33,11 @@ export const CAPABILITIES = {
   defaultRatio: "16:9",
   prompt: { maxChars: 4000 },
   referenceImages: { max: 10, maxBytes: MAX_FILE_BYTES, types: ["image/png", "image/jpeg", "image/webp"] },
+  // Contract v1.2 (STORY_019): two fake add-ons, so the UI's picker and the shared vectors have something to choose.
+  loras: [
+    { id: "fake-detail", label: "Fake detail" },
+    { id: "fake-style", label: "Fake style" },
+  ],
 } as const;
 
 const MAX_SEED = 4294967295;
@@ -43,6 +48,8 @@ export interface JobRequest {
   readonly model: string;
   readonly seed: number;
   readonly referenceImages: number;
+  /** The add-on named (v1.2, STORY_019), or null. */
+  readonly lora: string | null;
 }
 export interface ReceivedUpload {
   readonly filename: string;
@@ -161,6 +168,16 @@ export function validateRequest(fields: Record<string, unknown>, uploads: readon
   if (typeof model !== "string") throw new HttpError(400, "validation", "model must be a string", "model");
   if (!CAPABILITIES.models.some((m) => m.id === model)) throw new HttpError(400, "unsupported_option", `model ${model} is not offered by this server`, "model");
 
+  // Contract v1.2 (STORY_019): absent, empty or "none" is no add-on; anything else must be one offered.
+  const rawLora = fields["lora"];
+  let lora: string | null = null;
+  if (rawLora !== undefined && rawLora !== null && rawLora !== "" && rawLora !== "none") {
+    if (typeof rawLora !== "string" || !CAPABILITIES.loras.some((l) => l.id === rawLora)) {
+      throw new HttpError(400, "unsupported_option", typeof rawLora === "string" ? `add-on ${rawLora} is not offered by this server` : "lora must be a string", "lora");
+    }
+    lora = rawLora;
+  }
+
   const rawSeed = fields["seed"];
   let seed: number;
   if (rawSeed === undefined || rawSeed === "" || rawSeed === null) {
@@ -172,7 +189,7 @@ export function validateRequest(fields: Record<string, unknown>, uploads: readon
     }
     seed = n;
   }
-  return { prompt: prompt.trim(), ratio, model, seed, referenceImages: refs.length };
+  return { prompt: prompt.trim(), ratio, model, seed, referenceImages: refs.length, lora };
 }
 
 export function createStubServer(options: StubOptions = {}): StubServer {

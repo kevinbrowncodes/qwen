@@ -22,6 +22,8 @@ ARG TORCHVISION_VERSION=0.26.0+cu130
 ARG DIFFUSERS_COMMIT=e0abab83b5df05de9e7abd788643c1a7c1e42e28
 # The model card needs transformers >= 5.17.
 ARG TRANSFORMERS_VERSION=5.17.0
+# STORY_019: diffusers loads LoRAs (the community add-ons) only through PEFT. Latest release as read on 2026-09-29.
+ARG PEFT_VERSION=0.21.1
 ARG UID=1000
 ARG GID=1000
 
@@ -44,6 +46,9 @@ RUN /srv/model/venv/bin/pip install --quiet --extra-index-url "${TORCH_INDEX}" "
 RUN /srv/model/venv/bin/pip install --quiet \
       "git+https://github.com/huggingface/diffusers@${DIFFUSERS_COMMIT}" \
       "transformers==${TRANSFORMERS_VERSION}" accelerate pillow \
+ && /srv/model/venv/bin/pip freeze > /srv/model/requirements.lock
+# Its own layer, so adding it kept the torch and diffusers layers above; the lock is written again with it.
+RUN /srv/model/venv/bin/pip install --quiet "peft==${PEFT_VERSION}" \
  && /srv/model/venv/bin/pip freeze > /srv/model/requirements.lock
 
 # Node for the model server: the official binary, the same pinned image the app uses (glibc 2.36 → runs on 24.04).

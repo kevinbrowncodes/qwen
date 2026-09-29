@@ -1,10 +1,10 @@
 /**
  * The Python worker as the server sees it (STORY_015): a child process spoken to in JSON lines. It is started once,
  * reports `ready` when the pipeline has loaded, and is restarted if it exits; whoever owns it is told, so the job it
- * was running can be failed.
+ * was running can be failed. `init`, when given, is its first line on every start (the add-ons to load, STORY_019).
  */
 import { spawn, type ChildProcess } from "node:child_process";
-import { encode, LineSplitter, parseWorkerLine, type FromWorker, type ToWorker } from "./protocol.ts";
+import { encode, LineSplitter, parseWorkerLine, type FromWorker, type ToWorker, type WorkerInit } from "./protocol.ts";
 
 export interface WorkerEvents {
   readonly onMessage: (m: FromWorker) => void;
@@ -19,11 +19,13 @@ export class Worker {
   private readonly command: readonly string[];
   private readonly events: WorkerEvents;
   private readonly restartDelayMs: number;
+  private readonly init: WorkerInit | undefined;
 
-  constructor(command: readonly string[], events: WorkerEvents, restartDelayMs = 1000) {
+  constructor(command: readonly string[], events: WorkerEvents, restartDelayMs = 1000, init?: WorkerInit) {
     this.command = command;
     this.events = events;
     this.restartDelayMs = restartDelayMs;
+    this.init = init;
   }
 
   get ready(): boolean {
@@ -36,6 +38,7 @@ export class Worker {
     this.readyNow = false;
     const child = spawn(cmd, args, { stdio: ["pipe", "pipe", "pipe"] });
     this.child = child;
+    if (this.init) child.stdin.write(encode(this.init));
     const out = new LineSplitter();
     child.stdout.setEncoding("utf8");
     child.stdout.on("data", (chunk: string) => {

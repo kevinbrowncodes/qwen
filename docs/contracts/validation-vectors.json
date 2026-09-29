@@ -1,5 +1,5 @@
 {
-  "about": "Contract v1 request validation, shared by the stub's and the model server's tests (STORY_015) so the two cannot drift. Each case is a create body; `cases` carry no references, `editCases` are sent with one PNG reference (v1.1, STORY_017) and the answer the contract requires.",
+  "about": "Contract v1 request validation, shared by the stub's and the model server's tests (STORY_015) so the two cannot drift. Each case is a create body; `cases` carry no references, `editCases` are sent with one PNG reference (v1.1, STORY_017) and the answer the contract requires. `loraCases` (v1.2, STORY_019) are sent as JSON to a server whose capabilities offer the add-on `fake-detail` (the stub's first fake add-on); `lora` is what the status must echo.",
   "cases": [
     {
       "body": {
@@ -158,6 +158,63 @@
       "status": 400,
       "code": "unsupported_option",
       "field": "ratio"
+    }
+  ],
+  "loraCases": [
+    {
+      "body": {
+        "prompt": "a cat",
+        "ratio": "1:1"
+      },
+      "status": 202,
+      "lora": null
+    },
+    {
+      "body": {
+        "prompt": "a cat",
+        "ratio": "1:1",
+        "lora": ""
+      },
+      "status": 202,
+      "lora": null
+    },
+    {
+      "body": {
+        "prompt": "a cat",
+        "ratio": "1:1",
+        "lora": "none"
+      },
+      "status": 202,
+      "lora": null
+    },
+    {
+      "body": {
+        "prompt": "a cat",
+        "ratio": "1:1",
+        "lora": "fake-detail"
+      },
+      "status": 202,
+      "lora": "fake-detail"
+    },
+    {
+      "body": {
+        "prompt": "a cat",
+        "ratio": "1:1",
+        "lora": "not-installed"
+      },
+      "status": 400,
+      "code": "unsupported_option",
+      "field": "lora"
+    },
+    {
+      "body": {
+        "prompt": "a cat",
+        "ratio": "1:1",
+        "lora": 5
+      },
+      "status": 400,
+      "code": "unsupported_option",
+      "field": "lora"
     }
   ]
 }

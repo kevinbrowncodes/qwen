@@ -1,8 +1,8 @@
 import { validateAddition, type Candidate } from "./upload-validation";
 
 /**
- * The composer's state (STORY_010), as a pure reducer: the mode (resting or image), the model and ratio the owner
- * chose, and the text. Defaults come from the generation server's capabilities, with a static fallback shaped like
+ * The composer's state (STORY_010), as a pure reducer: the mode (resting or image), the model, ratio and add-on
+ * (STORY_019) the owner chose, and the text. Defaults come from the generation server's capabilities, with a static fallback shaped like
  * contract v1 so image mode still opens when the server is down (the submit then shows the server's answer).
  */
 export type Mode = "chat" | "image";
@@ -16,11 +16,17 @@ export interface RatioOption {
   readonly width: number;
   readonly height: number;
 }
+/** A community add-on (LoRA) the server has loaded (contract v1.2, STORY_019). */
+export interface LoraOption {
+  readonly id: string;
+  readonly label: string;
+}
 export interface Capabilities {
   readonly models: readonly ModelOption[];
   readonly ratios: readonly RatioOption[];
   readonly defaultRatio: string;
   readonly maxReferences: number;
+  readonly loras: readonly LoraOption[];
 }
 
 /** The reference's order (docs/recon/2026-09-26/interactions.md → The options), at the model server's sizes (STORY_014). */
@@ -37,6 +43,7 @@ export const FALLBACK_CAPABILITIES: Capabilities = {
   ],
   defaultRatio: "16:9",
   maxReferences: 10,
+  loras: [],
 };
 
 /** A reference image attached for an edit (STORY_011); `key` is stable for React and removal. */
@@ -51,6 +58,8 @@ export interface ComposerState {
   readonly ratio: string;
   /** The ratio for an edit (STORY_017): MATCH_REFERENCE keeps the reference's shape; otherwise a ratio id. */
   readonly editRatio: string;
+  /** The add-on for the next generation (STORY_019): NO_LORA, or an id from the capabilities. */
+  readonly lora: string;
   readonly text: string;
   readonly references: readonly ReferenceItem[];
   /** Why the last attachment was refused, shown under the composer until the next change. */
@@ -63,6 +72,7 @@ export type ComposerAction =
   | { readonly type: "setModel"; readonly model: string }
   | { readonly type: "setRatio"; readonly ratio: string }
   | { readonly type: "setEditRatio"; readonly ratio: string }
+  | { readonly type: "setLora"; readonly lora: string }
   | { readonly type: "setText"; readonly text: string }
   | { readonly type: "capabilities"; readonly capabilities: Capabilities }
   | { readonly type: "addReferences"; readonly items: readonly ReferenceItem[] }
@@ -89,11 +99,15 @@ export function parseCapabilities(v: unknown): Capabilities | null {
   const defaultRatio = ratios.some((r) => r.id === wanted) ? wanted : first.id;
   const refs = v["referenceImages"];
   const maxReferences = isRecord(refs) && typeof refs["max"] === "number" ? refs["max"] : FALLBACK_CAPABILITIES.maxReferences;
-  return { models, ratios, defaultRatio, maxReferences };
+  // A server before v1.2 has no add-ons.
+  const loras = Array.isArray(v["loras"])
+    ? v["loras"].filter(isRecord).flatMap((l) => (typeof l["id"] === "string" && l["id"] !== NO_LORA && typeof l["label"] === "string" ? [{ id: l["id"], label: l["label"] }] : []))
+    : [];
+  return { models, ratios, defaultRatio, maxReferences, loras };
 }
 
 export function initialState(capabilities: Capabilities = FALLBACK_CAPABILITIES): ComposerState {
-  return { mode: "chat", model: capabilities.models[0]?.id ?? "", ratio: capabilities.defaultRatio, editRatio: MATCH_REFERENCE, text: "", references: [], error: null };
+  return { mode: "chat", model: capabilities.models[0]?.id ?? "", ratio: capabilities.defaultRatio, editRatio: MATCH_REFERENCE, lora: NO_LORA, text: "", references: [], error: null };
 }
 
 export function reduce(state: ComposerState, action: ComposerAction): ComposerState {
@@ -108,6 +122,8 @@ export function reduce(state: ComposerState, action: ComposerAction): ComposerSt
       return { ...state, ratio: action.ratio };
     case "setEditRatio":
       return { ...state, editRatio: action.ratio };
+    case "setLora":
+      return { ...state, lora: action.lora };
     case "setText":
       return { ...state, text: action.text };
     case "addReferences":
@@ -128,13 +144,18 @@ export function reduce(state: ComposerState, action: ComposerAction): ComposerSt
       const model = capabilities.models.some((m) => m.id === state.model) ? state.model : (capabilities.models[0]?.id ?? "");
       const ratio = capabilities.ratios.some((r) => r.id === state.ratio) ? state.ratio : capabilities.defaultRatio;
       const editRatio = capabilities.ratios.some((r) => r.id === state.editRatio) ? state.editRatio : MATCH_REFERENCE;
-      return { ...state, model, ratio, editRatio };
+      // An add-on the server no longer offers falls back to none (STORY_019).
+      const lora = capabilities.loras.some((l) => l.id === state.lora) ? state.lora : NO_LORA;
+      return { ...state, model, ratio, editRatio, lora };
     }
   }
 }
 
 /** An edit's default: keep the reference's shape (STORY_017). Never sent to the server; no ratio is sent instead. */
 export const MATCH_REFERENCE = "match";
+
+/** No add-on (STORY_019): never sent to the server; the request just has no `lora`. */
+export const NO_LORA = "none";
 
 /** The ratio the composer's dropdown is showing: the edit ratio while references are attached (STORY_017). */
 export function activeRatio(state: ComposerState): string {
@@ -154,7 +175,7 @@ export const STORAGE_KEY = "qwen.composer.v1";
 
 /** What survives a reload within the session: the mode and the options, never the text. */
 export function serialize(state: ComposerState): string {
-  return JSON.stringify({ mode: state.mode, model: state.model, ratio: state.ratio, editRatio: state.editRatio });
+  return JSON.stringify({ mode: state.mode, model: state.model, ratio: state.ratio, editRatio: state.editRatio, lora: state.lora });
 }
 
 export function restore(raw: string | null, base: ComposerState): ComposerState {
@@ -170,5 +191,6 @@ export function restore(raw: string | null, base: ComposerState): ComposerState 
   const model = typeof v["model"] === "string" ? v["model"] : base.model;
   const ratio = typeof v["ratio"] === "string" ? v["ratio"] : base.ratio;
   const editRatio = typeof v["editRatio"] === "string" ? v["editRatio"] : base.editRatio;
-  return { ...base, mode, model, ratio, editRatio };
+  const lora = typeof v["lora"] === "string" ? v["lora"] : base.lora;
+  return { ...base, mode, model, ratio, editRatio, lora };
 }

@@ -26,6 +26,9 @@ services:
     volumes:
       - ../models/Qwen-Image-2.1:/weights:ro
       - ./data/outputs:/outputs
+      # Community add-ons (STORY_019): the manifest and the files spark/fetch-loras.sh fetched.
+      - ./loras.json:/srv/loras.json:ro
+      - ../models/loras:/loras:ro
     networks: [qwen]
     deploy:
       resources:

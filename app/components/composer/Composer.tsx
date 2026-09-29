@@ -6,7 +6,7 @@
  * (lib/composer-state.ts); options survive a reload within the session.
  */
 import { useCallback, useEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
-import { activeRatio, canSend, FALLBACK_CAPABILITIES, initialState, MATCH_REFERENCE, parseCapabilities, reduce, restore, serialize, shortModelLabel, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
+import { activeRatio, canSend, FALLBACK_CAPABILITIES, initialState, MATCH_REFERENCE, NO_LORA, parseCapabilities, reduce, restore, serialize, shortModelLabel, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
 import { useFileDrop } from "@/lib/use-file-drop";
 import { useNarrow } from "@/lib/use-narrow";
 import { Dropdown } from "../Dropdown";
@@ -88,6 +88,7 @@ export function Composer({ onSubmit, externalError = null, busy = false, running
       dispatch({ type: "setModel", model: back.model });
       dispatch({ type: "setRatio", ratio: back.ratio });
       dispatch({ type: "setEditRatio", ratio: back.editRatio });
+      dispatch({ type: "setLora", lora: back.lora });
       return;
     }
     try {
@@ -253,6 +254,20 @@ export function Composer({ onSubmit, externalError = null, busy = false, running
                       }}
                       placement={placement}
                     />
+                    {/* Community add-ons (STORY_019), only when the server has some; narrow shows the icon alone. */}
+                    {caps.loras.length > 0 ? (
+                      <Dropdown
+                        label="Add-on"
+                        className="clone-dropdown-icon-only"
+                        display={narrow ? <Icon id="appicon-toolbox" /> : <span>{caps.loras.find((l) => l.id === state.lora)?.label ?? "None"}</span>}
+                        items={[{ id: NO_LORA, label: "None" }, ...caps.loras.map((l) => ({ id: l.id, label: l.label }))]}
+                        selected={state.lora}
+                        onSelect={(id) => {
+                          dispatch({ type: "setLora", lora: id });
+                        }}
+                        placement={placement}
+                      />
+                    ) : null}
                   </div>
                 </div>
                 <div className="message-input-right-button">{sendButton}</div>

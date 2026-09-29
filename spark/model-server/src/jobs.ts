@@ -11,6 +11,8 @@ export interface JobRequest {
   readonly model: string;
   readonly seed: number;
   readonly referenceImages: number;
+  /** The add-on used (STORY_019); null for none, and for jobs saved before it existed. */
+  readonly lora: string | null;
 }
 
 export interface JobResult {
@@ -158,7 +160,9 @@ export class Jobs {
       const status = item["status"];
       if (!["queued", "running", "done", "failed", "cancelled"].includes(status)) continue;
       // Written by this server's own toIndex; fields beyond the ones checked are carried as they were saved.
-      const job = { ...item, references: [] } as unknown as JobRecord;
+      // A job saved before STORY_019 has no add-on: it reads as null.
+      const lora = typeof item["request"]["lora"] === "string" ? item["request"]["lora"] : null;
+      const job = { ...item, request: { ...item["request"], lora }, references: [] } as unknown as JobRecord;
       if (!isTerminal(job.status)) {
         job.status = "failed";
         job.error = { code: "generation_failed", message: RESTARTED };

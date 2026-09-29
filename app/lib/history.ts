@@ -11,6 +11,8 @@ export interface HistoryEntry {
   readonly ratio: string | null;
   readonly model: string;
   readonly referenceImages: number;
+  /** The add-on used (STORY_019); null for none, and for entries saved before add-ons existed. */
+  readonly lora: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly status: JobStatus;
@@ -19,7 +21,7 @@ export interface HistoryEntry {
   readonly result?: { readonly width: number; readonly height: number; readonly mimeType: string };
 }
 
-export type NewEntry = Pick<HistoryEntry, "id" | "prompt" | "ratio" | "model" | "referenceImages" | "createdAt">;
+export type NewEntry = Pick<HistoryEntry, "id" | "prompt" | "ratio" | "model" | "referenceImages" | "lora" | "createdAt">;
 
 /**
  * Newest first by creation time. Entries created in the same millisecond keep the order they were added in, newest
@@ -78,5 +80,8 @@ export function parseEntries(text: string): HistoryEntry[] {
     return [];
   }
   if (!Array.isArray(raw)) return [];
-  return raw.filter((e): e is HistoryEntry => isRecord(e) && typeof e["id"] === "string" && typeof e["prompt"] === "string" && typeof e["createdAt"] === "string" && typeof e["status"] === "string").sort(byNewest);
+  return raw
+    .filter((e): e is HistoryEntry => isRecord(e) && typeof e["id"] === "string" && typeof e["prompt"] === "string" && typeof e["createdAt"] === "string" && typeof e["status"] === "string")
+    .map((e) => ({ ...e, lora: typeof e.lora === "string" ? e.lora : null }))
+    .sort(byNewest);
 }

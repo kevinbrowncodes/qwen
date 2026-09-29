@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeRatio, canSend, MATCH_REFERENCE, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, type ComposerState } from "./composer-state";
+import { activeRatio, canSend, MATCH_REFERENCE, NO_LORA, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, type ComposerState } from "./composer-state";
 
 const caps = parseCapabilities({
   models: [{ id: "qwen-image-2.1", label: "Qwen-Image 2.1" }],
@@ -21,6 +21,7 @@ describe("parseCapabilities", () => {
       ],
       defaultRatio: "16:9",
       maxReferences: 10,
+      loras: [],
     });
   });
 
@@ -42,7 +43,7 @@ describe("reduce", () => {
   const start = initialState();
 
   it("starts resting, with the first model and the default ratio", () => {
-    expect(start).toEqual({ mode: "chat", model: "qwen-image-2.1", ratio: "16:9", editRatio: "match", text: "", references: [], error: null });
+    expect(start).toEqual({ mode: "chat", model: "qwen-image-2.1", ratio: "16:9", editRatio: "match", lora: "none", text: "", references: [], error: null });
     expect(initialState(FALLBACK_CAPABILITIES).ratio).toBe("16:9");
   });
 
@@ -79,7 +80,7 @@ describe("canSend", () => {
 });
 
 describe("session round-trip", () => {
-  const s: ComposerState = { mode: "image", model: "qwen-image-2.1", ratio: "1:1", editRatio: "3:4", text: "secret draft", references: [], error: null };
+  const s: ComposerState = { mode: "image", model: "qwen-image-2.1", ratio: "1:1", editRatio: "3:4", lora: "fake-detail", text: "secret draft", references: [], error: null };
 
   it("keeps the mode and options, never the text", () => {
     const raw = serialize(s);
@@ -192,5 +193,35 @@ describe("the edit's ratio (STORY_017)", () => {
     const caps = parseCapabilities({ models: [{ id: "qwen-image-2.1", label: "Q" }], ratios: [{ id: "1:1", width: 1, height: 1 }] });
     if (!caps) throw new Error("caps");
     expect(reduce(s, { type: "capabilities", capabilities: caps }).editRatio).toBe(MATCH_REFERENCE);
+  });
+});
+
+describe("add-ons (STORY_019)", () => {
+  const withLoras = parseCapabilities({
+    models: [{ id: "qwen-image-2.1", label: "Q" }],
+    ratios: [{ id: "1:1", width: 1, height: 1 }],
+    loras: [{ id: "uncensored", label: "Uncensored" }, { id: "none", label: "reserved" }, { id: 3, label: "bad" }, "junk"],
+  });
+
+  it("reads the server's add-ons, skipping malformed ones and the reserved id none", () => {
+    expect(withLoras?.loras).toEqual([{ id: "uncensored", label: "Uncensored" }]);
+  });
+
+  it("defaults to none and is chosen with setLora, leaving the other options alone", () => {
+    expect(initialState().lora).toBe(NO_LORA);
+    const s = reduce({ ...initialState(), ratio: "1:1" }, { type: "setLora", lora: "uncensored" });
+    expect(s).toMatchObject({ lora: "uncensored", ratio: "1:1" });
+  });
+
+  it("keeps an offered add-on when capabilities arrive, and falls back to none when it is gone", () => {
+    if (!withLoras) throw new Error("caps");
+    const chosen = { ...initialState(), lora: "uncensored" };
+    expect(reduce(chosen, { type: "capabilities", capabilities: withLoras }).lora).toBe("uncensored");
+    expect(reduce(chosen, { type: "capabilities", capabilities: { ...withLoras, loras: [] } }).lora).toBe(NO_LORA);
+  });
+
+  it("survives a reload, and an older stored session without one reads as none", () => {
+    expect(restore(serialize({ ...initialState(), lora: "uncensored" }), initialState()).lora).toBe("uncensored");
+    expect(restore('{"mode":"image"}', initialState()).lora).toBe(NO_LORA);
   });
 });

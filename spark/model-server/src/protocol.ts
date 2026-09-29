@@ -1,8 +1,9 @@
 /**
  * The line protocol between the model server and the Python worker (STORY_015): one JSON object per line.
- *   to the worker:   {type:"job", id, prompt, seed, steps, width?, height?, references:[paths], output}
+ *   to the worker:   {type:"init", loras:[{id, path}]}   (first, on every start: the add-ons to load; STORY_019)
+ *                    {type:"job", id, prompt, seed, steps, width?, height?, references:[paths], output, lora?:{id, scale}}
  *                    {type:"cancel", id}
- *   from the worker: {type:"ready"} | {type:"progress", id, step, steps}
+ *   from the worker: {type:"ready", loras?:[ids that loaded]} | {type:"progress", id, step, steps}
  *                    {type:"done", id, path, width, height} | {type:"failed", id, message} | {type:"cancelled", id}
  */
 export interface WorkerJob {
@@ -15,15 +16,21 @@ export interface WorkerJob {
   readonly height?: number;
   readonly references: readonly string[];
   readonly output: string;
+  /** The add-on for this job; absent means none (STORY_019). */
+  readonly lora?: { readonly id: string; readonly scale: number };
+}
+export interface WorkerInit {
+  readonly type: "init";
+  readonly loras: ReadonlyArray<{ readonly id: string; readonly path: string }>;
 }
 export interface WorkerCancel {
   readonly type: "cancel";
   readonly id: string;
 }
-export type ToWorker = WorkerJob | WorkerCancel;
+export type ToWorker = WorkerInit | WorkerJob | WorkerCancel;
 
 export type FromWorker =
-  | { readonly type: "ready" }
+  | { readonly type: "ready"; readonly loras: readonly string[] }
   | { readonly type: "progress"; readonly id: string; readonly step: number; readonly steps: number }
   | { readonly type: "done"; readonly id: string; readonly path: string; readonly width: number; readonly height: number }
   | { readonly type: "failed"; readonly id: string; readonly message: string }
@@ -48,7 +55,8 @@ export function parseWorkerLine(line: string): FromWorker | null {
   if (!isObj(v)) return null;
   switch (v["type"]) {
     case "ready":
-      return { type: "ready" };
+      // A worker from before STORY_019 reports no add-ons.
+      return { type: "ready", loras: Array.isArray(v["loras"]) ? v["loras"].filter(str) : [] };
     case "progress":
       return str(v["id"]) && int(v["step"]) && int(v["steps"]) && v["steps"] > 0 ? { type: "progress", id: v["id"], step: v["step"], steps: v["steps"] } : null;
     case "done":

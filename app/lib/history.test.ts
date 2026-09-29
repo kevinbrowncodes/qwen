@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addEntry, applyStatus, markCancelled, parseEntries, removeEntry, type HistoryEntry } from "./history";
 
 const add = (list: readonly HistoryEntry[], id: string, createdAt: string): HistoryEntry[] =>
-  addEntry(list, { id, prompt: `p ${id}`, ratio: "16:9", model: "qwen-image-2.1", referenceImages: 0, createdAt });
+  addEntry(list, { id, prompt: `p ${id}`, ratio: "16:9", model: "qwen-image-2.1", referenceImages: 0, lora: null, createdAt });
 
 describe("history", () => {
   it("keeps one entry per id, newest first", () => {
@@ -78,5 +78,14 @@ describe("history", () => {
     expect(parseEntries("{")).toEqual([]);
     expect(parseEntries('{"a":1}')).toEqual([]);
     expect(parseEntries('[{"id":1},null]')).toEqual([]);
+  });
+});
+
+describe("add-ons in history (STORY_019)", () => {
+  it("keeps the add-on an entry was made with, and reads an entry saved before add-ons as none", () => {
+    const made = addEntry([], { id: "a", prompt: "p", ratio: "1:1", model: "m", referenceImages: 0, lora: "uncensored", createdAt: "2026-09-29T10:00:00.000Z" });
+    expect(parseEntries(JSON.stringify(made))[0]?.lora).toBe("uncensored");
+    const old = [{ id: "o", prompt: "p", ratio: "1:1", model: "m", referenceImages: 0, createdAt: "2026-09-26T10:00:00.000Z", updatedAt: "2026-09-26T10:00:00.000Z", status: "done", progress: 100 }];
+    expect(parseEntries(JSON.stringify(old))[0]?.lora).toBeNull();
   });
 });
