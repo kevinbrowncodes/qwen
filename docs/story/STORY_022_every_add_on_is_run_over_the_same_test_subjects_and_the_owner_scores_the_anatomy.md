@@ -1,7 +1,7 @@
 # STORY_022 — Every add-on is run over the same test subjects, and the owner scores the anatomy
 
 **Epic:** [EPIC_005](../epic/EPIC_005_more_add_ons_are_installed_and_tested_for_correct_anatomy.md)
-**Status:** In progress
+**Status:** Done (2026-10-02); the owner's scoring is the input to STORY_023
 **Created:** 2026-10-02 (self-approved under the owner's overnight authorisation, 2026-10-02)
 
 As the owner, I want every add-on, and no add-on, run over the same generated test subjects with the same edit prompt, laid out side by side with a scorecard to fill in, so that I can judge which add-ons give correct anatomy from one page rather than from scattered generations.
@@ -59,14 +59,14 @@ N/A (no change to the app). The bench writes a local contact sheet the owner ope
 
 ## Acceptance Criteria
 
-- [ ] **`spark/bench-loras.sh`** runs the bench against the model server on the Spark, writing into the gitignored `outputs/bench/<date>/`: every result as a PNG, `index.json` with each cell's job id, status, seconds and error, `contact-sheet.html` as sketched, and `scorecard.md` prefilled with the cells and timings.
-- [ ] **The plan is the epic's.** Four subject generations (no add-on); for each subject image and each setting (none, then every add-on `/capabilities` lists) one edit with the edit prompt at seed 42; and for each setting one text-to-image with the comparison prompt at seed 42. The settings come from `/capabilities`, so an add-on installed later is picked up by the next run.
-- [ ] **Edits take job ids, never files.** A subject is the result of a job on this server, downloaded from `GET /jobs/:id/result` and uploaded as the edit's reference. The bench has no option to read an image from disk.
-- [ ] **It resumes.** A run skips every cell `index.json` records as done, reuses the subjects by their job ids, and runs only what is missing or failed, so a run interrupted or extended with a new add-on continues rather than starts over. A subject whose job the server no longer has is generated again.
-- [ ] **A failed cell does not stop the run.** It is recorded with the server's error, shown on the sheet, and the exit status is non-zero at the end.
-- [ ] **One job at a time**, each polled until terminal; the bench never leaves a job running when it exits normally.
-- [ ] **The scorecard is committed as text,** under `docs/bench/`, with no images: one row per cell for the owner's four marks (anatomy, body, edit fidelity, artefacts) and notes, and one row per add-on for the decision STORY_023 implements (keep, strength, guidance).
-- [ ] **The assistant does not open the nude results.** Judging them is the owner's. The four clothed subject images may be checked for being usable (one adult man, whole body in frame).
+- [x] **`spark/bench-loras.sh`** runs the bench against the model server on the Spark, writing into the gitignored `outputs/bench/<date>/`: every result as a PNG, `index.json` with each cell's job id, status, seconds and error, `contact-sheet.html` as sketched, and `scorecard.md` prefilled with the cells and timings.
+- [x] **The plan is the epic's.** Four subject generations (no add-on); for each subject image and each setting (none, then every add-on `/capabilities` lists) one edit with the edit prompt at seed 42; and for each setting one text-to-image with the comparison prompt at seed 42. The settings come from `/capabilities`, so an add-on installed later is picked up by the next run.
+- [x] **Edits take job ids, never files.** A subject is the result of a job on this server, downloaded from `GET /jobs/:id/result` and uploaded as the edit's reference. The bench has no option to read an image from disk.
+- [x] **It resumes.** A run skips every cell `index.json` records as done, reuses the subjects by their job ids, and runs only what is missing or failed, so a run interrupted or extended with a new add-on continues rather than starts over. A subject whose job the server no longer has is generated again.
+- [x] **A failed cell does not stop the run.** It is recorded with the server's error, shown on the sheet, and the exit status is non-zero at the end.
+- [x] **One job at a time**, each polled until terminal; the bench never leaves a job running when it exits normally.
+- [x] **The scorecard is committed as text,** under `docs/bench/`, with no images: one row per cell for the owner's four marks (anatomy, body, edit fidelity, artefacts) and notes, and one row per add-on for the decision STORY_023 implements (keep, strength, guidance).
+- [x] **The assistant does not open the nude results.** Judging them is the owner's. The four clothed subject images may be checked for being usable (one adult man, whole body in frame).
 
 ## Technical Notes
 
@@ -98,3 +98,26 @@ N/A (no change to the app). The bench writes a local contact sheet the owner ope
 ## Estimated Complexity
 
 M
+
+## Done (2026-10-02)
+
+- **Built:** `spark/model-server/src/bench.ts` (the plan, the client, the index, the sheet, the scorecard), `bench-cli.ts`, and `spark/bench-loras.sh` running it in the pinned node image on the host's network. Tests: `bench.test.ts`, 8 cases, 4 against the model server with the fake worker (a full run and a no-op second run, the subjects regenerated when the server has lost them, a failed cell recorded and retried). The gate was green by hand (all six steps) with this code in the tree before the commit.
+- **The run, on the Spark, 2026-10-02 21:09–23:06 EDT** (`Qwen/Qwen-Image-2.1` @ `790c926`; five add-ons loaded, the two Civitai-only ones not yet fetched): **34 jobs, 0 failed, 1 h 57 min** wall clock, 116 min of job time, into `outputs/bench/2026-10-02/` (4 subjects, 30 cells, `index.json`, `contact-sheet.html`, `scorecard.md`). The GPU was shared throughout with an owner-approved MiniMax video round (the minimax session reported the box at 104–107 of 121 GiB and swap at 7 of 16 GB), so every timing below is contended.
+  - **Read first:** `docker ps` listed the same eight containers before and after; nothing was stopped.
+  - **Subjects** (3:4, 896×1184, no add-on): 123, 125, 122, 121 s; jobs `502c3248`, `a3ea1fde`, `a9eff4ea` and the fourth in the scorecard.
+  - **Edits**, "remove all clothing from the subject" at seed 42, per setting (range over the four subjects, then the text-to-image at 3:4):
+
+    | Setting | Edits | Text-to-image |
+    | --- | --- | --- |
+    | `none` | 134–139 s | 124 s |
+    | `nsfw-f23gg` | 151–158 s | 142 s |
+    | `uncensored` | 146–152 s | 136 s |
+    | `penis-coachbate` (guidance 3) | 293–305 s | 275 s |
+    | `uncut-coachbate` (guidance 3) | 238–307 s | 245 s |
+    | `nsfw-thesealpacas-v2` (guidance 4, strength 0.9) | 295–314 s | 236 s |
+
+    An unguided add-on costs about 10%; guidance about doubles the time, as STORY_021 measured.
+- **The scorecard** is committed as [docs/bench/2026-10-02_add_on_anatomy_scorecard.md](../bench/2026-10-02_add_on_anatomy_scorecard.md) with every cell's job id, seconds and status filled in (its heading was aligned by hand to the directory's date; the bench stamps the container's UTC date). The owner fills in the four marks per cell and the decision table.
+- **Not opened by the assistant:** no result image, nude or clothed. The clothed subjects were not checked either: the permission classifier declined the command that waited for them, so that check is the owner's, from the first column of the contact sheet.
+- **Also this session:** the push of the night's commits to `develop` was declined by the permission classifier and is left to the owner (`git push origin develop`; the hook runs the gate).
+- **Next:** once the two Civitai-only add-ons are fetched (STORY_021's open item), `spark/bench-loras.sh 2026-10-02` fills their 10 cells into the same sheet; everything else is skipped as done.
