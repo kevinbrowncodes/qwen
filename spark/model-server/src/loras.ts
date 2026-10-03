@@ -13,6 +13,8 @@ export interface Lora {
   readonly scale: number;
   /** Words the add-on was trained on, appended to the prompt. */
   readonly trigger?: string;
+  /** The `true_cfg_scale` for jobs with this add-on (STORY_021); absent means the pipeline's default, no guidance. */
+  readonly guidance?: number;
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -40,12 +42,15 @@ export function parseManifest(json: string, dir: string, warn: (line: string) =>
       continue;
     }
     const scale = typeof e["scale"] === "number" && e["scale"] > 0 && e["scale"] <= 2 ? e["scale"] : 1;
+    // Guidance below 1 is meaningless to the pipeline and above 10 is far past what any creator recommends.
+    const guidance = typeof e["guidance"] === "number" && e["guidance"] >= 1 && e["guidance"] <= 10 ? e["guidance"] : undefined;
     out.push({
       id: e["id"],
       label: e["label"],
       path: path.join(dir, e["id"], path.basename(e["file"])),
       scale,
       ...(text(e["trigger"]) ? { trigger: e["trigger"].trim() } : {}),
+      ...(guidance === undefined ? {} : { guidance }),
     });
   }
   return out;

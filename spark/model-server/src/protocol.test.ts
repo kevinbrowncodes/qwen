@@ -7,6 +7,13 @@ describe("worker protocol", () => {
     expect(JSON.parse(encode({ type: "init", loras: [{ id: "x", path: "/loras/x/x.safetensors" }] }))).toEqual({ type: "init", loras: [{ id: "x", path: "/loras/x/x.safetensors" }] });
   });
 
+  it("carries a job's add-on with its guidance only when the add-on has one (STORY_021)", () => {
+    const job = { type: "job" as const, id: "j", prompt: "p", seed: 1, steps: 40, references: [], output: "/o/j.png" };
+    expect(JSON.parse(encode({ ...job, lora: { id: "x", scale: 1, guidance: 3 } }))).toMatchObject({ lora: { id: "x", scale: 1, guidance: 3 } });
+    expect(JSON.parse(encode({ ...job, lora: { id: "x", scale: 1 } }))).toEqual({ ...job, lora: { id: "x", scale: 1 } });
+    expect(JSON.parse(encode(job))).toEqual(job);
+  });
+
   it("parses every message the worker sends", () => {
     // A worker from before STORY_019 reports no add-ons; one after lists those that loaded, ignoring non-strings.
     expect(parseWorkerLine('{"type":"ready"}')).toEqual({ type: "ready", loras: [] });

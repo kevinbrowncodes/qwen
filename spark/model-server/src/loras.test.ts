@@ -20,6 +20,12 @@ describe("parseManifest", () => {
     expect(parseManifest(manifest([{ ...entry, scale: 3 }]), "/l")[0]?.scale).toBe(1);
   });
 
+  it("keeps a guidance between 1 and 10, and drops one outside that or not a number (STORY_021)", () => {
+    const [a, b, c, d, e] = parseManifest(manifest([{ ...entry, id: "a", guidance: 3 }, { ...entry, id: "b", guidance: 1 }, { ...entry, id: "c", guidance: 0.5 }, { ...entry, id: "d", guidance: 11 }, { ...entry, id: "e", guidance: "3" }]), "/l");
+    expect([a?.guidance, b?.guidance]).toEqual([3, 1]);
+    for (const l of [c, d, e, parseManifest(manifest([entry]), "/l")[0]]) expect(l).not.toHaveProperty("guidance");
+  });
+
   it("skips malformed entries, the reserved id none, and a repeated id, saying why", () => {
     const warnings: string[] = [];
     const out = parseManifest(manifest([entry, { ...entry }, { ...entry, id: "none" }, { ...entry, id: "Bad Id" }, { id: "x", label: "X" }, "junk"]), "/l", (w) => warnings.push(w));

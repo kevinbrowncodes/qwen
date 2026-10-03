@@ -1,7 +1,8 @@
 /**
  * The line protocol between the model server and the Python worker (STORY_015): one JSON object per line.
  *   to the worker:   {type:"init", loras:[{id, path}]}   (first, on every start: the add-ons to load; STORY_019)
- *                    {type:"job", id, prompt, seed, steps, width?, height?, references:[paths], output, lora?:{id, scale}}
+ *                    {type:"job", id, prompt, seed, steps, width?, height?, references:[paths], output,
+ *                     lora?:{id, scale, guidance?}}   (guidance is the job's true_cfg_scale; STORY_021)
  *                    {type:"cancel", id}
  *   from the worker: {type:"ready", loras?:[ids that loaded]} | {type:"progress", id, step, steps}
  *                    {type:"done", id, path, width, height} | {type:"failed", id, message} | {type:"cancelled", id}
@@ -17,7 +18,7 @@ export interface WorkerJob {
   readonly references: readonly string[];
   readonly output: string;
   /** The add-on for this job; absent means none (STORY_019). */
-  readonly lora?: { readonly id: string; readonly scale: number };
+  readonly lora?: { readonly id: string; readonly scale: number; readonly guidance?: number };
 }
 export interface WorkerInit {
   readonly type: "init";

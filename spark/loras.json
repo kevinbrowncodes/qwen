@@ -1,27 +1,92 @@
 {
-  "about": "Community add-ons (LoRAs) for Qwen-Image-2.1 (STORY_019). Fetched by spark/fetch-loras.sh into models/loras/<id>/ (gitignored); the model server offers those fetched and loaded. Each licence was read from the repo on readOn, before the fetch.",
+  "about": "Community add-ons (LoRAs) for Qwen-Image-2.1 (STORY_019, STORY_021). Fetched by spark/fetch-loras.sh into models/loras/<id>/ (gitignored); the model server offers those fetched and loaded. `source` is where the bytes come from (a Hugging Face repo at a pinned revision, or a Civitai model version), `origin` is the creator's page where the terms were read on `readOn`, and `sha256` is the creator's published checksum: the fetch refuses a file that differs. `guidance` is the true_cfg_scale the worker uses with that add-on (absent: the pipeline's default, which is no guidance).",
   "loras": [
     {
       "id": "nsfw-f23gg",
       "label": "NSFW (f23gg)",
-      "repo": "f23gg/NSFW-LORA-Qwen-Image-2.1",
-      "revision": "ed1acb15578a4d16d26032e8b8c10ca439843ecf",
+      "source": { "kind": "huggingface", "repo": "f23gg/NSFW-LORA-Qwen-Image-2.1", "revision": "ed1acb15578a4d16d26032e8b8c10ca439843ecf" },
       "file": "NSFW Qwen Lora.safetensors",
+      "sha256": "c29f503f3515877882fd6b10f6849c78a4f2337c09021f4bd4b93d060c311aea",
       "scale": 1.0,
-      "license": "none stated",
-      "readOn": "2026-09-29",
-      "note": "The repo states no licence. Installed by the owner's decision on 2026-09-29, for personal, private, non-commercial use only."
+      "origin": "https://civitai.com/models/2958918?modelVersionId=3351951",
+      "license": "The repo states none. Identified by its sha256 on 2026-10-02 as TheseAlpacas' 'NSFW LORA | Qwen Image 2.1' v1.0, whose Civitai page allows derivatives and commercial use.",
+      "readOn": "2026-10-02",
+      "note": "Installed by the owner's decision on 2026-09-29, for personal, private, non-commercial use only. The creator calls v1.0 experimental; v2.0 is nsfw-thesealpacas-v2."
     },
     {
       "id": "uncensored",
       "label": "Uncensored",
-      "repo": "JoyFusionAI/Qwen-Image-2.1-Uncensored-LoRA",
-      "revision": "112f15b699d8071ae7e79640fe4a35c4acfac7d0",
+      "source": { "kind": "huggingface", "repo": "JoyFusionAI/Qwen-Image-2.1-Uncensored-LoRA", "revision": "112f15b699d8071ae7e79640fe4a35c4acfac7d0" },
       "file": "qwen-image-2.1-uncensored-lora.safetensors",
       "sha256": "00ee2cb7f00a37b097640c1880ed0d17e368e30599f34bb348fee0e8c2cc4ca1",
       "scale": 1.0,
+      "origin": "https://huggingface.co/JoyFusionAI/Qwen-Image-2.1-Uncensored-LoRA",
       "license": "Qwen Research License (non-commercial), per the repo's card",
       "readOn": "2026-09-29"
+    },
+    {
+      "id": "penis-coachbate",
+      "label": "Penis (CoachBate)",
+      "source": { "kind": "huggingface", "repo": "RunningHubAI/rh-qwen2.1coach-lora", "revision": "00dd721d82801a43c86dff99add9e06daf8dd8f2" },
+      "file": "qwen-image-2.1_penis_coachbate_preview1.safetensors",
+      "sha256": "0f79fae880ba2b89960676e036dfee1fea6020f7acbf6d1a333dc14b477cdeeb",
+      "scale": 1.0,
+      "guidance": 3,
+      "origin": "https://civitai.com/models/2952865?modelVersionId=3344536",
+      "license": "Non-commercial; derivatives allowed (the creator's Civitai page)",
+      "readOn": "2026-10-02",
+      "note": "A preview, by coachbate. The Hugging Face repo is a third-party mirror, byte-identical to Civitai's file 3232190. The creator recommends CFG 3 and 25 steps."
+    },
+    {
+      "id": "uncut-coachbate",
+      "label": "Uncut penis (CoachBate)",
+      "source": { "kind": "huggingface", "repo": "EllaPriest45/QwenImage2.1_Actions", "revision": "2ac7da00d50f982becfaaea23d61d9349dc9bed9" },
+      "file": "Uncut Penis - QwenImage2.1.safetensors",
+      "sha256": "13744574cffe131d6a450891e46a26295a5f89a170c789ed29c229de0c59be8c",
+      "scale": 1.0,
+      "guidance": 3,
+      "origin": "https://civitai.com/models/2955550?modelVersionId=3347830",
+      "license": "Non-commercial; no derivatives (the creator's Civitai page)",
+      "readOn": "2026-10-02",
+      "note": "A preview release, by coachbate. The Hugging Face repo is a third-party mirror, byte-identical to Civitai's file 3238300 (qwen-image-2.1_uncut_penis_coachbate_00900.safetensors). The creator says CFG 3 is needed."
+    },
+    {
+      "id": "erect-friendofmale",
+      "label": "Erect penis (FriendOfMale)",
+      "source": { "kind": "civitai", "modelId": 2955779, "versionId": 3348119 },
+      "file": "qwen2.1_penisV01_000004956.safetensors",
+      "sha256": "6089c36527afdc22cf521c41233010458a7a85babcae7609c71224da80520988",
+      "scale": 1.0,
+      "origin": "https://civitai.com/models/2955779?modelVersionId=3348119",
+      "license": "Image use and rental allowed; no derivatives, no selling (the creator's Civitai page)",
+      "readOn": "2026-10-02",
+      "note": "By FriendOfMale. Civitai only (no byte-identical copy on Hugging Face as of 2026-10-02). The creator recommends FlowMatchDiscreteScheduler, which the pipeline already uses, and 1024 px or larger."
+    },
+    {
+      "id": "flaccid-lonelycoyote",
+      "label": "Flaccid uncut (LonelyCoyote)",
+      "source": { "kind": "civitai", "modelId": 2966916, "versionId": 3361754 },
+      "file": "male_anathomy_fu_qwen21.safetensors",
+      "sha256": "e39e5c978b1b325c9c527bc149039f6663bb5df6d2d30f7263f1bb2818efdc32",
+      "scale": 1.0,
+      "trigger": "d3np3n1s",
+      "origin": "https://civitai.com/models/2966916?modelVersionId=3361754",
+      "license": "Image use and rental allowed; derivatives allowed; no selling (the creator's Civitai page)",
+      "readOn": "2026-10-02",
+      "note": "By LonelyCoyote. Civitai only (no byte-identical copy on Hugging Face as of 2026-10-02). Trigger word d3np3n1s."
+    },
+    {
+      "id": "nsfw-thesealpacas-v2",
+      "label": "NSFW v2 (TheseAlpacas)",
+      "source": { "kind": "huggingface", "repo": "Tanibella/QWEN-EDIT2.1", "revision": "f112c4d321982a77e1dcf691af3c1b3a1ebeab39" },
+      "file": "NSFW Qwen by TheseAlpacas V2.safetensors",
+      "sha256": "83aba822ad8ee10a1e836828f5088259d93bce7b5f3419b46dbc0258c2be46a9",
+      "scale": 0.9,
+      "guidance": 4,
+      "origin": "https://civitai.com/models/2958918?modelVersionId=3357315",
+      "license": "Derivatives and commercial use allowed (the creator's Civitai page)",
+      "readOn": "2026-10-02",
+      "note": "TheseAlpacas' 'NSFW LORA | Qwen Image 2.1' v2.0: better anatomy, prompt following and realism than v1.0 (nsfw-f23gg), per the creator. The Hugging Face repo is a third-party mirror, byte-identical to Civitai's file 3244894. The creator recommends 25+ steps, CFG 3-6 and strength 0.8-1."
     }
   ]
 }

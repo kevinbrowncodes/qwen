@@ -213,7 +213,7 @@ describe("the model server", () => {
 });
 
 describe("add-ons (STORY_019)", () => {
-  const detail: Lora = { id: "fake-detail", label: "Fake detail", path: "/loras/fake-detail/d.safetensors", scale: 0.8, trigger: "sharp focus" };
+  const detail: Lora = { id: "fake-detail", label: "Fake detail", path: "/loras/fake-detail/d.safetensors", scale: 0.8, trigger: "sharp focus", guidance: 3 };
   const style: Lora = { id: "fake-style", label: "Fake style", path: "/loras/fake-style/s.safetensors", scale: 1 };
   const jobs = (): Array<Record<string, unknown>> => sentToWorker().filter((m) => m["type"] === "job");
 
@@ -228,17 +228,22 @@ describe("add-ons (STORY_019)", () => {
     expect(await json(res)).toMatchObject({ error: { code: "unsupported_option", field: "lora" } });
   });
 
-  it("sends a job its add-on with the manifest's strength and trigger words, and the next job none", async () => {
-    await start({ loras: [detail] });
-    await until(async () => JSON.stringify((await json(await fetch(`${base}/capabilities`)))["loras"]) === JSON.stringify([{ id: "fake-detail", label: "Fake detail" }]));
+  it("sends a job its add-on with the manifest's strength, trigger words and guidance, and the next job none", async () => {
+    await start({ loras: [detail, style] });
+    await until(async () => JSON.stringify((await json(await fetch(`${base}/capabilities`)))["loras"]) === JSON.stringify([{ id: "fake-detail", label: "Fake detail" }, { id: "fake-style", label: "Fake style" }]));
     const a = await create({ prompt: "a portrait", ratio: "1:1", lora: "fake-detail" });
     expect(await terminal(a)).toMatchObject({ status: "done", request: { prompt: "a portrait", lora: "fake-detail" } });
     const b = await create({ prompt: "a portrait", ratio: "1:1" });
     expect(await terminal(b)).toMatchObject({ status: "done", request: { lora: null } });
-    const [first, second] = jobs();
-    expect(first).toMatchObject({ id: a, prompt: "a portrait, sharp focus", lora: { id: "fake-detail", scale: 0.8 } });
+    const c = await create({ prompt: "a portrait", ratio: "1:1", lora: "fake-style" });
+    expect(await terminal(c)).toMatchObject({ status: "done", request: { lora: "fake-style" } });
+    const [first, second, third] = jobs();
+    expect(first).toMatchObject({ id: a, prompt: "a portrait, sharp focus" });
+    expect(first?.["lora"]).toEqual({ id: "fake-detail", scale: 0.8, guidance: 3 });
     expect(second).toMatchObject({ id: b, prompt: "a portrait" });
     expect(second?.["lora"]).toBeUndefined();
+    // An add-on with no guidance leaves the pipeline's default alone (STORY_021).
+    expect(third?.["lora"]).toEqual({ id: "fake-style", scale: 1 });
   });
 
   it("offers none and sends no init without add-ons", async () => {

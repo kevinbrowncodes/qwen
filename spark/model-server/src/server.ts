@@ -144,7 +144,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       ...(size ? { width: size.width, height: size.height } : {}),
       references: job.references,
       output: path.join(outputDir, `${job.id}.png`),
-      ...(lora ? { lora: { id: lora.id, scale: lora.scale } } : {}),
+      ...(lora ? { lora: { id: lora.id, scale: lora.scale, ...(lora.guidance === undefined ? {} : { guidance: lora.guidance }) } } : {}),
     });
     if (!sent) return;
     current = job.id;

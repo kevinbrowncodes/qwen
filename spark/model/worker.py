@@ -2,7 +2,8 @@
 
 Protocol: one JSON object per line (spark/model-server/src/protocol.ts).
   stdin:  {"type":"init", loras:[{id, path}]}   (first, when the server has add-ons; STORY_019)
-          {"type":"job", id, prompt, seed, steps, width?, height?, references:[paths], output, lora?:{id, scale}}
+          {"type":"job", id, prompt, seed, steps, width?, height?, references:[paths], output,
+                         lora?:{id, scale, guidance?}}
           {"type":"cancel", id}
   stdout: {"type":"ready", loras:[ids that loaded]} | {"type":"progress", id, step, steps}
           {"type":"done", id, path, width, height} | {"type":"failed", id, message} | {"type":"cancelled", id}
@@ -13,7 +14,9 @@ is free for the next job.
 
 Add-ons (LoRAs, STORY_019) are loaded once, after the pipeline, and left unfused: each job enables the one it names
 at its strength, or disables them all, so switching costs nothing. One that fails to load is logged and left out, and
-the server never offers it.
+the server never offers it. An add-on's `guidance` (STORY_021) is the job's true_cfg_scale: the pipeline's default
+is 1.0, no guidance, and some creators tuned theirs for 3 to 6. Above 1 the pipeline runs a second, unguided pass per
+step, so such a job takes about twice as long.
 """
 
 import json
@@ -140,6 +143,13 @@ def run(pipe, job: dict, loaded: list) -> None:
     if job.get("width") and job.get("height"):
         kwargs["width"] = int(job["width"])
         kwargs["height"] = int(job["height"])
+    guidance = (job.get("lora") or {}).get("guidance")
+    if guidance and float(guidance) > 1:
+        # The pipeline applies true CFG only when a negative prompt is given (do_true_cfg = scale > 1 and
+        # has_neg_prompt); without one it logs a warning and samples unguided. The model card's empty negative
+        # prompt is a single space.
+        kwargs["true_cfg_scale"] = float(guidance)
+        kwargs["negative_prompt"] = " "
     references = [load_image(p) for p in job.get("references") or []]
     if references:
         kwargs["image"] = references if len(references) > 1 else references[0]
