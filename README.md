@@ -150,18 +150,22 @@ The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL
 | Memory | Peak **36.9 GiB** on the GPU at 1 MP (56.7 GiB at 2K); the host's used memory rose from 14 to about 54 GiB. A cold start loads for about 3.3 minutes |
 | Port / env vars | `qwen-model:4120` on the docker network `qwen` (host: `127.0.0.1:4120` only). The app reads `MODEL_BASE_URL` (default `http://qwen-model:4120`) and optionally `MODEL_API_KEY` |
 | Moderation | None: the model ships no safety checker, so a job never ends `moderated` |
-| Add-ons (LoRAs) | Listed in `spark/loras.json` and fetched by `spark/fetch-loras.sh` into `models/loras/`. The worker loads them unfused at start (needs `peft` 0.21.1, in the image), and each job picks one or none from the composer's Add-on dropdown (STORY_019). Installed 2026-09-29: **NSFW (f23gg)** (`f23gg/NSFW-LORA-Qwen-Image-2.1` @ `ed1acb1`, 159 MB, **no licence stated**, installed by the owner's decision for private use) and **Uncensored** (`JoyFusionAI/Qwen-Image-2.1-Uncensored-LoRA` @ `112f15b`, 34 MB, Qwen Research License). Both loaded add 3 GiB to the worker's peak (40.0 GiB). An add-on costs about 12% per image, measured with the GPU shared (see STORY_019) |
+| Add-ons (LoRAs) | Listed in `spark/loras.json` and fetched by `spark/fetch-loras.sh` into `models/loras/`, each from a pinned source (a Hugging Face revision or a Civitai model version) and checked against its creator's sha256 (STORY_021). The worker loads them unfused at start (needs `peft` 0.21.1, in the image), and each job picks one or none from the composer's Add-on dropdown (STORY_019); an add-on's `guidance` in the manifest is the `true_cfg_scale` its jobs run with (about twice the time per image). Installed: **NSFW (f23gg)** (TheseAlpacas' v1.0, 159 MB), **Uncensored** (34 MB, Qwen Research License), **Penis (CoachBate)** (159 MB, guidance 3), **Uncut penis (CoachBate)** (159 MB, guidance 3) and **NSFW v2 (TheseAlpacas)** (80 MB, guidance 4, strength 0.9). Waiting for a Civitai token at `~/.config/civitai/token`: **Erect penis (FriendOfMale)** and **Flaccid uncut (LonelyCoyote)**, which exist only on Civitai. Terms per add-on are in the manifest; all are used for personal, non-commercial purposes only. [EPIC_005](docs/epic/EPIC_005_more_add_ons_are_installed_and_tested_for_correct_anatomy.md) compares them |
 
 ```bash
 spark/up.sh                            # start the model server (reads what runs first; refuses below 60 GiB free)
 spark/fetch-loras.sh                   # fetch the add-ons in spark/loras.json; then spark/up.sh to load them
 spark/fetch-loras.sh status            # which add-ons are on disk
+spark/fetch-loras.sh verify            # hash every add-on on disk against the manifest
+spark/bench-loras.sh                   # run (or resume) the add-on bench into outputs/bench/<date>/ (STORY_022; 1-2 hours)
 curl -s 127.0.0.1:4120/health          # {"ok":true,...,"ready":true} once loaded
 docker logs -f qwen-model              # the server's and the worker's log
 docker compose -f spark/compose.yaml down   # stop it (frees about 37-54 GiB)
 ```
 
 Results, uploads and the job index are in `spark/data/outputs/` (gitignored). The Spark facts and the measurements are in [spark/README.md](spark/README.md).
+
+**The add-on bench** (`spark/bench-loras.sh`, STORY_022) runs every add-on, and none, over the same four generated subjects through the job API: an edit of each subject with the same prompt and seed, plus one text-to-image per setting. It writes the images, a `contact-sheet.html` and a `scorecard.md` into the gitignored `outputs/bench/<date>/`, and resumes if re-run. Its only inputs are the prompts in `spark/model-server/src/bench.ts` and the ids of jobs this server made from them; it never reads an image from disk. The owner's filled-in scorecards are committed, as text only, under [docs/bench/](docs/bench/).
 
 **The target model is Qwen-Image-2.1** (owner's request, 2026-09-26). Facts read from its Hugging Face model card and LICENSE file on 2026-09-26:
 

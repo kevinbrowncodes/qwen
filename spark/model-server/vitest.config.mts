@@ -9,7 +9,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      exclude: ["src/**/*.test.ts", "src/main.ts", "src/fake-worker.ts"],
+      exclude: ["src/**/*.test.ts", "src/main.ts", "src/fetch-loras-cli.ts", "src/bench-cli.ts", "src/fake-worker.ts"],
       reporter: ["text-summary", "json-summary"],
       reportsDirectory: "coverage",
     },

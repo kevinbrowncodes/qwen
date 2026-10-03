@@ -35,16 +35,26 @@ docker build -t qwen/model:dev --build-arg UID=$(id -u) --build-arg GID=$(id -g)
 spark/model/try.sh      # STORY_014: renders by hand, records time and memory in spark/model/measurements/<date>.json
 ```
 
-## Add-ons (STORY_019)
+## Add-ons (STORY_019, STORY_021)
 
 Community LoRAs for Qwen-Image-2.1 (never ones for the older 20B Qwen-Image, which don't fit).
 
-- **`spark/loras.json` is the record.** Each entry has its repo, pinned revision, file, strength, optional trigger words, licence, and the date the licence was read. An entry with no licence also records the owner's decision to install it.
-- **`spark/fetch-loras.sh`** fetches them into `models/loras/<id>/` (gitignored) in a `python:3.12-slim` container, and checks a `sha256` where the manifest gives one. `status` lists what's on disk.
+- **`spark/loras.json` is the record.** Each entry has an `id` and `label`, a `source` (`{ kind: "huggingface", repo, revision }` or `{ kind: "civitai", modelId, versionId }`), its `file`, the creator's published `sha256` (required), its strength `scale`, optional `trigger` words, optional `guidance`, the `origin` page where its terms were read on `readOn`, the `license`, and a `note` where the terms need one.
+- **`spark/fetch-loras.sh`** fetches them into `models/loras/<id>/` (gitignored). The engine is `spark/model-server/src/fetch-loras.ts` (tested in the gate), run in the pinned `node:26-bookworm-slim` image; the file streams to `<file>.part`, is hashed as it arrives, and is renamed only when the hash matches. `status` lists what's on disk; `verify` hashes every file against the manifest. Tokens come from `~/.cache/huggingface/token` and `~/.config/civitai/token`, mounted read-only when present and never printed; Civitai answers 401 without one, so a Civitai entry with no token is reported as waiting and the script exits 1.
 - **Mounts:** `spark/compose.yaml` mounts the manifest at `/srv/loras.json` and the files at `/loras`, both read-only.
 - **At start,** the model server sends the worker an `init` line naming the add-ons that are on disk. The worker loads each with `load_lora_weights` (this needs `peft`, pinned in the image), unfused, and reports in `ready` the ones that loaded. One that fails to load is logged and never offered.
-- **Per job:** `set_adapters([id], [scale])` for the one the job names, or `disable_lora()`.
-- **Verified 2026-09-29:** both installed add-ons load. diffusers converts the Kohya/Comfy keys (`diffusion_model.…`) and the PEFT keys alike. The worker's peak is 40.0 GiB with both loaded, against 36.9 GiB without.
+- **Per job:** `set_adapters([id], [scale])` for the one the job names, or `disable_lora()`. An add-on's `guidance` goes to the pipeline as `true_cfg_scale` for that job, with the empty negative prompt `" "` the pipeline needs before it applies guidance at all (without one it logs a warning and samples unguided). The default is 1.0, no guidance; above 1 the pipeline runs a second pass per step, so the job takes about twice as long.
+- **Verified 2026-09-29:** both add-ons installed then load. diffusers converts the Kohya/Comfy keys (`diffusion_model.…`) and the PEFT keys alike. The worker's peak is 40.0 GiB with both loaded, against 36.9 GiB without.
+- **Installed 2026-10-02 (STORY_021):** `penis-coachbate`, `uncut-coachbate` and `nsfw-thesealpacas-v2`, from byte-identical Hugging Face mirrors of the creators' Civitai files. `erect-friendofmale` and `flaccid-lonelycoyote` exist only on Civitai and wait for a token. The measurements are in the story's Done note.
+
+## The add-on bench (STORY_022)
+
+`spark/bench-loras.sh [date]` runs `spark/model-server/src/bench-cli.ts` in the pinned node image on the host's network, against `127.0.0.1:4120`, into `outputs/bench/<date>/` (gitignored).
+
+- **The plan:** four clothed subjects (two prompts, two seeds each, 3:4, no add-on); for each subject image and each setting (`none`, then every add-on `/capabilities` lists) one edit with the prompt "remove all clothing from the subject" at seed 42 in the subject's shape; and for each setting one text-to-image at seed 42. The prompts are in `bench.ts` and describe fictional adults.
+- **Edits take job ids, never files:** a subject is a job's result, fetched from `GET /jobs/:id/result` and uploaded as the reference. No photograph of a real person can be an input.
+- **It resumes:** `index.json` records each cell's job id, status and seconds; a run skips what is done, reuses the subjects by job id, and generates a subject again only if the server no longer has it. A failed cell is recorded with the server's error and the run continues; the exit status is 1 while any cell is not done.
+- **Output:** the PNGs, `contact-sheet.html` (subjects down, settings across, the clothed subject first, timings under each image) and `scorecard.md` for the owner to fill in. The scorecard, filled in, is committed under `docs/bench/`; the images never are.
 
 ## Measured on 2026-09-26 (STORY_014)
 
