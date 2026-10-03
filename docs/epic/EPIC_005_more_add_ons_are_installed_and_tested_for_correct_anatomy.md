@@ -1,6 +1,6 @@
 # EPIC_005 — More add-ons are installed and tested for correct anatomy
 
-**Status:** Draft (2026-10-02), awaiting the owner's approval
+**Status:** In progress. Approved by the owner on 2026-10-02 ("proceed to create the seeds, complete the epic and test"), with the stories self-approved under that night's authorisation. STORY_021 is Done; STORY_022's bench ran overnight and waits for the owner's scores; STORY_023 waits for those scores.
 **Created:** 2026-10-02
 
 ## Goal
@@ -59,7 +59,7 @@ Read from the Civitai API and the Hugging Face API on 2026-10-02. The sha256 val
 
 1. **A Civitai token.** `erect-friendofmale` and `flaccid-lonelycoyote` exist only on Civitai, and Civitai usually requires an API key to download adult models. The owner creates one and saves it on the Spark at `~/.config/civitai/token`. The assistant never sees or prints it ([CLAUDE.md §4b](../../CLAUDE.md#4b-recon-with-playwright)).
 2. **Memory.** The worker loads every add-on at start. The two installed now raised the peak to 40.0 GiB (+3 GiB), and five more add about 880 MB of files. STORY_021 re-derives the arithmetic and measures it. The Spark is shared (`minimax-comfyui-nsfw` held 46 GiB on 2026-09-29), so the box is read first, and nothing of the owner's is stopped ([CLAUDE.md §4a](../../CLAUDE.md#4a-two-machines-the-mac-and-the-spark)).
-3. **CFG.** Three authors recommend CFG 3 to 6. The worker passes no guidance value, so the pipeline's default applies. STORY_021 reads that default. If it is far off, the manifest gains an optional per-add-on guidance value. That is new behaviour, so it gets its own acceptance criteria in STORY_021.
+3. ~~**CFG.** Three authors recommend CFG 3 to 6. The worker passes no guidance value, so the pipeline's default applies. STORY_021 reads that default. If it is far off, the manifest gains an optional per-add-on guidance value. That is new behaviour, so it gets its own acceptance criteria in STORY_021.~~ **Answered 2026-10-02 (STORY_021):** the default is `true_cfg_scale` 1.0, no guidance. The manifest gained `guidance`, set to 3, 3 and 4 for the three add-ons whose creators ask for it. The pipeline applies it only with a negative prompt, so the worker sends the model card's empty one with it. Measured at 2.3× the time of an unguided image.
 4. **Licences.** The two CoachBate add-ons are non-commercial. That fits this workstation's personal, non-commercial footing, the same as the base model's.
 
 ## Stories
@@ -68,9 +68,9 @@ The numbers follow the order they will ship. Each story is drafted and approved 
 
 | # | Story | Status |
 | --- | --- | --- |
-| 021 | The male anatomy add-ons and the newer NSFW add-on are installed, each checked against its published checksum | Not drafted |
-| 022 | Every add-on is run over the same test subjects, and the owner scores the anatomy | Not drafted |
-| 023 | The add-ons that passed stay at the settings that worked, and the rest are removed | Not drafted |
+| 021 | [The male anatomy add-ons and the newer NSFW add-on are installed, each checked against its published checksum](../story/STORY_021_the_male_anatomy_add_ons_are_installed_each_checked_against_its_published_checksum.md) | Done 2026-10-02 (two add-ons wait for the owner's Civitai token) |
+| 022 | [Every add-on is run over the same test subjects, and the owner scores the anatomy](../story/STORY_022_every_add_on_is_run_over_the_same_test_subjects_and_the_owner_scores_the_anatomy.md) | Bench run 2026-10-02; waits for the owner's scores |
+| 023 | [The add-ons that passed stay at the settings that worked, and the rest are removed](../story/STORY_023_the_add_ons_that_passed_stay_at_the_settings_that_worked_and_the_rest_are_removed.md) | Drafted; not started until the scorecard is filled in |
 
 ### STORY_021, in outline
 
