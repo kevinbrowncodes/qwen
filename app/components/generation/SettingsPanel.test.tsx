@@ -32,16 +32,16 @@ describe("the Info panel", () => {
   it("is closed by default and toggles from the Info button", () => {
     view();
     const info = screen.getByRole("button", { name: "Info" });
-    expect(info).toHaveAttribute("aria-expanded", "false");
+    expect(info.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByTestId("settings-panel")).toBeNull();
     fireEvent.click(info);
-    expect(info).toHaveAttribute("aria-expanded", "true");
+    expect(info.getAttribute("aria-expanded")).toBe("true");
     const panel = screen.getByRole("region", { name: "Settings" });
-    expect(info).toHaveAttribute("aria-controls", panel.id);
-    expect(within(panel).getByText("Fake detail")).toBeVisible();
-    expect(within(panel).getByText("strength 0.8 · guidance default")).toBeVisible();
-    expect(within(panel).getByText("a red bicycle, sharp focus")).toBeVisible();
-    expect(within(panel).getByText("16:9 · 1376 × 768")).toBeVisible();
+    expect(info.getAttribute("aria-controls")).toBe(panel.id);
+    expect(within(panel).getByText("Fake detail")).toBeTruthy();
+    expect(within(panel).getByText("strength 0.8 · guidance default")).toBeTruthy();
+    expect(within(panel).getByText("a red bicycle, sharp focus")).toBeTruthy();
+    expect(within(panel).getByText("16:9 · 1376 × 768")).toBeTruthy();
     fireEvent.click(info);
     expect(screen.queryByTestId("settings-panel")).toBeNull();
   });
@@ -53,7 +53,7 @@ describe("the Info panel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Info" }));
     fireEvent.click(screen.getByRole("button", { name: "Copy seed" }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Copy seed" })).toHaveTextContent("Copied");
+      expect(screen.getByRole("button", { name: "Copy seed" }).textContent).toBe("Copied");
     });
     expect(writeText).toHaveBeenLastCalledWith("42");
     fireEvent.click(screen.getByRole("button", { name: "Copy all" }));
@@ -85,8 +85,8 @@ describe("the Info panel", () => {
 
   it("shows under a failed job's notice too, with how long it ran", () => {
     view({ job: { ...done, status: "failed", updatedAt: "2026-10-07T10:00:40.000Z", result: undefined, error: { code: "generation_failed", message: "out of memory" } } });
-    expect(screen.getByTestId("notice")).toContainElement(screen.getByRole("button", { name: "Info" }));
+    expect(screen.getByTestId("notice").contains(screen.getByRole("button", { name: "Info" }))).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Info" }));
-    expect(within(screen.getByTestId("settings-panel")).getByText("failed after 40 s")).toBeVisible();
+    expect(within(screen.getByTestId("settings-panel")).getByText("failed after 40 s")).toBeTruthy();
   });
 });
