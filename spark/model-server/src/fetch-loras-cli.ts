@@ -1,9 +1,10 @@
 /**
  * Entry point for spark/fetch-loras.sh (STORY_021): `node fetch-loras-cli.ts <manifest> <dir> [status|verify]`.
- * Env: HF_TOKEN_PATH and CIVITAI_TOKEN_PATH name token files (optional, never printed); HF_BASE and CIVITAI_BASE
+ * Env: HF_TOKEN_PATH and CIVITAI_TOKEN_PATH name token files, and ENV_FILE a .env whose CIVITAI_TOKEN wins over
+ * the token file (CHORE_005); all optional, never printed. HF_BASE and CIVITAI_BASE
  * override where the sources are reached. Exits 1 when any entry is refused, left waiting, failed, or does not verify.
  */
-import { DEFAULT_BASES, fetchAll, readFetchManifest, readToken, statusLines, verify } from "./fetch-loras.ts";
+import { DEFAULT_BASES, fetchAll, readEnvToken, readFetchManifest, readToken, statusLines, verify } from "./fetch-loras.ts";
 import { readFileSync } from "node:fs";
 
 const [manifest, dir, command = ""] = process.argv.slice(2);
@@ -25,7 +26,11 @@ if (command === "status") {
   }
 } else {
   const bases = { huggingface: process.env["HF_BASE"] ?? DEFAULT_BASES.huggingface, civitai: process.env["CIVITAI_BASE"] ?? DEFAULT_BASES.civitai };
-  const tokens = { huggingface: readToken(process.env["HF_TOKEN_PATH"]), civitai: readToken(process.env["CIVITAI_TOKEN_PATH"]) };
+  // CHORE_005: CIVITAI_TOKEN in the repo's .env (ENV_FILE) wins over the token file.
+  const fromEnv = readEnvToken(process.env["ENV_FILE"]);
+  const fromFile = readToken(process.env["CIVITAI_TOKEN_PATH"]);
+  console.log(`fetch: Civitai key: ${fromEnv !== undefined ? "found in .env" : fromFile !== undefined ? "found in ~/.config/civitai/token" : "none"}`);
+  const tokens = { huggingface: readToken(process.env["HF_TOKEN_PATH"]), civitai: fromEnv ?? fromFile };
   const outcome = await fetchAll(entries, dir, tokens, bases, (line) => {
     console.log(line);
   });

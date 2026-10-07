@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { downloadUrl, fetchAll, localPath, plan, readFetchManifest, readToken, statusLines, verify, type Bases, type FetchEntry } from "./fetch-loras.ts";
+import { downloadUrl, envValue, fetchAll, localPath, plan, readEnvToken, readFetchManifest, readToken, statusLines, verify, type Bases, type FetchEntry } from "./fetch-loras.ts";
 
 // STORY_021: the fetch engine behind spark/fetch-loras.sh, against a local fake of Hugging Face and Civitai.
 const sha = (b: string | Uint8Array): string => createHash("sha256").update(b).digest("hex");
@@ -191,6 +191,38 @@ describe("against a local fake of both sources", () => {
     const lines = statusLines([hf, civ], dir);
     expect(lines[0]).toMatch(/^nsfw-v2\s+fetched\s+0\.0 MB\s+Mirror\/Repo$/);
     expect(lines[1]).toMatch(/^erect\s+missing\s+civitai version 3348119$/);
+  });
+});
+
+describe("envValue and readEnvToken (CHORE_005)", () => {
+  it("reads one variable from .env text, stripping quotes and an export, and ignores everything else", () => {
+    expect(envValue("CIVITAI_TOKEN=abc123", "CIVITAI_TOKEN")).toBe("abc123");
+    expect(envValue('MODEL_API_KEY=x\nCIVITAI_TOKEN="quoted value"\n', "CIVITAI_TOKEN")).toBe("quoted value");
+    expect(envValue("export CIVITAI_TOKEN='single'", "CIVITAI_TOKEN")).toBe("single");
+    expect(envValue("  CIVITAI_TOKEN = spaced  \r\n", "CIVITAI_TOKEN")).toBe("spaced");
+    expect(envValue("CIVITAI_TOKEN=a=b", "CIVITAI_TOKEN")).toBe("a=b");
+  });
+
+  it("has none for a commented-out, empty or missing entry, or a name that only starts the same", () => {
+    expect(envValue("# CIVITAI_TOKEN=old", "CIVITAI_TOKEN")).toBeUndefined();
+    expect(envValue("CIVITAI_TOKEN=", "CIVITAI_TOKEN")).toBeUndefined();
+    expect(envValue('CIVITAI_TOKEN=""', "CIVITAI_TOKEN")).toBeUndefined();
+    expect(envValue("MODEL_API_KEY=x", "CIVITAI_TOKEN")).toBeUndefined();
+    expect(envValue("CIVITAI_TOKEN_OLD=x", "CIVITAI_TOKEN")).toBeUndefined();
+    expect(envValue("", "CIVITAI_TOKEN")).toBeUndefined();
+  });
+
+  it("reads the key from a .env file, and has none for an unset or unreadable path", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "qwen-env-"));
+    try {
+      writeFileSync(path.join(dir, ".env"), "MODEL_BASE_URL=http://x\nCIVITAI_TOKEN=from-env\n");
+      expect(readEnvToken(path.join(dir, ".env"))).toBe("from-env");
+      expect(readEnvToken(path.join(dir, "nope"))).toBeUndefined();
+      expect(readEnvToken(undefined)).toBeUndefined();
+      expect(readEnvToken("")).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

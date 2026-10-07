@@ -203,6 +203,31 @@ export function statusLines(entries: readonly FetchEntry[], dir: string): string
   });
 }
 
+/** One variable's value from the text of a .env file (CHORE_005): `NAME=value`, optionally `export NAME=value`,
+ * with surrounding quotes stripped. None for a missing, commented-out or empty entry; other lines are ignored, and
+ * nothing in the file is ever executed. */
+export function envValue(text: string, name: string): string | undefined {
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    const match = /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/.exec(line);
+    if (match?.[1] !== name) continue;
+    let value = (match[2] ?? "").trim();
+    if (value.length >= 2 && (value[0] === '"' || value[0] === "'") && value.at(-1) === value[0]) value = value.slice(1, -1);
+    return value === "" ? undefined : value;
+  }
+  return undefined;
+}
+
+/** CIVITAI_TOKEN from a .env file; none when the path is unset or unreadable. The value is never logged. */
+export function readEnvToken(file: string | undefined, name = "CIVITAI_TOKEN"): string | undefined {
+  if (file === undefined || file === "") return undefined;
+  try {
+    return envValue(readFileSync(file, "utf8"), name);
+  } catch {
+    return undefined;
+  }
+}
+
 /** A token from a file, trimmed; none when the path is unset or unreadable. The value is never logged. */
 export function readToken(file: string | undefined): string | undefined {
   if (file === undefined || file === "") return undefined;

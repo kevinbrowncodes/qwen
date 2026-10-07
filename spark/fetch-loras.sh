@@ -12,6 +12,7 @@
 # that differs is removed. The token files, if present, are mounted read-only and never printed:
 #   ~/.cache/huggingface/token   Hugging Face (not needed for public repos)
 #   ~/.config/civitai/token      Civitai (needed: its downloads answer 401 without one)
+#   CIVITAI_TOKEN in .env        Civitai, beside compose.yaml (CHORE_005); wins over the token file
 # Exits 1 when any entry is left unfetched, saying which. Afterwards, spark/up.sh rebuilds and recreates the model so
 # the worker loads them (about 3.3 minutes; check that no job is running first).
 set -euo pipefail
@@ -35,6 +36,10 @@ if [[ -r "$HOME/.cache/huggingface/token" ]]; then
 fi
 if [[ -r "$HOME/.config/civitai/token" ]]; then
   token_mounts+=(-v "$HOME/.config/civitai/token:/tokens/civitai:ro" -e CIVITAI_TOKEN_PATH=/tokens/civitai)
+fi
+# CHORE_005: CIVITAI_TOKEN in the repo's .env. Mounted read-only and parsed by the engine; this shell never reads it.
+if [[ -r "$repo/.env" ]]; then
+  token_mounts+=(-v "$repo/.env:/tokens/env:ro" -e ENV_FILE=/tokens/env)
 fi
 
 docker run --rm --user "$(id -u):$(id -g)" \
