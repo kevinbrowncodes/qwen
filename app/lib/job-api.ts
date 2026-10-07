@@ -16,6 +16,10 @@ export interface JobRequestEcho {
   readonly referenceImages: number;
   /** v1.2 (STORY_019); a server before it sends none. */
   readonly lora?: string | null;
+  /** v1.3 (STORY_024): the add-on's strength and guidance as applied, and the prompt the model received. */
+  readonly loraScale?: number | null;
+  readonly loraGuidance?: number | null;
+  readonly promptSent?: string;
 }
 export interface JobResult {
   readonly url: string;
@@ -64,8 +68,12 @@ function isResult(v: unknown): v is JobResult {
   return isRecord(v) && typeof v["url"] === "string" && typeof v["mimeType"] === "string" && typeof v["width"] === "number" && typeof v["height"] === "number" && typeof v["sizeBytes"] === "number";
 }
 
+const optional = (v: unknown, type: "string" | "number"): boolean => v === undefined || v === null || typeof v === type;
+
 function isRequestEcho(v: unknown): v is JobRequestEcho {
-  return isRecord(v) && typeof v["prompt"] === "string" && (typeof v["ratio"] === "string" || v["ratio"] === null) && typeof v["model"] === "string" && typeof v["seed"] === "number" && typeof v["referenceImages"] === "number" && (v["lora"] === undefined || v["lora"] === null || typeof v["lora"] === "string");
+  if (!isRecord(v) || typeof v["prompt"] !== "string" || !(typeof v["ratio"] === "string" || v["ratio"] === null) || typeof v["model"] !== "string") return false;
+  if (typeof v["seed"] !== "number" || typeof v["referenceImages"] !== "number" || !optional(v["lora"], "string")) return false;
+  return optional(v["loraScale"], "number") && optional(v["loraGuidance"], "number") && (v["promptSent"] === undefined || typeof v["promptSent"] === "string");
 }
 
 export function isJobStatusResponse(v: unknown): v is JobStatusResponse {

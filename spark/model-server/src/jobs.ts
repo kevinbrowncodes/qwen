@@ -13,7 +13,16 @@ export interface JobRequest {
   readonly referenceImages: number;
   /** The add-on used (STORY_019); null for none, and for jobs saved before it existed. */
   readonly lora: string | null;
+  /** The add-on's strength and guidance as applied to this job, recorded at creation (contract v1.3, STORY_024);
+   * null without an add-on, without guidance, or for a job saved before it. */
+  readonly loraScale: number | null;
+  readonly loraGuidance: number | null;
+  /** The prompt the model received, with any trigger word (v1.3); the prompt itself for a job saved before it. */
+  readonly promptSent: string;
 }
+
+/** What validation decides from the request alone; the server adds what the add-on contributes (STORY_024). */
+export type ValidatedRequest = Omit<JobRequest, "loraScale" | "loraGuidance" | "promptSent">;
 
 export interface JobResult {
   readonly file: string;
@@ -160,9 +169,14 @@ export class Jobs {
       const status = item["status"];
       if (!["queued", "running", "done", "failed", "cancelled"].includes(status)) continue;
       // Written by this server's own toIndex; fields beyond the ones checked are carried as they were saved.
-      // A job saved before STORY_019 has no add-on: it reads as null.
-      const lora = typeof item["request"]["lora"] === "string" ? item["request"]["lora"] : null;
-      const job = { ...item, request: { ...item["request"], lora }, references: [] } as unknown as JobRecord;
+      // A job saved before STORY_019 has no add-on, and one saved before STORY_024 has no recorded settings: they
+      // read as null, and the prompt sent as the prompt (the honest reading: nothing about them was recorded).
+      const r = item["request"];
+      const lora = typeof r["lora"] === "string" ? r["lora"] : null;
+      const num = (v: unknown): number | null => (typeof v === "number" ? v : null);
+      const promptSent = typeof r["promptSent"] === "string" ? r["promptSent"] : typeof r["prompt"] === "string" ? r["prompt"] : "";
+      const request = { ...r, lora, loraScale: num(r["loraScale"]), loraGuidance: num(r["loraGuidance"]), promptSent };
+      const job = { ...item, request, references: [] } as unknown as JobRecord;
       if (!isTerminal(job.status)) {
         job.status = "failed";
         job.error = { code: "generation_failed", message: RESTARTED };

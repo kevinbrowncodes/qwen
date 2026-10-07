@@ -3,7 +3,7 @@
  * history-store.ts. Rules: one entry per job id; newest first; a terminal status is final (a late non-terminal answer
  * never overwrites it); a cancelled job stays in history, shown as cancelled (CLAUDE.md §6 rule 4, decided here).
  */
-import { isTerminal, type JobStatus, type JobStatusResponse } from "./job-api";
+import { isTerminal, type JobRequestEcho, type JobStatus, type JobStatusResponse } from "./job-api";
 
 export interface HistoryEntry {
   readonly id: string;
@@ -13,6 +13,12 @@ export interface HistoryEntry {
   readonly referenceImages: number;
   /** The add-on used (STORY_019); null for none, and for entries saved before add-ons existed. */
   readonly lora: string | null;
+  /** What made it (STORY_024), from the first status echo that carries them; null for entries saved before, and
+   * for a server before contract v1.3 (the three add-on fields). */
+  readonly seed: number | null;
+  readonly loraScale: number | null;
+  readonly loraGuidance: number | null;
+  readonly promptSent: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly status: JobStatus;
@@ -33,16 +39,29 @@ function byNewest(a: HistoryEntry, b: HistoryEntry): number {
 }
 
 export function addEntry(entries: readonly HistoryEntry[], entry: NewEntry): HistoryEntry[] {
-  const fresh: HistoryEntry = { ...entry, updatedAt: entry.createdAt, status: "queued", progress: 0 };
+  // The create answer carries no seed: it and the add-on's settings arrive with the first status echo.
+  const fresh: HistoryEntry = { ...entry, seed: null, loraScale: null, loraGuidance: null, promptSent: null, updatedAt: entry.createdAt, status: "queued", progress: 0 };
   return [fresh, ...entries.filter((e) => e.id !== entry.id)].sort(byNewest);
 }
 
+/** What a status echo says made the job (STORY_024); fields the server did not send are left as they were. */
+function echoed(e: HistoryEntry, request: JobRequestEcho | undefined): Partial<HistoryEntry> {
+  if (!request) return {};
+  return {
+    seed: request.seed,
+    ...(request.loraScale === undefined ? {} : { loraScale: request.loraScale }),
+    ...(request.loraGuidance === undefined ? {} : { loraGuidance: request.loraGuidance }),
+    promptSent: request.promptSent ?? e.promptSent,
+  };
+}
+
 /** Folds a status answer into its entry. Unknown ids and answers after a terminal status change nothing. */
-export function applyStatus(entries: readonly HistoryEntry[], status: Pick<JobStatusResponse, "id" | "status" | "progress" | "error" | "result">, at: string): HistoryEntry[] {
+export function applyStatus(entries: readonly HistoryEntry[], status: Pick<JobStatusResponse, "id" | "status" | "progress" | "error" | "result"> & { readonly request?: JobRequestEcho }, at: string): HistoryEntry[] {
   return entries.map((e) => {
     if (e.id !== status.id || isTerminal(e.status)) return e;
     const next: HistoryEntry = {
       ...e,
+      ...echoed(e, status.request),
       status: status.status,
       progress: Math.max(e.progress, status.progress),
       updatedAt: at,
@@ -71,6 +90,8 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+const numberOrNull = (v: unknown): number | null => (typeof v === "number" ? v : null);
+
 /** Reads a stored file's contents; anything that is not a list of entries reads as empty. */
 export function parseEntries(text: string): HistoryEntry[] {
   let raw: unknown;
@@ -82,6 +103,14 @@ export function parseEntries(text: string): HistoryEntry[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((e): e is HistoryEntry => isRecord(e) && typeof e["id"] === "string" && typeof e["prompt"] === "string" && typeof e["createdAt"] === "string" && typeof e["status"] === "string")
-    .map((e) => ({ ...e, lora: typeof e.lora === "string" ? e.lora : null }))
+    .map((e) => ({
+      ...e,
+      lora: typeof e.lora === "string" ? e.lora : null,
+      // Entries saved before STORY_024 have none of these.
+      seed: numberOrNull(e.seed),
+      loraScale: numberOrNull(e.loraScale),
+      loraGuidance: numberOrNull(e.loraGuidance),
+      promptSent: typeof e.promptSent === "string" ? e.promptSent : null,
+    }))
     .sort(byNewest);
 }

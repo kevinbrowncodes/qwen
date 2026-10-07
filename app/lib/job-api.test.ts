@@ -15,6 +15,15 @@ describe("job-api checks", () => {
     expect(isJobStatusResponse({ ...base, request: { ...base.request, ratio: null } })).toBe(true);
   });
 
+  it("accepts the v1.3 echo fields present, null and absent, and refuses them mistyped (STORY_024)", () => {
+    const v13 = { ...base.request, lora: "x", loraScale: 0.8, loraGuidance: 3, promptSent: "p, t" };
+    expect(isJobStatusResponse({ ...base, request: v13 })).toBe(true);
+    expect(isJobStatusResponse({ ...base, request: { ...v13, loraScale: null, loraGuidance: null } })).toBe(true);
+    expect(isJobStatusResponse({ ...base, request: { ...v13, loraScale: "0.8" } })).toBe(false);
+    expect(isJobStatusResponse({ ...base, request: { ...v13, loraGuidance: "3" } })).toBe(false);
+    expect(isJobStatusResponse({ ...base, request: { ...v13, promptSent: null } })).toBe(false);
+  });
+
   it("requires a result when done and an error when failed", () => {
     expect(isJobStatusResponse({ ...base, status: "done" })).toBe(false);
     expect(isJobStatusResponse({ ...base, status: "done", result: { url: "/r", mimeType: "image/png", width: 1, height: 1, sizeBytes: 1 } })).toBe(true);

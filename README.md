@@ -78,6 +78,7 @@ Our feature list follows the MVP Scope above.
 Beyond the MVP (after its epics were Done):
 - **Settings** (⚙ at the bottom of the sidebar): the interface zoom, 1× to 4×, remembered per browser (STORY_020).
 - **Add-ons** in the composer: community LoRAs chosen per generation (STORY_019; see Running the Model).
+- **Info** under every generation (ⓘ in the action row, or beside a failed or stopped notice): the prompt, the prompt as sent with any trigger word, the model, size, seed, add-on with its strength and guidance, the reference count and the time taken, all read from the job's own record. It also has Copy (the seed), Copy all, and **Same seed again**, which reruns every setting including the seed (Regenerate still draws a new one). The model server also writes these lines, less the time, into each PNG as a `parameters` text chunk (STORY_024, job API contract v1.3).
 
 ## Testing
 

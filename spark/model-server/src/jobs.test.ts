@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BusyError, Jobs, RESTARTED } from "./jobs.ts";
 
-const req = { prompt: "p", ratio: "1:1", model: "qwen-image-2.1", seed: 1, referenceImages: 0, lora: null };
+const req = { prompt: "p", ratio: "1:1", model: "qwen-image-2.1", seed: 1, referenceImages: 0, lora: null, loraScale: null, loraGuidance: null, promptSent: "p" };
 let tick = 0;
 const clock = (): string => `2026-09-26T00:00:${String(tick++).padStart(2, "0")}.000Z`;
 
@@ -88,5 +88,12 @@ describe("Jobs", () => {
     expect(Jobs.fromIndex(old).get("o")?.request.lora).toBeNull();
     const withAddOn = '[{"id":"n","request":{"prompt":"p","ratio":"1:1","model":"m","seed":1,"referenceImages":0,"lora":"uncensored"},"status":"done","progress":100}]';
     expect(Jobs.fromIndex(withAddOn).get("n")?.request.lora).toBe("uncensored");
+  });
+
+  it("reads a job saved before STORY_024 as having no recorded settings, and keeps those recorded after", () => {
+    const old = '[{"id":"o","request":{"prompt":"p","ratio":"1:1","model":"m","seed":1,"referenceImages":0,"lora":"x"},"status":"done","progress":100}]';
+    expect(Jobs.fromIndex(old).get("o")?.request).toMatchObject({ lora: "x", loraScale: null, loraGuidance: null, promptSent: "p" });
+    const kept = '[{"id":"n","request":{"prompt":"p","ratio":"1:1","model":"m","seed":1,"referenceImages":0,"lora":"x","loraScale":0.9,"loraGuidance":4,"promptSent":"p, t"},"status":"done","progress":100}]';
+    expect(Jobs.fromIndex(kept).get("n")?.request).toMatchObject({ loraScale: 0.9, loraGuidance: 4, promptSent: "p, t" });
   });
 });

@@ -13,6 +13,10 @@ const at = (daysAgo: number, hour = 12): string => {
 const entry = (id: string, createdAt: string, status: HistoryEntry["status"] = "done"): HistoryEntry => ({
   id,
   lora: null,
+  seed: null,
+  loraScale: null,
+  loraGuidance: null,
+  promptSent: null,
   prompt: `prompt ${id}`,
   ratio: "1:1",
   model: "m",

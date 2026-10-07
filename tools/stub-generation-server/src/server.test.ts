@@ -265,6 +265,26 @@ describe("the contract's shared add-on vectors (v1.2, STORY_019)", () => {
   });
 });
 
+describe("the add-on's settings in the status echo (v1.3, STORY_024)", () => {
+  const echo = async (body: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    const res = await create(body);
+    expect(res.status).toBe(202);
+    const id = String((await json(res))["id"]);
+    const status = await json(await fetch(`${base}/jobs/${id}`));
+    return status["request"] as Record<string, unknown>;
+  };
+  it("echoes the strength, guidance and the prompt with the trigger for an add-on that has them", async () => {
+    expect(await echo({ prompt: "a portrait", ratio: "1:1", lora: "fake-detail" })).toMatchObject({ lora: "fake-detail", loraScale: 0.8, loraGuidance: 3, promptSent: "a portrait, sharp focus" });
+  });
+  it("leaves the trigger out when the prompt already has it", async () => {
+    expect(await echo({ prompt: "a Sharp Focus portrait", ratio: "1:1", lora: "fake-detail" })).toMatchObject({ promptSent: "a Sharp Focus portrait" });
+  });
+  it("echoes a null guidance and the prompt unchanged for an add-on without them, and nulls without one", async () => {
+    expect(await echo({ prompt: "a portrait", ratio: "1:1", lora: "fake-style" })).toMatchObject({ loraScale: 1, loraGuidance: null, promptSent: "a portrait" });
+    expect(await echo({ prompt: "  a portrait  ", ratio: "1:1" })).toMatchObject({ lora: null, loraScale: null, loraGuidance: null, promptSent: "a portrait" });
+  });
+});
+
 describe("the contract's shared edit vectors (v1.1, STORY_017)", () => {
   const vectors: unknown = JSON.parse(readFileSync(new URL("../../../docs/contracts/validation-vectors.json", import.meta.url), "utf8"));
   type EditCase = { body: Record<string, string>; status: number; ratio?: string | null; code?: string; field?: string };

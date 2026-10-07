@@ -89,3 +89,26 @@ describe("add-ons in history (STORY_019)", () => {
     expect(parseEntries(JSON.stringify(old))[0]?.lora).toBeNull();
   });
 });
+
+describe("what made it, in history (STORY_024)", () => {
+  const echo = { prompt: "p", ratio: "1:1", model: "m", seed: 42, referenceImages: 0, lora: "x", loraScale: 0.8, loraGuidance: null, promptSent: "p, t" };
+
+  it("starts with nothing recorded, then keeps the seed and the add-on's settings from the first echo, through a save", () => {
+    let list = add([], "a", "t0");
+    expect(list[0]).toMatchObject({ seed: null, loraScale: null, loraGuidance: null, promptSent: null });
+    list = applyStatus(list, { id: "a", status: "running", progress: 10, request: echo }, "t1");
+    list = applyStatus(list, { id: "a", status: "done", progress: 100 }, "t2");
+    expect(list[0]).toMatchObject({ seed: 42, loraScale: 0.8, loraGuidance: null, promptSent: "p, t", status: "done" });
+    expect(parseEntries(JSON.stringify(list))[0]).toMatchObject({ seed: 42, loraScale: 0.8, loraGuidance: null, promptSent: "p, t" });
+  });
+
+  it("keeps the seed from a server before contract v1.3, and leaves its add-on fields unrecorded", () => {
+    const list = applyStatus(add([], "a", "t0"), { id: "a", status: "running", progress: 10, request: { prompt: "p", ratio: "1:1", model: "m", seed: 7, referenceImages: 0 } }, "t1");
+    expect(list[0]).toMatchObject({ seed: 7, loraScale: null, loraGuidance: null, promptSent: null });
+  });
+
+  it("reads an entry saved before this story as having none of them", () => {
+    const old = [{ id: "o", prompt: "p", ratio: "1:1", model: "m", referenceImages: 0, lora: "x", createdAt: "t0", updatedAt: "t0", status: "done", progress: 100 }];
+    expect(parseEntries(JSON.stringify(old))[0]).toMatchObject({ seed: null, loraScale: null, loraGuidance: null, promptSent: null });
+  });
+});

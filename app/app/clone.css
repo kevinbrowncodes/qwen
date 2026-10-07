@@ -278,6 +278,82 @@ html.mobile .clone-action {
 html.mobile .clone-notice-action {
   min-height: 44px;
 }
+.clone-notice-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+/* The Info panel (STORY_024): ours, the reference has none. The result's width on desktop (400), full width on the
+ * phone; the type and colours are the notice's and the status line's. */
+.clone-settings {
+  box-sizing: border-box;
+  max-width: 400px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  border: 0.8px solid rgba(250, 251, 255, 0.12);
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 20px;
+  color: #fafbff;
+}
+html.mobile .clone-settings {
+  max-width: none;
+}
+.clone-settings-title {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.clone-settings-rows {
+  margin: 0;
+}
+.clone-settings-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 2px 0;
+}
+.clone-settings-row dt {
+  flex: none;
+  width: 64px;
+  color: rgba(250, 251, 255, 0.5);
+}
+.clone-settings-row dd {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.clone-settings-detail {
+  display: block;
+  color: rgba(250, 251, 255, 0.5);
+}
+.clone-settings-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.clone-settings-button {
+  min-height: 28px;
+  padding: 0 12px;
+  border: 0.8px solid rgba(250, 251, 255, 0.12);
+  border-radius: 8px;
+  background: #2c2c2c;
+  color: #fafbff;
+  font: inherit;
+  cursor: pointer;
+}
+.clone-settings-button:hover {
+  background: #353535;
+}
+.clone-settings-copy {
+  flex: none;
+}
+html.mobile .clone-settings-button {
+  min-height: 44px;
+}
 /* Stop, in Send's place (job-generating@1437: 32px circle). Ours is enabled: it cancels (a departure). */
 .chat-prompt-send-button .clone-stop-button {
   background: #fafbff;

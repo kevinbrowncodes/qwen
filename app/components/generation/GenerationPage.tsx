@@ -8,6 +8,7 @@ import { ComposerHost, useSubmit } from "@/components/composer/ComposerHost";
 import type { Injected } from "@/components/composer/Composer";
 import { resultFileName } from "@/lib/content-disposition";
 import { recall } from "@/lib/pending";
+import { useCapabilities } from "@/lib/use-capabilities";
 import { useGeneration } from "@/lib/use-generation";
 import { announceHistoryChanged } from "@/lib/use-history";
 import { GenerationView } from "./GenerationView";
@@ -37,6 +38,7 @@ export function GenerationPage({ id }: { readonly id: string }) {
   }, []);
   const { job, problem, stop } = useGeneration(id, onTerminal);
   const { submit } = useSubmit();
+  const capabilities = useCapabilities();
 
   // Reopened from history (or after a reload): the prompt and options come from the job's own echo.
   const echo = job?.request;
@@ -44,6 +46,10 @@ export function GenerationPage({ id }: { readonly id: string }) {
 
   const running = job !== null && (job.status === "queued" || job.status === "running");
   const canResend = shown !== null && (shown.referenceCount === 0 || shown.files.length === shown.referenceCount);
+  // Regenerate draws a new seed; Same seed again (STORY_024) sends this job's, from its echo.
+  const resend = (seed?: number): void => {
+    if (shown) void submit({ prompt: shown.prompt, ratio: shown.ratio, model: shown.model, lora: shown.lora, references: shown.files, ...(seed === undefined ? {} : { seed }) });
+  };
 
   return (
     <div className="clone-chat-page">
@@ -63,7 +69,21 @@ export function GenerationPage({ id }: { readonly id: string }) {
                   setInject({ files: [new File([blob], resultFileName(id), { type: blob.type || "image/png" })], nonce: ++nonce });
                 });
             }}
-            onRegenerate={canResend ? () => void submit({ prompt: shown.prompt, ratio: shown.ratio, model: shown.model, lora: shown.lora, references: shown.files }) : undefined}
+            onRegenerate={
+              canResend
+                ? () => {
+                    resend();
+                  }
+                : undefined
+            }
+            labels={capabilities}
+            onSameSeed={
+              canResend && echo
+                ? () => {
+                    resend(echo.seed);
+                  }
+                : undefined
+            }
           />
         ) : problem ? (
           <div className="qwen-chat-message">

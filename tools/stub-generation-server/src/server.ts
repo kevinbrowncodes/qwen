@@ -42,6 +42,13 @@ export const CAPABILITIES = {
 
 const MAX_SEED = 4294967295;
 
+/** What each fake add-on applies (contract v1.3, STORY_024): one with a trigger and guidance, one with neither, so
+ * the echo of both shapes can be tested. The model server reads the same things from spark/loras.json. */
+export const FAKE_LORA_SETTINGS: Readonly<Record<string, { readonly scale: number; readonly guidance: number | null; readonly trigger: string | null }>> = {
+  "fake-detail": { scale: 0.8, guidance: 3, trigger: "sharp focus" },
+  "fake-style": { scale: 1, guidance: null, trigger: null },
+};
+
 export interface JobRequest {
   readonly prompt: string;
   readonly ratio: string | null;
@@ -50,6 +57,10 @@ export interface JobRequest {
   readonly referenceImages: number;
   /** The add-on named (v1.2, STORY_019), or null. */
   readonly lora: string | null;
+  /** v1.3 (STORY_024): the add-on's strength and guidance as applied, and the prompt with any trigger word. */
+  readonly loraScale: number | null;
+  readonly loraGuidance: number | null;
+  readonly promptSent: string;
 }
 export interface ReceivedUpload {
   readonly filename: string;
@@ -189,7 +200,12 @@ export function validateRequest(fields: Record<string, unknown>, uploads: readon
     }
     seed = n;
   }
-  return { prompt: prompt.trim(), ratio, model, seed, referenceImages: refs.length, lora };
+  const applied = lora === null ? undefined : FAKE_LORA_SETTINGS[lora];
+  const trimmed = prompt.trim();
+  // The model server's rule (loras.ts withTrigger): the trigger is appended unless the prompt already has it.
+  const trigger = applied?.trigger ?? null;
+  const promptSent = trigger === null || trimmed.toLowerCase().includes(trigger.toLowerCase()) ? trimmed : `${trimmed}, ${trigger}`;
+  return { prompt: trimmed, ratio, model, seed, referenceImages: refs.length, lora, loraScale: applied?.scale ?? null, loraGuidance: applied?.guidance ?? null, promptSent };
 }
 
 export function createStubServer(options: StubOptions = {}): StubServer {

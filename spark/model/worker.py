@@ -33,6 +33,7 @@ sys.stdout = sys.stderr
 
 import torch  # noqa: E402
 from PIL import Image  # noqa: E402
+from PIL.PngImagePlugin import PngInfo  # noqa: E402
 
 WEIGHTS = os.environ.get("WEIGHTS", "/weights")
 _lock = threading.Lock()
@@ -123,6 +124,21 @@ def use_lora(pipe, job: dict, loaded: list) -> None:
         pipe.disable_lora()
 
 
+def png_info(job: dict, image: Image.Image) -> PngInfo:
+    """The settings the image carries (STORY_024): the server's lines, with the size, which only the saved image knows,
+    appended to the Size line. Written as a `parameters` text chunk, the name image tools conventionally read (Pillow
+    falls back to iTXt for a prompt outside Latin-1); the pixels are unchanged."""
+    info = PngInfo()
+    params = job.get("parameters")
+    if params:
+        lines = list(params["lines"])
+        at = params["sizeLine"]
+        if 0 <= at < len(lines):
+            lines[at] = f"{lines[at]} · {image.width} × {image.height}"
+        info.add_text("parameters", "\n".join(lines))
+    return info
+
+
 def run(pipe, job: dict, loaded: list) -> None:
     job_id = job["id"]
     steps = int(job.get("steps", 40))
@@ -156,7 +172,7 @@ def run(pipe, job: dict, loaded: list) -> None:
     try:
         use_lora(pipe, job, loaded)
         image = pipe(**kwargs).images[0]
-        image.save(job["output"])
+        image.save(job["output"], pnginfo=png_info(job, image))
         say({"type": "done", "id": job_id, "path": job["output"], "width": image.width, "height": image.height})
     except Cancelled:
         say({"type": "cancelled", "id": job_id})

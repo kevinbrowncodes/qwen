@@ -218,6 +218,23 @@ describe("edits", () => {
     expect(stored().find((e) => e.id === c)).toMatchObject({ lora: null });
   });
 
+  it("records the seed and what the add-on contributed in history, and reads them back (contract v1.3, STORY_024)", async () => {
+    const res = await post({ prompt: "a portrait", ratio: "1:1", model: "qwen-image-2.1", lora: "fake-detail", seed: 42 }, "done-after-1-poll");
+    const id = String(field(await json(res), "id"));
+    expect(stored().find((e) => e.id === id)).toMatchObject({ seed: null, promptSent: null });
+    const echo = { seed: 42, lora: "fake-detail", loraScale: 0.8, loraGuidance: 3, promptSent: "a portrait, sharp focus" };
+    expect(await status(id)).toMatchObject({ status: "done", request: echo });
+    expect(stored().find((e) => e.id === id)).toMatchObject(echo);
+    const listed = field(await json(await getHistory()), "entries");
+    expect(Array.isArray(listed) ? listed.find((e: unknown) => typeof e === "object" && e !== null && "id" in e && e.id === id) : null).toMatchObject(echo);
+    // Reopening asks the server again and gets the same echo.
+    expect(field(await status(id), "request")).toMatchObject(echo);
+
+    const plain = String(field(await json(await post({ prompt: "a portrait", ratio: "1:1", model: "qwen-image-2.1" }, "done-after-1-poll")), "id"));
+    await status(plain);
+    expect(stored().find((e) => e.id === plain)).toMatchObject({ lora: null, loraScale: null, loraGuidance: null, promptSent: "a portrait" });
+  });
+
   it("relays the server's refusal of an add-on it does not offer, and records nothing", async () => {
     const res = await post({ prompt: "a portrait", ratio: "1:1", model: "qwen-image-2.1", lora: "not-installed" });
     expect(res.status).toBe(400);

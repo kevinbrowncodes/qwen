@@ -56,6 +56,21 @@ describe("add-ons (STORY_019)", () => {
   });
 });
 
+describe("a seed (STORY_024)", () => {
+  it("is sent in JSON and in a form when given, and not when absent", () => {
+    const json = buildBody({ prompt: "p", ratio: "1:1", model: "m", lora: null, references: [], seed: 42 }).body;
+    expect(JSON.parse(typeof json === "string" ? json : "{}")).toMatchObject({ seed: 42 });
+    const zero = buildBody({ prompt: "p", ratio: "1:1", model: "m", lora: null, references: [], seed: 0 }).body;
+    expect(JSON.parse(typeof zero === "string" ? zero : "{}")).toMatchObject({ seed: 0 });
+    const form = buildBody({ prompt: "p", ratio: null, model: "m", lora: null, references: [a], seed: 42 }).body;
+    expect(form instanceof FormData ? form.get("seed") : null).toBe("42");
+    const none = buildBody({ prompt: "p", ratio: "1:1", model: "m", lora: null, references: [] }).body;
+    expect(JSON.parse(typeof none === "string" ? none : "{}")).not.toHaveProperty("seed");
+    const noneForm = buildBody({ prompt: "p", ratio: null, model: "m", lora: null, references: [a] }).body;
+    expect(noneForm instanceof FormData ? noneForm.has("seed") : true).toBe(false);
+  });
+});
+
 describe("submitGeneration", () => {
   const req = { prompt: "p", ratio: "1:1", model: "m", lora: null, references: [] };
   const respond = (status: number, body: unknown) => vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify(body), { status }));

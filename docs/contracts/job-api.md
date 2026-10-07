@@ -1,6 +1,6 @@
 # Job API contract: create, then status, then result
 
-**Version 1.2 (2026-09-29, STORY_019; v1.1 2026-09-27, STORY_017; v1 2026-09-26, STORY_006).** v1.1 lets an edit choose its ratio; v1.2 adds community add-ons (LoRAs). This is the one protocol the UI speaks to an image generation server. Two servers implement it:
+**Version 1.3 (2026-10-07, STORY_024; v1.2 2026-09-29, STORY_019; v1.1 2026-09-27, STORY_017; v1 2026-09-26, STORY_006).** v1.1 lets an edit choose its ratio; v1.2 adds community add-ons (LoRAs); v1.3 echoes what the add-on contributed to each job. This is the one protocol the UI speaks to an image generation server. Two servers implement it:
 - the **stub** (`tools/stub-generation-server/`, STORY_006), with scripted outcomes for the test gate;
 - the **model server** on the Spark (`spark/`, EPIC_004), in front of Qwen-Image-2.1.
 
@@ -74,7 +74,7 @@ Errors:
   "progress": 100,
   "createdAt": "2026-09-26T22:00:00.000Z",
   "updatedAt": "2026-09-26T22:00:35.000Z",
-  "request": { "prompt": "…", "ratio": "16:9", "model": "qwen-image-2.1", "seed": 42, "referenceImages": 0, "lora": null },
+  "request": { "prompt": "…", "ratio": "16:9", "model": "qwen-image-2.1", "seed": 42, "referenceImages": 0, "lora": null, "loraScale": null, "loraGuidance": null, "promptSent": "…" },
   "error": { "code": "moderated", "message": "…" },
   "result": { "url": "/jobs/…/result", "mimeType": "image/png", "width": 1376, "height": 768, "sizeBytes": 1461575 }
 }
@@ -82,6 +82,7 @@ Errors:
 
 - `error` is present only when `status` is `failed`. Its `code` is `moderated` when the server refused the prompt or an image on content grounds, and `generation_failed` otherwise.
 - `result` is present only when `status` is `done`, and `url` is relative to the base URL.
+- `request.loraScale` and `request.loraGuidance` (v1.3) are the add-on's strength and guidance as applied to this job, or `null` without an add-on (and `loraGuidance` is `null` for an add-on with no guidance). `request.promptSent` (v1.3) is the prompt the model received, which differs from `prompt` when the add-on has a trigger word. All three are recorded when the job is created, so a later change to the server's add-on settings never rewrites an older job. A client must read a server before v1.3 as sending none of them.
 - An unknown id answers `404 not_found`.
 
 ## `DELETE /jobs/:id`: cancel

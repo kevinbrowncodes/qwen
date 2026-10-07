@@ -246,6 +246,30 @@ describe("add-ons (STORY_019)", () => {
     expect(third?.["lora"]).toEqual({ id: "fake-style", scale: 1 });
   });
 
+  it("echoes what the add-on contributed and sends the worker the PNG's settings text (STORY_024)", async () => {
+    await start({ loras: [detail, style] });
+    await until(async () => JSON.stringify((await json(await fetch(`${base}/capabilities`)))["loras"]) === JSON.stringify([{ id: "fake-detail", label: "Fake detail" }, { id: "fake-style", label: "Fake style" }]));
+    const a = await create({ prompt: "a red bicycle", ratio: "3:4", seed: 7, lora: "fake-detail" });
+    expect(await terminal(a)).toMatchObject({ request: { lora: "fake-detail", loraScale: 0.8, loraGuidance: 3, promptSent: "a red bicycle, sharp focus" } });
+    const b = await create({ prompt: "a red bicycle", ratio: "3:4", lora: "fake-style" });
+    expect(await terminal(b)).toMatchObject({ request: { loraScale: 1, loraGuidance: null, promptSent: "a red bicycle" } });
+    const c = await create({ prompt: "a red bicycle", ratio: "3:4" });
+    expect(await terminal(c)).toMatchObject({ request: { lora: null, loraScale: null, loraGuidance: null, promptSent: "a red bicycle" } });
+    const [first, , third] = jobs();
+    expect(first?.["parameters"]).toEqual({ lines: ["Prompt: a red bicycle", "Sent: a red bicycle, sharp focus", "Model: Qwen-Image 2.1", "Size: 3:4", "Seed: 7", "Add-on: Fake detail · strength 0.8 · guidance 3"], sizeLine: 3 });
+    expect(JSON.stringify(third?.["parameters"])).toContain('"Add-on: None"');
+  });
+
+  it("keeps a finished job's recorded settings when the server restarts with a changed strength (STORY_024)", async () => {
+    await start({ loras: [detail] });
+    await until(async () => JSON.stringify((await json(await fetch(`${base}/capabilities`)))["loras"]) === JSON.stringify([{ id: "fake-detail", label: "Fake detail" }]));
+    const a = await create({ prompt: "a red bicycle", ratio: "1:1", lora: "fake-detail" });
+    await terminal(a);
+    await model?.close();
+    await start({ loras: [{ ...detail, scale: 0.5, guidance: undefined }] });
+    expect((await status(a))["request"]).toMatchObject({ loraScale: 0.8, loraGuidance: 3 });
+  });
+
   it("offers none and sends no init without add-ons", async () => {
     await start();
     expect(await json(await fetch(`${base}/capabilities`))).toMatchObject({ loras: [] });

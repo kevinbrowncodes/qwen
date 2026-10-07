@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { Page } from "@playwright/test";
-import { expect, expectImageLoaded, submitAndWait, test } from "./fixtures";
+import { expect, expectImageLoaded, settledBox, submitAndWait, test } from "./fixtures";
 
 const FIXTURE = path.join(process.cwd(), "..", "tools", "stub-generation-server", "fixtures", "reference.png");
 
@@ -154,4 +154,64 @@ test("desktop: on a generation's page the composer's menus open upward, inside t
   await page.getByRole("button", { name: "Select Mode" }).click();
   await inside(page.getByRole("menu", { name: "Select Mode" }));
   await page.getByRole("menuitem", { name: "Create Image" }).click();
+});
+
+/** The seed the stub drew or was sent, from what it received. */
+async function receivedRequest(stub: import("./fixtures").Stub, id: string): Promise<Record<string, unknown>> {
+  const body = await stub.received(id);
+  const request = typeof body === "object" && body !== null && "request" in body ? body.request : null;
+  return typeof request === "object" && request !== null ? { ...request } : {};
+}
+
+test("Info shows the settings that made the image, Same seed again reproduces them, and they survive a reload (STORY_024)", async ({ page, stub }, info) => {
+  await useScript(page, "done-after-1-poll");
+  await page.goto("/");
+  await imageMode(page);
+  await page.getByRole("combobox", { name: "Aspect ratio" }).click();
+  await page.getByRole("option", { name: "1:1" }).click();
+  await page.getByRole("combobox", { name: "Add-on" }).click();
+  await page.getByRole("listbox", { name: "Add-on" }).getByRole("option", { name: "Fake detail" }).click();
+  await page.getByLabel("Prompt").fill("a red bicycle");
+  await submitAndWait(page, () => page.getByRole("button", { name: "Send" }).click());
+  const first = jobIdFromUrl(page);
+  await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${first}/result`, 64);
+  const seed = (await receivedRequest(stub, first))["seed"];
+  expect(typeof seed).toBe("number");
+
+  const infoButton = page.getByRole("button", { name: "Info" });
+  if (info.project.name === "narrow") {
+    const box = await settledBox(infoButton);
+    expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
+  }
+  const expectPanel = async (): Promise<void> => {
+    await infoButton.click();
+    const panel = page.getByRole("region", { name: "Settings" });
+    const value = (row: string) => panel.locator(`[data-row="${row}"] dd`);
+    await expect(value("prompt")).toHaveText("a red bicycle");
+    // The stub's add-on has a trigger word, which the server appended.
+    await expect(value("sent")).toHaveText("a red bicycle, sharp focus");
+    await expect(value("model")).toHaveText("Qwen-Image 2.1");
+    await expect(value("size")).toHaveText("1:1 · 64 × 36");
+    await expect(value("seed")).toHaveText(String(seed));
+    await expect(value("addOn")).toHaveText("Fake detailstrength 0.8 · guidance 3");
+    await expect(value("time")).toHaveText(/^\d+ s$/);
+  };
+  await expectPanel();
+
+  // Same seed again sends every setting of this one, the seed included.
+  await submitAndWait(page, () => page.getByRole("button", { name: "Same seed again" }).click());
+  const second = jobIdFromUrl(page);
+  expect(second).not.toBe(first);
+  expect(await receivedRequest(stub, second)).toMatchObject({ seed, prompt: "a red bicycle", ratio: "1:1", lora: "fake-detail" });
+  await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${second}/result`, 64);
+
+  // Regenerate is unchanged: the browser sends no seed, so the server draws a new one.
+  const regenerated = page.waitForRequest((r) => r.method() === "POST" && new URL(r.url()).pathname === "/api/jobs");
+  await submitAndWait(page, () => page.getByRole("button", { name: "Regenerate" }).click());
+  expect(JSON.parse((await regenerated).postData() ?? "{}")).not.toHaveProperty("seed");
+
+  // Loaded afresh, the first job's panel reads the same values from its echo, not from this page's memory.
+  await submitAndWait(page, () => page.goto(`/g/${encodeURIComponent(first)}`));
+  await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${first}/result`, 64);
+  await expectPanel();
 });

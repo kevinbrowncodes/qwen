@@ -12,6 +12,8 @@ export interface GenerationRequest {
   /** The add-on (STORY_019), or null for none. */
   readonly lora: string | null;
   readonly references: readonly File[];
+  /** "Same seed again" (STORY_024) sends this generation's seed; absent, the server draws one (Regenerate). */
+  readonly seed?: number;
 }
 
 export type SubmitOutcome = { readonly ok: true; readonly id: string } | { readonly ok: false; readonly message: string };
@@ -26,7 +28,7 @@ export function requestFrom(state: ComposerState): GenerationRequest {
 export function buildBody(req: GenerationRequest): { readonly body: BodyInit; readonly headers: Record<string, string> } {
   if (req.references.length === 0) {
     // No add-on sends no `lora` field (contract v1.2, STORY_019).
-    const json = { prompt: req.prompt, ratio: req.ratio, model: req.model, ...(req.lora === null ? {} : { lora: req.lora }) };
+    const json = { prompt: req.prompt, ratio: req.ratio, model: req.model, ...(req.lora === null ? {} : { lora: req.lora }), ...(req.seed === undefined ? {} : { seed: req.seed }) };
     return { body: JSON.stringify(json), headers: { "content-type": "application/json" } };
   }
   const form = new FormData();
@@ -34,6 +36,7 @@ export function buildBody(req: GenerationRequest): { readonly body: BodyInit; re
   form.set("model", req.model);
   if (req.ratio !== null) form.set("ratio", req.ratio);
   if (req.lora !== null) form.set("lora", req.lora);
+  if (req.seed !== undefined) form.set("seed", String(req.seed));
   for (const file of req.references) form.append("referenceImage", file, file.name);
   return { body: form, headers: {} };
 }

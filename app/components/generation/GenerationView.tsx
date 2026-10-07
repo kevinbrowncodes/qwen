@@ -5,11 +5,13 @@
  * controls when done, or a notice when it failed, was moderated or was stopped. Readings: docs/recon/2026-09-26/states/
  * job-generating@1437.json, job-done@1437.json, edit-done@1437.json, job-done@393.json.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { settingsRows, type Labels } from "@/lib/generation-settings";
 import { noticeFor, skeletonSize, statusLine } from "@/lib/generation-view";
 import type { JobStatusResponse } from "@/lib/job-api";
 import { useNarrow } from "@/lib/use-narrow";
 import { Icon } from "../Icon";
+import { SettingsPanel } from "./SettingsPanel";
 
 const TRACKS = ["blue", "lilac", "peach", "rose", "cyan"] as const;
 
@@ -23,6 +25,10 @@ export interface GenerationViewProps {
   readonly onEdit: (resultUrl: string) => void;
   /** Absent when the request cannot be sent again (an edit whose files this page no longer holds). */
   readonly onRegenerate?: () => void;
+  /** The model and add-on labels for the Info panel (STORY_024). */
+  readonly labels: Labels;
+  /** "Same seed again" (STORY_024); absent exactly when Regenerate is. */
+  readonly onSameSeed?: () => void;
 }
 
 function ReferenceTile({ file }: { readonly file: File }) {
@@ -69,13 +75,31 @@ function Skeleton({ ratio, status, narrow }: { readonly ratio: string | null; re
   );
 }
 
-export function GenerationView({ job, prompt, ratio, referenceFiles, referenceCount, problem, onEdit, onRegenerate }: GenerationViewProps) {
+export function GenerationView({ job, prompt, ratio, referenceFiles, referenceCount, problem, onEdit, onRegenerate, labels, onSameSeed }: GenerationViewProps) {
   const narrow = useNarrow();
   const [hover, setHover] = useState(false);
+  // Closed by default, and not remembered (STORY_024).
+  const [info, setInfo] = useState(false);
+  const panelId = useId();
   const status = job?.status ?? "queued";
   const notice = job ? noticeFor(job) : null;
   const result = job?.status === "done" ? job.result : undefined;
   const iconSet = narrow ? "appicon" : "qwpcicon";
+  const infoButton = (
+    <button
+      type="button"
+      className="clone-icon-button clone-action"
+      aria-label="Info"
+      aria-expanded={info}
+      aria-controls={info ? panelId : undefined}
+      onClick={() => {
+        setInfo((v) => !v);
+      }}
+    >
+      <Icon id={`${iconSet}-info`} />
+    </button>
+  );
+  const panel = info && job ? <SettingsPanel id={panelId} rows={settingsRows(job, labels)} onSameSeed={onSameSeed} /> : null;
 
   return (
     <div className="clone-messages">
@@ -161,24 +185,32 @@ export function GenerationView({ job, prompt, ratio, referenceFiles, referenceCo
                   </a>
                 </>
               ) : null}
+              {infoButton}
               {onRegenerate ? (
                 <button type="button" className="clone-icon-button clone-action" aria-label="Regenerate" onClick={onRegenerate}>
                   <Icon id={`${iconSet}-refresh`} />
                 </button>
               ) : null}
             </div>
+            {panel}
           </>
         ) : notice ? (
-          <div className="clone-generation-notice" role="status" data-testid="notice">
-            <span>
-              <Icon id={status === "cancelled" ? "qwpcicon-stop-fill" : "qwpcicon-errorPicture"} /> {notice}
-            </span>
-            {onRegenerate ? (
-              <button type="button" className="clone-icon-button clone-notice-action" onClick={onRegenerate}>
-                <Icon id={`${iconSet}-refresh`} /> {status === "cancelled" ? "Regenerate" : "Try again"}
-              </button>
-            ) : null}
-          </div>
+          <>
+            <div className="clone-generation-notice" role="status" data-testid="notice">
+              <span>
+                <Icon id={status === "cancelled" ? "qwpcicon-stop-fill" : "qwpcicon-errorPicture"} /> {notice}
+              </span>
+              <span className="clone-notice-actions">
+                {infoButton}
+                {onRegenerate ? (
+                  <button type="button" className="clone-icon-button clone-notice-action" onClick={onRegenerate}>
+                    <Icon id={`${iconSet}-refresh`} /> {status === "cancelled" ? "Regenerate" : "Try again"}
+                  </button>
+                ) : null}
+              </span>
+            </div>
+            {panel}
+          </>
         ) : job || !problem ? (
           <Skeleton ratio={ratio} status={status} narrow={narrow} />
         ) : null}

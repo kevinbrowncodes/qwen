@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HistoryEntry } from "./history";
 import { announceHistoryChanged, RUNNING_REFRESH_MS, useHistory, type History } from "./use-history";
 
-const entry = (id: string, createdAt = "2026-01-01T00:00:00Z"): HistoryEntry => ({ id, prompt: id, ratio: "1:1", model: "m", referenceImages: 0, lora: null, createdAt, updatedAt: "t", status: "done", progress: 100 });
+const entry = (id: string, createdAt = "2026-01-01T00:00:00Z"): HistoryEntry => ({ id, prompt: id, ratio: "1:1", model: "m", referenceImages: 0, lora: null, seed: null, loraScale: null, loraGuidance: null, promptSent: null, createdAt, updatedAt: "t", status: "done", progress: 100 });
 
 let list: HistoryEntry[] = [];
 let deleteStatus = 200;

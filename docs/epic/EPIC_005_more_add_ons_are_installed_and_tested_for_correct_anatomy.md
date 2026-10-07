@@ -71,6 +71,7 @@ The numbers follow the order they will ship. Each story is drafted and approved 
 | 021 | [The male anatomy add-ons and the newer NSFW add-on are installed, each checked against its published checksum](../story/STORY_021_the_male_anatomy_add_ons_are_installed_each_checked_against_its_published_checksum.md) | Done 2026-10-02 (two add-ons wait for the owner's Civitai token) |
 | 022 | [Every add-on is run over the same test subjects, and the owner scores the anatomy](../story/STORY_022_every_add_on_is_run_over_the_same_test_subjects_and_the_owner_scores_the_anatomy.md) | Bench run 2026-10-02; waits for the owner's scores |
 | 023 | [The add-ons that passed stay at the settings that worked, and the rest are removed](../story/STORY_023_the_add_ons_that_passed_stay_at_the_settings_that_worked_and_the_rest_are_removed.md) | Drafted; not started until the scorecard is filled in |
+| 024 | [A generated image shows the settings that made it](../story/STORY_024_a_generated_image_shows_the_settings_that_made_it.md) | Implemented 2026-10-07, ahead of 023 (which waits for scores) at the owner's request; the model server's restart and the manual check are pending |
 
 ### STORY_021, in outline
 

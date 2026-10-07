@@ -3,7 +3,7 @@
  * shared vectors in docs/contracts/validation-vectors.json so they cannot drift.
  */
 import type { MultipartFile } from "./multipart.ts";
-import type { JobRequest } from "./jobs.ts";
+import type { ValidatedRequest } from "./jobs.ts";
 
 export interface Capabilities {
   readonly models: ReadonlyArray<{ readonly id: string; readonly label: string }>;
@@ -30,7 +30,7 @@ export class HttpError extends Error {
 
 const MAX_SEED = 4294967295;
 
-export function validateRequest(caps: Capabilities, fields: Record<string, unknown>, uploads: readonly MultipartFile[], drawSeed: () => number): JobRequest {
+export function validateRequest(caps: Capabilities, fields: Record<string, unknown>, uploads: readonly MultipartFile[], drawSeed: () => number): ValidatedRequest {
   const prompt = fields["prompt"];
   if (typeof prompt !== "string" || prompt.trim().length === 0) throw new HttpError(400, "validation", "prompt is required", "prompt");
   if (prompt.trim().length > caps.prompt.maxChars) throw new HttpError(400, "validation", `prompt is longer than ${String(caps.prompt.maxChars)} characters`, "prompt");

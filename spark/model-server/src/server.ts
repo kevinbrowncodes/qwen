@@ -1,5 +1,5 @@
 /**
- * The model server (STORY_015): docs/contracts/job-api.md v1.2 in front of Qwen-Image-2.1. This process owns the
+ * The model server (STORY_015): docs/contracts/job-api.md v1.3 in front of Qwen-Image-2.1. This process owns the
  * contract (HTTP, validation, the queue, cancel, results on disk); the Python worker (spark/model/worker.py) owns
  * the pipeline. One job runs at a time. Zero runtime dependencies, like the stub.
  */
@@ -8,9 +8,10 @@ import { createReadStream, existsSync, mkdirSync, readFileSync, renameSync, rmSy
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import path from "node:path";
 import { CAPABILITIES, STEPS } from "./capabilities.ts";
-import { BusyError, isTerminal, Jobs, type JobRecord } from "./jobs.ts";
+import { BusyError, isTerminal, Jobs, type JobRecord, type JobRequest } from "./jobs.ts";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
 import { withTrigger, type Lora } from "./loras.ts";
+import { parametersFor } from "./parameters.ts";
 import { progressFor, type FromWorker } from "./protocol.ts";
 import { HttpError, validateRequest, type Capabilities } from "./validation.ts";
 import { Worker } from "./worker.ts";
@@ -135,16 +136,19 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       pump();
       return;
     }
+    // The job runs with what was recorded at creation (STORY_024), not with whatever the manifest says now.
+    const r = job.request;
     const sent = worker.send({
       type: "job",
       id: job.id,
-      prompt: withTrigger(job.request.prompt, lora),
-      seed: job.request.seed,
+      prompt: r.promptSent,
+      seed: r.seed,
       steps: STEPS,
       ...(size ? { width: size.width, height: size.height } : {}),
       references: job.references,
       output: path.join(outputDir, `${job.id}.png`),
-      ...(lora ? { lora: { id: lora.id, scale: lora.scale, ...(lora.guidance === undefined ? {} : { guidance: lora.guidance }) } } : {}),
+      ...(lora ? { lora: { id: lora.id, scale: r.loraScale ?? lora.scale, ...(r.loraGuidance === null ? {} : { guidance: r.loraGuidance }) } } : {}),
+      parameters: parametersFor(r, { model: CAPABILITIES.models.find((m) => m.id === r.model)?.label, lora: lora?.label }),
     });
     if (!sent) return;
     current = job.id;
@@ -230,7 +234,17 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
         throw error;
       }
     }
-    const request = validateRequest(capabilities(), fields, uploads, () => randomInt(0, 2 ** 32 - 1));
+    const validated = validateRequest(capabilities(), fields, uploads, () => randomInt(0, 2 ** 32 - 1));
+    // Contract v1.3 (STORY_024): what the add-on contributes is recorded now, so a later manifest change (a new
+    // strength, a dropped add-on) never rewrites what an old job says made it. Validation already refused an add-on
+    // that is not loaded, so `lora` is found whenever one is named.
+    const lora = validated.lora === null ? undefined : loaded.find((l) => l.id === validated.lora);
+    const request: JobRequest = {
+      ...validated,
+      loraScale: lora?.scale ?? null,
+      loraGuidance: lora?.guidance ?? null,
+      promptSent: withTrigger(validated.prompt, lora),
+    };
     const id = randomUUID();
     const refs = uploads.filter((u) => u.field === "referenceImage");
     const dir = path.join(uploadsDir, id);
