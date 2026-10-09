@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeRatio, canSend, MATCH_REFERENCE, NO_LORA, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, type ComposerState } from "./composer-state";
+import { activeRatio, canSend, MATCH_REFERENCE, MAX_COUNT, validCount, NO_LORA, FALLBACK_CAPABILITIES, initialState, parseCapabilities, reduce, restore, serialize, shortModelLabel, type ComposerState } from "./composer-state";
 
 const caps = parseCapabilities({
   models: [{ id: "qwen-image-2.1", label: "Qwen-Image 2.1" }],
@@ -43,7 +43,7 @@ describe("reduce", () => {
   const start = initialState();
 
   it("starts resting, with the first model and the default ratio", () => {
-    expect(start).toEqual({ mode: "chat", model: "qwen-image-2.1", ratio: "16:9", editRatio: "match", lora: "none", text: "", references: [], error: null });
+    expect(start).toEqual({ mode: "chat", model: "qwen-image-2.1", ratio: "16:9", editRatio: "match", lora: "none", text: "", count: 1, references: [], error: null });
     expect(initialState(FALLBACK_CAPABILITIES).ratio).toBe("16:9");
   });
 
@@ -80,7 +80,7 @@ describe("canSend", () => {
 });
 
 describe("session round-trip", () => {
-  const s: ComposerState = { mode: "image", model: "qwen-image-2.1", ratio: "1:1", editRatio: "3:4", lora: "fake-detail", text: "secret draft", references: [], error: null };
+  const s: ComposerState = { mode: "image", model: "qwen-image-2.1", ratio: "1:1", editRatio: "3:4", lora: "fake-detail", text: "secret draft", count: 3, references: [], error: null };
 
   it("keeps the mode and options, never the text", () => {
     const raw = serialize(s);
@@ -223,5 +223,30 @@ describe("add-ons (STORY_019)", () => {
   it("survives a reload, and an older stored session without one reads as none", () => {
     expect(restore(serialize({ ...initialState(), lora: "uncensored" }), initialState()).lora).toBe("uncensored");
     expect(restore('{"mode":"image"}', initialState()).lora).toBe(NO_LORA);
+  });
+});
+
+describe("the image count (STORY_025)", () => {
+  it("starts at one, takes 1 to 8, and ignores anything else", () => {
+    const s = initialState();
+    expect(s.count).toBe(1);
+    expect(reduce(s, { type: "setCount", count: 4 }).count).toBe(4);
+    expect(reduce(s, { type: "setCount", count: MAX_COUNT }).count).toBe(8);
+    for (const bad of [0, 9, 2.5, -1, Number.NaN]) expect(reduce({ ...s, count: 3 }, { type: "setCount", count: bad }).count).toBe(3);
+  });
+
+  it("is kept by a send, which clears only the text and the references", () => {
+    const s = { ...initialState(), text: "x", count: 5 };
+    expect(reduce(s, { type: "sent" }).count).toBe(5);
+  });
+
+  it("survives a reload, and a stored 0, 9, a non-number or none reads as one", () => {
+    expect(restore(serialize({ ...initialState(), count: 6 }), initialState()).count).toBe(6);
+    for (const raw of ['{"count":0}', '{"count":9}', '{"count":"4"}', '{"mode":"image"}']) expect(restore(raw, initialState()).count).toBe(1);
+  });
+
+  it("validCount accepts whole numbers from 1 to 8 only", () => {
+    expect([1, 8].map(validCount)).toEqual([1, 8]);
+    expect([0, 9, 1.5, "2", null].map(validCount)).toEqual([null, null, null, null, null]);
   });
 });

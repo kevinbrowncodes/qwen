@@ -74,6 +74,32 @@ export async function submitAndWait(page: Page, action: () => Promise<unknown>, 
 }
 
 /**
+ * Several jobs at once (STORY_025): resolves with their ids once `count` different jobs have answered a terminal status
+ * to the page. Register it BEFORE the first submit, like `submitAndWait`; it rejects after `timeout` so a hung job
+ * fails the test instead of the gate.
+ */
+export function waitForTerminals(page: Page, count: number, timeout = 60_000): Promise<string[]> {
+  const ids = new Set<string>();
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      page.off("response", onResponse);
+      reject(new Error(`only ${String(ids.size)} of ${String(count)} jobs reached a terminal status`));
+    }, timeout);
+    const onResponse = (response: Response): void => {
+      void terminalStatus(response).then((terminal) => {
+        if (!terminal) return;
+        ids.add(decodeURIComponent(new URL(response.url()).pathname.replace(/^\/api\/jobs\//, "")));
+        if (ids.size < count) return;
+        clearTimeout(timer);
+        page.off("response", onResponse);
+        resolve([...ids]);
+      });
+    };
+    page.on("response", onResponse);
+  });
+}
+
+/**
  * A measurement taken only once the element has stopped moving: two consecutive frames with the same box (CLAUDE.md
  * §6 rule 9: a probe that measures through a slide or fade produces false defects).
  */

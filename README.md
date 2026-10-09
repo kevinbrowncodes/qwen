@@ -79,6 +79,7 @@ Beyond the MVP (after its epics were Done):
 - **Settings** (⚙ at the bottom of the sidebar): the interface zoom, 1× to 4×, remembered per browser (STORY_020).
 - **Add-ons** in the composer: community LoRAs chosen per generation (STORY_019; see Running the Model).
 - **Info** under every generation (ⓘ in the action row, or beside a failed or stopped notice): the prompt, the prompt as sent with any trigger word, the model, size, seed, add-on with its strength and guidance, the reference count and the time taken, all read from the job's own record. It also has Copy (the seed), Copy all, and **Same seed again**, which reruns every setting including the seed (Regenerate still draws a new one). The model server also writes these lines, less the time, into each PNG as a `parameters` text chunk (STORY_024, job API contract v1.3).
+- **Queueing several images** (STORY_025): Send stays available while images generate, and each new prompt adds its card below the earlier ones on the same page, with its own Stop. The **×N** pill in image mode (beside the text on a phone) queues 1 to 8 images of one prompt per send, each with its own seed. The model server runs them one at a time and holds at most 8 waiting; a send it cannot take in full says how many went ("Queued 2 of 4."). The cards of one visit are not kept together across a reload: each is in the sidebar.
 
 ## Testing
 

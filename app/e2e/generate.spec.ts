@@ -198,17 +198,21 @@ test("Info shows the settings that made the image, Same seed again reproduces th
   };
   await expectPanel();
 
-  // Same seed again sends every setting of this one, the seed included.
+  // Same seed again sends every setting of this one, the seed included. Its card is added to this page (STORY_025).
   await submitAndWait(page, () => page.getByRole("button", { name: "Same seed again" }).click());
-  const second = jobIdFromUrl(page);
+  const newest = page.getByTestId("generation").last();
+  await expect(page.getByTestId("generation")).toHaveCount(2);
+  const second = (await newest.getAttribute("data-job-id")) ?? "";
   expect(second).not.toBe(first);
+  expect(jobIdFromUrl(page)).toBe(first);
   expect(await receivedRequest(stub, second)).toMatchObject({ seed, prompt: "a red bicycle", ratio: "1:1", lora: "fake-detail" });
-  await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${second}/result`, 64);
+  await expectImageLoaded(newest.getByTestId("result-image"), `/api/jobs/${second}/result`, 64);
 
   // Regenerate is unchanged: the browser sends no seed, so the server draws a new one.
   const regenerated = page.waitForRequest((r) => r.method() === "POST" && new URL(r.url()).pathname === "/api/jobs");
-  await submitAndWait(page, () => page.getByRole("button", { name: "Regenerate" }).click());
+  await submitAndWait(page, () => newest.getByRole("button", { name: "Regenerate" }).click());
   expect(JSON.parse((await regenerated).postData() ?? "{}")).not.toHaveProperty("seed");
+  await expect(page.getByTestId("generation")).toHaveCount(3);
 
   // Loaded afresh, the first job's panel reads the same values from its echo, not from this page's memory.
   await submitAndWait(page, () => page.goto(`/g/${encodeURIComponent(first)}`));

@@ -228,10 +228,23 @@ html.mobile .clone-result {
   font-size: 20px;
 }
 .clone-status-text {
-  margin-top: 8px;
   font-size: 13px;
   line-height: 20px;
   color: rgba(250, 251, 255, 0.5);
+}
+/* Under a queued or running card (STORY_025): its status on the left, its own Stop on the right. */
+.clone-card-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 100%;
+  margin-top: 8px;
+}
+/* Several cards on one page (STORY_025): about 38px from a reply's last row to the next bubble, measured from the
+   owner's screenshot of a two-turn chat (2026-10-09, 1.55 display px per CSS px at 2×). Provisional until CHORE_007's
+   capture gives a reading. */
+.clone-messages + .clone-messages {
+  margin-top: 38px;
 }
 /* The row under the image: 32px below it on desktop (job-done@1437: 425 → 457), 9px on the phone (328 → 337). */
 .clone-actions {
@@ -353,12 +366,6 @@ html.mobile .clone-settings {
 }
 html.mobile .clone-settings-button {
   min-height: 44px;
-}
-/* Stop, in Send's place (job-generating@1437: 32px circle). Ours is enabled: it cancels (a departure). */
-.chat-prompt-send-button .clone-stop-button {
-  background: #fafbff;
-  color: #222222;
-  border-radius: 50%;
 }
 /* "AI-generated content may not be accurate." (edit-done@1437: 10px/12px, rgba(250,251,255,0.5)). */
 .clone-statement {
@@ -740,4 +747,19 @@ html[data-zoom] .desktop-layout {
 html.mobile .clone-segmented-item {
   height: 44px;
   flex-basis: 30%;
+}
+
+/* The phone's text row in image mode (STORY_025): the text, then the image count at its right, because the footer
+   row has no room for it (the reference's own pills fill it). */
+html.mobile .clone-text-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+html.mobile .clone-text-row .message-input-textarea {
+  flex: 1;
+  min-width: 0;
+}
+html.mobile .clone-text-row .clone-dropdown {
+  flex: none;
 }

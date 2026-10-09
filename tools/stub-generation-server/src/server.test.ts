@@ -208,6 +208,21 @@ describe("busy, hooks and reset", () => {
     expect((await fetch(`${base}/__stub/busy`, { method: "POST", body: "{" })).status).toBe(400);
   });
 
+  it("accepts the next k creates and then answers busy, until reset (STORY_025)", async () => {
+    const set = await fetch(`${base}/__stub/busy`, { method: "POST", body: JSON.stringify({ afterAccepting: 2 }) });
+    expect(await json(set)).toEqual({ busy: false, afterAccepting: 2 });
+    expect((await create({ prompt: "a", ratio: "1:1" })).status).toBe(202);
+    expect((await create({ prompt: "b", ratio: "1:1" })).status).toBe(202);
+    const third = await create({ prompt: "c", ratio: "1:1" });
+    expect(third.status).toBe(503);
+    expect(await json(third)).toMatchObject({ error: { code: "busy" } });
+    expect((await create({ prompt: "d", ratio: "1:1" })).status).toBe(503);
+    await fetch(`${base}/__stub/reset`, { method: "POST" });
+    expect((await create({ prompt: "e", ratio: "1:1" })).status).toBe(202);
+    // A count that is not a whole number of at least 0 is ignored.
+    expect(await json(await fetch(`${base}/__stub/busy`, { method: "POST", body: JSON.stringify({ afterAccepting: -1 }) }))).toEqual({ busy: false, afterAccepting: null });
+  });
+
   it("lists jobs with their state and forgets them on reset", async () => {
     await create({ prompt: "x", ratio: "1:1" }, "cancel-midway");
     const listed = await json(await fetch(`${base}/__stub/jobs`));

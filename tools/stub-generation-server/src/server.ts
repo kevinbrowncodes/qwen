@@ -214,6 +214,8 @@ export function createStubServer(options: StubOptions = {}): StubServer {
   const resultSize = pngSize(result);
   const jobs = new Map<string, Job>();
   let busy = false;
+  /** `/__stub/busy {"afterAccepting": k}` (STORY_025): the next k creates are accepted, then every one is busy. */
+  let acceptLeft: number | null = null;
 
   const stateOf = (job: Job): JobState => {
     const step = stepFor(job.script, job.pollCount);
@@ -311,7 +313,8 @@ export function createStubServer(options: StubOptions = {}): StubServer {
       return;
     }
     if (method === "POST" && p === "/jobs") {
-      if (busy) throw new HttpError(503, "busy", "The generation server is busy (scripted); try again later.");
+      if (busy || acceptLeft === 0) throw new HttpError(503, "busy", "The generation server is busy (scripted); try again later.");
+      if (acceptLeft !== null) acceptLeft -= 1;
       const job = await createJob(req, url);
       sendJson(res, 202, { id: job.id, status: "queued", progress: 0 });
       return;
@@ -344,6 +347,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
     if (method === "POST" && p === "/__stub/reset") {
       jobs.clear();
       busy = false;
+      acceptLeft = null;
       sendJson(res, 200, { ok: true });
       return;
     }
@@ -356,7 +360,9 @@ export function createStubServer(options: StubOptions = {}): StubServer {
         throw new HttpError(400, "validation", "body is not valid JSON");
       }
       busy = isRecord(parsed) && parsed["busy"] === true;
-      sendJson(res, 200, { busy });
+      const after = isRecord(parsed) ? parsed["afterAccepting"] : undefined;
+      acceptLeft = typeof after === "number" && Number.isInteger(after) && after >= 0 ? after : null;
+      sendJson(res, 200, { busy, afterAccepting: acceptLeft });
       return;
     }
     if (method === "GET" && p === "/__stub/jobs") {
@@ -403,6 +409,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
     reset: () => {
       jobs.clear();
       busy = false;
+      acceptLeft = null;
     },
     setBusy: (value: boolean) => {
       busy = value;

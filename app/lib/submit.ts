@@ -61,3 +61,31 @@ export async function submitGeneration(req: GenerationRequest, fetchImpl: typeof
   if (isApiError(payload)) return { ok: false, message: payload.error.message };
   return { ok: false, message: SUBMIT_FAILED };
 }
+
+/** What a send of several images got (STORY_025): the jobs created, in order, and the refusal that stopped it. */
+export interface BatchOutcome {
+  readonly ids: readonly string[];
+  /** The server's message when a create was refused; the rest were not sent. Null when every one was created. */
+  readonly message: string | null;
+}
+
+/**
+ * Creates `count` jobs from one request, one after another, each answered before the next is sent, so the server
+ * sees them in order and a full queue stops the rest rather than racing them. No seed is added: the server draws one
+ * for each, so the images differ. A count of 1 is exactly one `submitGeneration`.
+ */
+export async function submitBatch(req: GenerationRequest, count: number, submitOne: (req: GenerationRequest) => Promise<SubmitOutcome> = submitGeneration): Promise<BatchOutcome> {
+  const ids: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const outcome = await submitOne(req);
+    if (!outcome.ok) return { ids, message: outcome.message };
+    ids.push(outcome.id);
+  }
+  return { ids, message: null };
+}
+
+/** The line under the composer for a refused send (STORY_025): a count stopped part-way says how many went. */
+export function batchMessage(outcome: BatchOutcome, count: number): string | null {
+  if (outcome.message === null) return null;
+  return outcome.ids.length === 0 ? outcome.message : `Queued ${String(outcome.ids.length)} of ${String(count)}. ${outcome.message}`;
+}

@@ -19,7 +19,7 @@ const done: JobStatusResponse = {
 function view(props: Partial<GenerationViewProps> = {}) {
   return render(
     <StrictMode>
-      <GenerationView job={done} prompt="a red bicycle" ratio="16:9" referenceFiles={[]} referenceCount={0} problem={null} onEdit={() => undefined} labels={labels} {...props} />
+      <GenerationView id="j1" job={done} prompt="a red bicycle" ratio="16:9" referenceFiles={[]} referenceCount={0} problem={null} onEdit={() => undefined} labels={labels} {...props} />
     </StrictMode>,
   );
 }
@@ -88,5 +88,26 @@ describe("the Info panel", () => {
     expect(screen.getByTestId("notice").contains(screen.getByRole("button", { name: "Info" }))).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Info" }));
     expect(within(screen.getByTestId("settings-panel")).getByText("failed after 40 s")).toBeTruthy();
+  });
+});
+
+describe("each card's own Stop (STORY_025)", () => {
+  const running: JobStatusResponse = { ...done, status: "running", progress: 40, result: undefined };
+
+  it("shows Stop under a queued or running card, which stops that card's job", () => {
+    const onStop = vi.fn();
+    view({ job: running, onStop });
+    const card = screen.getByTestId("generation");
+    expect(card.getAttribute("data-job-id")).toBe("j1");
+    fireEvent.click(within(card).getByRole("button", { name: "Stop" }));
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows Stop before the first status arrives, and none once the job is done", () => {
+    const first = view({ job: null, onStop: () => undefined });
+    expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
+    first.unmount();
+    view({ onStop: () => undefined });
+    expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
   });
 });

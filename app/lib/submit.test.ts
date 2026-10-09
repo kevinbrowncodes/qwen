@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { initialState } from "./composer-state";
-import { buildBody, requestFrom, submitGeneration, SUBMIT_FAILED } from "./submit";
+import { batchMessage, buildBody, requestFrom, submitBatch, submitGeneration, SUBMIT_FAILED, type GenerationRequest, type SubmitOutcome } from "./submit";
 
 const a = new File(["a"], "a.png", { type: "image/png" });
 const b = new File(["b"], "b.png", { type: "image/png" });
@@ -87,5 +87,59 @@ describe("submitGeneration", () => {
     expect(await submitGeneration(req, vi.fn<typeof fetch>().mockRejectedValue(new Error("offline")))).toEqual({ ok: false, message: SUBMIT_FAILED });
     expect(await submitGeneration(req, vi.fn<typeof fetch>().mockResolvedValue(new Response("<html>", { status: 500 })))).toEqual({ ok: false, message: SUBMIT_FAILED });
     expect(await submitGeneration(req, respond(202, { nope: true }))).toEqual({ ok: false, message: SUBMIT_FAILED });
+  });
+});
+
+describe("submitBatch (STORY_025)", () => {
+  const req: GenerationRequest = { prompt: "a kite", ratio: "16:9", model: "qwen-image-2.1", lora: null, references: [] };
+
+  /** A fake create that answers in order, and records when each call started and finished. */
+  function fake(answers: readonly SubmitOutcome[]) {
+    const log: string[] = [];
+    const sent: GenerationRequest[] = [];
+    let n = 0;
+    const submitOne = async (r: GenerationRequest): Promise<SubmitOutcome> => {
+      const i = n++;
+      log.push(`start ${String(i)}`);
+      sent.push(r);
+      await Promise.resolve();
+      log.push(`end ${String(i)}`);
+      return answers[i] ?? { ok: false, message: "unexpected" };
+    };
+    return { submitOne, log, sent };
+  }
+
+  it("sends a count of 3 one after another, with no seed, and returns the ids in order", async () => {
+    const f = fake([
+      { ok: true, id: "a" },
+      { ok: true, id: "b" },
+      { ok: true, id: "c" },
+    ]);
+    expect(await submitBatch(req, 3, f.submitOne)).toEqual({ ids: ["a", "b", "c"], message: null });
+    expect(f.log).toEqual(["start 0", "end 0", "start 1", "end 1", "start 2", "end 2"]);
+    expect(f.sent.every((r) => r === req && !("seed" in r))).toBe(true);
+  });
+
+  it("stops at the first refusal and sends no more", async () => {
+    const f = fake([{ ok: true, id: "a" }, { ok: true, id: "b" }, { ok: false, message: "full" }, { ok: true, id: "never" }]);
+    expect(await submitBatch(req, 4, f.submitOne)).toEqual({ ids: ["a", "b"], message: "full" });
+    expect(f.sent).toHaveLength(3);
+  });
+
+  it("returns no ids when the first is refused", async () => {
+    const f = fake([{ ok: false, message: "full" }]);
+    expect(await submitBatch(req, 2, f.submitOne)).toEqual({ ids: [], message: "full" });
+  });
+
+  it("a count of 1 is exactly one create of the request given", async () => {
+    const f = fake([{ ok: true, id: "a" }]);
+    expect(await submitBatch(req, 1, f.submitOne)).toEqual({ ids: ["a"], message: null });
+    expect(f.sent).toEqual([req]);
+  });
+
+  it("says how many went when a count was stopped part-way", () => {
+    expect(batchMessage({ ids: ["a", "b"], message: "Full." }, 4)).toBe("Queued 2 of 4. Full.");
+    expect(batchMessage({ ids: [], message: "Full." }, 4)).toBe("Full.");
+    expect(batchMessage({ ids: ["a"], message: null }, 1)).toBeNull();
   });
 });

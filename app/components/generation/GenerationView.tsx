@@ -16,6 +16,8 @@ import { SettingsPanel } from "./SettingsPanel";
 const TRACKS = ["blue", "lilac", "peach", "rose", "cyan"] as const;
 
 export interface GenerationViewProps {
+  /** This card's job (STORY_025: a page holds several). */
+  readonly id: string;
   readonly job: JobStatusResponse | null;
   readonly prompt: string;
   readonly ratio: string | null;
@@ -29,6 +31,8 @@ export interface GenerationViewProps {
   readonly labels: Labels;
   /** "Same seed again" (STORY_024); absent exactly when Regenerate is. */
   readonly onSameSeed?: () => void;
+  /** Cancels this card's job (STORY_025: Stop moved from the composer to each queued or running card). */
+  readonly onStop?: () => void;
 }
 
 function ReferenceTile({ file }: { readonly file: File }) {
@@ -49,9 +53,10 @@ function ReferenceTile({ file }: { readonly file: File }) {
   );
 }
 
-function Skeleton({ ratio, status, narrow }: { readonly ratio: string | null; readonly status: string; readonly narrow: boolean }) {
+function Skeleton({ ratio, status, narrow, onStop }: { readonly ratio: string | null; readonly status: string; readonly narrow: boolean; readonly onStop?: (() => void) | undefined }) {
   const size = skeletonSize(ratio, narrow ? 300 : 400);
   const line = statusLine(status);
+  const iconSet = narrow ? "appicon" : "qwpcicon";
   return (
     <div className="clone-generating" data-testid="generating">
       <div className="qwen-image" style={{ width: size.width, height: size.height }}>
@@ -70,12 +75,21 @@ function Skeleton({ ratio, status, narrow }: { readonly ratio: string | null; re
           </div>
         </div>
       </div>
-      {line ? <div className="clone-status-text">{line}</div> : null}
+      {line || onStop ? (
+        <div className="clone-card-status" style={{ width: size.width }}>
+          <span className="clone-status-text">{line}</span>
+          {onStop ? (
+            <button type="button" className="clone-icon-button clone-action clone-card-stop" aria-label="Stop" onClick={onStop}>
+              <Icon id={`${iconSet}-stop-fill`} />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-export function GenerationView({ job, prompt, ratio, referenceFiles, referenceCount, problem, onEdit, onRegenerate, labels, onSameSeed }: GenerationViewProps) {
+export function GenerationView({ id, job, prompt, ratio, referenceFiles, referenceCount, problem, onEdit, onRegenerate, labels, onSameSeed, onStop }: GenerationViewProps) {
   const narrow = useNarrow();
   const [hover, setHover] = useState(false);
   // Closed by default, and not remembered (STORY_024).
@@ -102,7 +116,7 @@ export function GenerationView({ job, prompt, ratio, referenceFiles, referenceCo
   const panel = info && job ? <SettingsPanel id={panelId} rows={settingsRows(job, labels)} onSameSeed={onSameSeed} /> : null;
 
   return (
-    <div className="clone-messages">
+    <div className="clone-messages" data-testid="generation" data-job-id={id}>
       <div className="qwen-chat-message qwen-chat-message-user">
         <div className="chat-user-message-container">
           {referenceFiles.length > 0 || referenceCount > 0 ? (
@@ -212,7 +226,7 @@ export function GenerationView({ job, prompt, ratio, referenceFiles, referenceCo
             {panel}
           </>
         ) : job || !problem ? (
-          <Skeleton ratio={ratio} status={status} narrow={narrow} />
+          <Skeleton ratio={ratio} status={status} narrow={narrow} onStop={status === "queued" || status === "running" ? onStop : undefined} />
         ) : null}
       </div>
     </div>

@@ -27,6 +27,7 @@ The result is always `fixtures/result.png` (64×36, 156 bytes). `fixtures/refere
 
 - `POST /__stub/reset` forgets every job and clears busy.
 - `POST /__stub/busy` with `{ "busy": true }` makes `POST /jobs` answer `503 busy`.
+- `POST /__stub/busy` with `{ "afterAccepting": k }` accepts the next k creates, then answers `503 busy` to every one until reset (STORY_025: an image count the server stops part-way).
 - `GET /__stub/jobs` returns `{ jobs: [{ id, script, status, progress }] }`, so a spec can assert nothing is left running.
 - `GET /__stub/jobs/:id/received` returns what the job was sent: `request`, and `uploads[] { filename, contentType, size, sha256 }`.
 

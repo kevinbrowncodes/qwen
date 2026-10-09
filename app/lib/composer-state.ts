@@ -61,6 +61,8 @@ export interface ComposerState {
   /** The add-on for the next generation (STORY_019): NO_LORA, or an id from the capabilities. */
   readonly lora: string;
   readonly text: string;
+  /** How many images one send queues (STORY_025): 1 to MAX_COUNT, each its own job with its own seed. */
+  readonly count: number;
   readonly references: readonly ReferenceItem[];
   /** Why the last attachment was refused, shown under the composer until the next change. */
   readonly error: string | null;
@@ -74,6 +76,7 @@ export type ComposerAction =
   | { readonly type: "setEditRatio"; readonly ratio: string }
   | { readonly type: "setLora"; readonly lora: string }
   | { readonly type: "setText"; readonly text: string }
+  | { readonly type: "setCount"; readonly count: number }
   | { readonly type: "capabilities"; readonly capabilities: Capabilities }
   | { readonly type: "addReferences"; readonly items: readonly ReferenceItem[] }
   /** Files read by the component (name, size, first bytes), checked here against what is already attached. */
@@ -107,7 +110,7 @@ export function parseCapabilities(v: unknown): Capabilities | null {
 }
 
 export function initialState(capabilities: Capabilities = FALLBACK_CAPABILITIES): ComposerState {
-  return { mode: "chat", model: capabilities.models[0]?.id ?? "", ratio: capabilities.defaultRatio, editRatio: MATCH_REFERENCE, lora: NO_LORA, text: "", references: [], error: null };
+  return { mode: "chat", model: capabilities.models[0]?.id ?? "", ratio: capabilities.defaultRatio, editRatio: MATCH_REFERENCE, lora: NO_LORA, text: "", count: 1, references: [], error: null };
 }
 
 export function reduce(state: ComposerState, action: ComposerAction): ComposerState {
@@ -126,6 +129,8 @@ export function reduce(state: ComposerState, action: ComposerAction): ComposerSt
       return { ...state, lora: action.lora };
     case "setText":
       return { ...state, text: action.text };
+    case "setCount":
+      return { ...state, count: validCount(action.count) ?? state.count };
     case "addReferences":
       // Attaching enters image mode (an edit is an image generation) and clears an earlier refusal.
       return { ...state, mode: "image", references: [...state.references, ...action.items], error: null };
@@ -157,6 +162,14 @@ export const MATCH_REFERENCE = "match";
 /** No add-on (STORY_019): never sent to the server; the request just has no `lora`. */
 export const NO_LORA = "none";
 
+/** The most images one send queues (STORY_025): the model server's waiting limit (spark/model-server/src/jobs.ts). */
+export const MAX_COUNT = 8;
+
+/** A whole number from 1 to MAX_COUNT, or null. */
+export function validCount(v: unknown): number | null {
+  return typeof v === "number" && Number.isInteger(v) && v >= 1 && v <= MAX_COUNT ? v : null;
+}
+
 /** The ratio the composer's dropdown is showing: the edit ratio while references are attached (STORY_017). */
 export function activeRatio(state: ComposerState): string {
   return state.references.length > 0 ? state.editRatio : state.ratio;
@@ -173,9 +186,9 @@ export function shortModelLabel(label: string): string {
 
 export const STORAGE_KEY = "qwen.composer.v1";
 
-/** What survives a reload within the session: the mode and the options, never the text. */
+/** What survives a reload within the session: the mode and the options (the count among them), never the text. */
 export function serialize(state: ComposerState): string {
-  return JSON.stringify({ mode: state.mode, model: state.model, ratio: state.ratio, editRatio: state.editRatio, lora: state.lora });
+  return JSON.stringify({ mode: state.mode, model: state.model, ratio: state.ratio, editRatio: state.editRatio, lora: state.lora, count: state.count });
 }
 
 export function restore(raw: string | null, base: ComposerState): ComposerState {
@@ -192,5 +205,7 @@ export function restore(raw: string | null, base: ComposerState): ComposerState 
   const ratio = typeof v["ratio"] === "string" ? v["ratio"] : base.ratio;
   const editRatio = typeof v["editRatio"] === "string" ? v["editRatio"] : base.editRatio;
   const lora = typeof v["lora"] === "string" ? v["lora"] : base.lora;
-  return { ...base, mode, model, ratio, editRatio, lora };
+  // Anything but 1–8 (an old session, a hand-edited value) reads as one image.
+  const count = validCount(v["count"]) ?? 1;
+  return { ...base, mode, model, ratio, editRatio, lora, count };
 }

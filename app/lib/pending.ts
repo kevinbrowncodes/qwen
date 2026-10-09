@@ -18,3 +18,17 @@ export function recall(id: string): GenerationRequest | undefined {
 export function forget(id: string): void {
   pending.delete(id);
 }
+
+/**
+ * A send of several images from the home page (STORY_025): the jobs after the first, kept under the first's id so the
+ * page it moves to shows them all. Read once by that page; a reload starts from the URL's job alone.
+ */
+const batches = new Map<string, readonly string[]>();
+
+export function rememberBatch(firstId: string, rest: readonly string[]): void {
+  if (rest.length > 0) batches.set(firstId, rest);
+}
+
+export function recallBatch(firstId: string): readonly string[] {
+  return batches.get(firstId) ?? [];
+}

@@ -6,7 +6,7 @@
  * (lib/composer-state.ts); options survive a reload within the session.
  */
 import { useCallback, useEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
-import { activeRatio, canSend, FALLBACK_CAPABILITIES, initialState, MATCH_REFERENCE, NO_LORA, parseCapabilities, reduce, restore, serialize, shortModelLabel, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
+import { activeRatio, canSend, FALLBACK_CAPABILITIES, initialState, MATCH_REFERENCE, MAX_COUNT, NO_LORA, parseCapabilities, reduce, restore, serialize, shortModelLabel, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
 import { useFileDrop } from "@/lib/use-file-drop";
 import { useNarrow } from "@/lib/use-narrow";
 import { Dropdown } from "../Dropdown";
@@ -29,13 +29,12 @@ export interface ComposerProps {
   readonly onSubmit?: (state: ComposerState) => Promise<boolean>;
   /** The server's answer to the last submit, shown under the composer. */
   readonly externalError?: string | null;
-  /** A submit is on its way: Send waits. */
+  /** A submit is on its way: Send waits. Send is never replaced by Stop (STORY_025): each card has its own. */
   readonly busy?: boolean;
-  /** The generation on this page is queued or running: Stop replaces Send. */
-  readonly running?: boolean;
-  readonly onStop?: () => void;
   readonly inject?: Injected | null;
 }
+
+const COUNTS = Array.from({ length: MAX_COUNT }, (_, i) => i + 1);
 
 const RATIO_ICON = (id: string): string => `qwpcicon-a-${id.replace(":", "by")}AspectRatio`;
 
@@ -47,7 +46,7 @@ function readStored(): string | null {
   }
 }
 
-export function Composer({ onSubmit, externalError = null, busy = false, running = false, onStop, inject = null }: ComposerProps) {
+export function Composer({ onSubmit, externalError = null, busy = false, inject = null }: ComposerProps) {
   const narrow = useNarrow();
   const iconSet = narrow ? "appicon" : "qwpcicon";
   const [state, dispatch] = useReducer(reduce, FALLBACK_CAPABILITIES, initialState);
@@ -89,6 +88,7 @@ export function Composer({ onSubmit, externalError = null, busy = false, running
       dispatch({ type: "setRatio", ratio: back.ratio });
       dispatch({ type: "setEditRatio", ratio: back.editRatio });
       dispatch({ type: "setLora", lora: back.lora });
+      dispatch({ type: "setCount", count: back.count });
       return;
     }
     try {
@@ -149,17 +149,26 @@ export function Composer({ onSubmit, externalError = null, busy = false, running
   const sendButton = (
     <div className="message-input-right-button-send">
       <div className="chat-prompt-send-button">
-        {running ? (
-          <button type="button" className="stop-button clone-stop-button" aria-label="Stop" onClick={onStop}>
-            <Icon id="qwpcicon-stop-fill" className="icon-stop" />
-          </button>
-        ) : (
-          <button type="button" className={`send-button${sendable ? "" : " disabled"}`} aria-label="Send" disabled={!sendable} onClick={send}>
-            <Icon id="qwpcicon-sendChat" className="icon-send" />
-          </button>
-        )}
+        <button type="button" className={`send-button${sendable ? "" : " disabled"}`} aria-label="Send" disabled={!sendable} onClick={send}>
+          <Icon id="qwpcicon-sendChat" className="icon-send" />
+        </button>
       </div>
     </div>
+  );
+  // How many images one send queues (STORY_025; ours: the reference has no count). Arrowless on the phone, like the
+  // add-on's icon, with the same 44px touch area.
+  const countDropdown = (
+    <Dropdown
+      label="Number of images"
+      className="clone-dropdown-icon-only"
+      display={<span>{`×${String(state.count)}`}</span>}
+      items={COUNTS.map((n) => ({ id: String(n), label: n === 1 ? "1 image" : `${String(n)} images` }))}
+      selected={String(state.count)}
+      onSelect={(id) => {
+        dispatch({ type: "setCount", count: Number(id) });
+      }}
+      placement={placement}
+    />
   );
   const input = (
     <textarea
@@ -211,7 +220,15 @@ export function Composer({ onSubmit, externalError = null, busy = false, running
                   dispatch({ type: "removeReference", key });
                 }}
               />
-              {input}
+              {/* On the phone the count sits beside the text: the footer row has no room left (STORY_025). */}
+              {narrow ? (
+                <div className="clone-text-row">
+                  {input}
+                  {countDropdown}
+                </div>
+              ) : (
+                input
+              )}
               <div className="message-input-column-footer">
                 <div className="mode-select">
                   {modeMenu}
@@ -268,6 +285,7 @@ export function Composer({ onSubmit, externalError = null, busy = false, running
                         placement={placement}
                       />
                     ) : null}
+                    {narrow ? null : countDropdown}
                   </div>
                 </div>
                 <div className="message-input-right-button">{sendButton}</div>

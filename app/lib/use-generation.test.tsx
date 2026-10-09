@@ -149,3 +149,79 @@ describe("useGeneration", () => {
     expect(into.current?.job?.status).toBe("cancelled");
   });
 });
+
+describe("two generations on one page (STORY_025)", () => {
+  /** A fake server per id: "a" runs until it is stopped, "b" is done on its third poll. */
+  function twoJobs() {
+    const polls = new Map<string, number>();
+    const stopped = new Set<string>();
+    const seen: Array<{ id: string; method: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string, init?: RequestInit) => {
+        const id = decodeURIComponent(input.replace("/api/jobs/", ""));
+        const method = init?.method ?? "GET";
+        seen.push({ id, method });
+        if (method === "DELETE") {
+          stopped.add(id);
+          return Promise.resolve(new Response(JSON.stringify({ id, status: "cancelled", progress: 33 }), { status: 202 }));
+        }
+        const n = (polls.get(id) ?? 0) + 1;
+        polls.set(id, n);
+        const s = stopped.has(id) ? "cancelled" : id === "b" && n >= 3 ? "done" : "running";
+        return Promise.resolve(new Response(JSON.stringify(status(s, { id })), { status: 200 }));
+      }),
+    );
+    return { seen };
+  }
+
+  function reportPair(into: { a: Generation | null; b: Generation | null }, a: Generation, b: Generation): void {
+    into.a = a;
+    into.b = b;
+  }
+
+  function Pair({ into }: { readonly into: { a: Generation | null; b: Generation | null } }) {
+    const a = useGeneration("a");
+    const b = useGeneration("b");
+    reportPair(into, a, b);
+    return (
+      <p>
+        {a.job?.status ?? "none"} {b.job?.status ?? "none"}
+      </p>
+    );
+  }
+
+  it("each polls only its own job, and stopping one leaves the other running to its end", async () => {
+    const { seen } = twoJobs();
+    const into: { a: Generation | null; b: Generation | null } = { a: null, b: null };
+    const view = render(
+      <StrictMode>
+        <Pair into={into} />
+      </StrictMode>,
+    );
+    await flush();
+    await act(async () => {
+      await into.a?.stop();
+    });
+    await flush(10_000);
+    expect(view.container.textContent).toBe("cancelled done");
+    expect(seen.filter((c) => c.method === "DELETE").map((c) => c.id)).toEqual(["a"]);
+    expect(new Set(seen.map((c) => c.id))).toEqual(new Set(["a", "b"]));
+    view.unmount();
+  });
+
+  it("unmounting the page stops both", async () => {
+    const { seen } = twoJobs();
+    const into: { a: Generation | null; b: Generation | null } = { a: null, b: null };
+    const view = render(
+      <StrictMode>
+        <Pair into={into} />
+      </StrictMode>,
+    );
+    await flush(1000);
+    view.unmount();
+    const before = seen.length;
+    await flush(30_000);
+    expect(seen.length).toBe(before);
+  });
+});
