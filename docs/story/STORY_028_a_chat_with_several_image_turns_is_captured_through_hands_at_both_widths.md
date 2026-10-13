@@ -1,7 +1,7 @@
 # STORY_028 — A chat with several image turns is captured through Hands, at desktop and phone widths
 
 **Epic:** [EPIC_006](../epic/EPIC_006_the_reference_is_captured_again_through_hands_starting_with_a_chat_that_holds_several_images.md)
-**Status:** Draft (2026-10-13), awaiting the owner's approval. Not started until STORY_027 is Done
+**Status:** In progress (2026-10-13): the client's `js` and `routine` subcommands and the committed reads are being built; the run waits for the owner's steps (EPIC_006). Approved by the owner on 2026-10-13 ("please proceed with completing the epic")
 **Created:** 2026-10-13
 
 As the owner, I want the reference's chat that already holds several images read through Hands at both widths, the phone-width states the first pass missed read too, and the generations I approve spent on the two questions nothing else can answer (how a second image is asked for inside a chat, and what a plain follow-up does), with the part that spends nothing kept as a Hands routine, so that STORY_029 has a dated raw capture to file and the chat story has something exact to match.
@@ -67,7 +67,7 @@ N/A (no UI change; the deliverable is the raw capture under `recon/out/<date>/ha
 **After the run:**
 
 - [ ] **The log** `recon/out/<date>/hands/capture-log.md` holds: the date; Hands' version and commit; the Mac, display and widths; N approved and N spent; the chat studied; one line per step saying what it showed; every state not captured and why; the exact wording of any failure state; and anything Hands lacked (as a ticket to open in the Hands repo). STORY_029 copies it, masked.
-- [ ] **The routine.** Parts A and B, minus the attach, are written as `recon/hands/routines/qwen-recon-multi-turn-chat.json` (committed): Hands' step shape, selectors by role and title and `nth` (never a look id or a number from a look), `look` steps where a state is read, and no `fill` (every run fills by itself). It is saved in Hands under the name **"qwen recon: multi-turn chat"** with `recon/run.sh hands <date> routine <file>` (a new subcommand: `POST /api/routines`, or `PUT /api/routines/{slug}` when the slug exists; it fills the routine's placeholder URL from `HANDS_CHAT_URL` in `.env`, which `.env.example` gains as an empty line), and the log names it. **The routine spends no generation:** it presses no element titled `Send`, sends no `return`, and `type`s nothing but Part B's cleared text, and a test says so.
+- [ ] **The routine.** Parts A and B, minus the attach, are written as `recon/hands/routines/qwen-recon-multi-turn-chat.json` (committed): Hands' step shape, selectors by role and title and `nth` (never a look id or a number from a look), `look` steps where a state is read, and no `fill` (every run fills by itself). It is saved in Hands under the name **"qwen recon: multi-turn chat"** with `recon/run.sh hands <date> routine <file>` (a new subcommand: `POST /api/routines`, or `PUT /api/routines/{slug}` when Hands answers 422 "already exists", which is how Hands refuses a duplicate name, read on 2026-10-13 in `app/services/routines.py`; it fills the routine's placeholder `{{HANDS_CHAT_URL}}` from `HANDS_CHAT_URL` in `.env`, which `.env.example` gains as an empty line), and the log names it. **The routine spends no generation:** it presses no element titled `Send`, sends no `return`, and `type`s nothing but Part B's cleared text, and a test says so.
 - [ ] **The routine runs once through Hands** (`POST /api/routines/{slug}/run`, that day or when the owner next leaves the Mac alone) and its outcome is in the log: Done, or the step that missed and why. A missed step is noted and fixed in the file by hand; no model repairs it.
 - [ ] `git status --short` shows nothing under `recon/out/`, and the only new tracked files are the routine, its test, the `routine` subcommand and this story's checkboxes.
 
@@ -87,7 +87,7 @@ N/A (no UI change; the deliverable is the raw capture under `recon/out/<date>/ha
 
 - **Unit** (`recon/run.sh test`, and the root `pnpm test`):
   - `recon/src/routine-file.test.ts` over the committed `recon/hands/routines/qwen-recon-multi-turn-chat.json`: every step's `do` is one Hands accepts; every element step has a role or a title and a positive `nth` when present; no step names a look id or an element number; there is no `fill`; **no step presses an element titled `Send` or `Stop`, no `key` step is `return`, and every `type` step is followed by a clearing `cmd+a` and `delete` before any other element act**; the first step is `open` Safari with the placeholder URL; the name is "qwen recon: multi-turn chat".
-  - `recon/src/hands-client.test.ts` (extended): the `routine` subcommand POSTs to `/api/routines` with the bearer header, falls back to `PUT /api/routines/{slug}` on a 409 for an existing slug, fills the placeholder from `HANDS_CHAT_URL`, refuses a file with the placeholder unfilled, and never prints the URL it filled.
+  - `recon/src/hands-client.test.ts` (extended): the `routine` subcommand POSTs to `/api/routines` with the bearer header, falls back to `PUT /api/routines/{slug}` on Hands' 422 "already exists" for a taken name, fills the placeholder from `HANDS_CHAT_URL`, refuses a file with the placeholder unfilled, and never prints the URL it filled.
   - These prove the only code this story adds: that the routine can never spend a generation or leak the chat's id.
 - **Integration:** N/A. Hands is on another machine ([CLAUDE.md → §4a](../../CLAUDE.md#4a-two-machines-the-mac-and-the-spark)).
 - **E2E:** N/A. The app does not change.
@@ -96,3 +96,30 @@ N/A (no UI change; the deliverable is the raw capture under `recon/out/<date>/ha
 ## Estimated Complexity
 
 M: the code is one JSON file, one subcommand and two tests; the work is 60 to 90 acts over 45 to 60 minutes of the Mac's time, read one look at a time.
+
+## Revised before implementation (2026-10-13)
+
+Hands gained a `js` act the same day (its STORY_007, code pushed; its rollout on the Mac is the owner's: the hand reinstalled, Safari › Develop › "Allow JavaScript from Apple Events" on, the Automation grant allowed). It runs a JavaScript expression in Safari's current tab and answers with the result as text, beside the look. That changes what this run can read; the criteria above stand, and these are added:
+
+- [ ] **Before the first act, a `js` smoke.** `recon/run.sh hands <date> js reads/title.js --as preflight-js@W` asks the page for `document.title`. When it answers, the reads below are on; when Hands refuses (the act unknown to an older Hands, or a 503 naming the Develop setting or the Automation grant), the log says so and the run proceeds on pictures and frames alone, as drafted.
+- [ ] **A `js` subcommand in the client:** `recon/run.sh hands <date> js <file under recon/hands/reads/> --as <state>@<width>` sends the file's expression as a `js` act, saves the look as every act does, and saves the result as `NN-<state>@<width>.result.txt`, printing its length and first line. The expressions are committed files, never typed on a command line, so what was asked of the page is in git and tested.
+- [ ] **The reads, each costing no generation, at every state where the layout matters** (the two chat views at both widths, the composer between turns, the row menu, the full-screen image, New Chat, and each Part C `done` state):
+  - `reads/dom.js`: `document.documentElement.outerHTML`, the rendered markup, saved as `<state>@<width>-dom`;
+  - `reads/styles.js`: for the selectors the chat story needs (the message rows and bubbles, the reply's image, the composer and its footer, the chat rows and their menu, the scroll-to-bottom control, the user button), each element's `getBoundingClientRect` box and the computed font, colours, background, radius, padding, margin, gap and shadow, as JSON, saved as `<state>@<width>-styles`; the selector list lives in the file and starts from the 2026-09-26 inventory's class names;
+  - `reads/page.js`: `location.href`, `innerWidth`, `innerHeight`, `devicePixelRatio`, `navigator.maxTouchPoints` and the `pathname`s of `performance.getEntriesByType("resource")` under `/api/`, as JSON, saved as `<state>@<width>-page`, once per page load, so the width is measured and the endpoints are listed as `endpoints.md` listed them in 2026-09-26.
+- [ ] **The routine gains the same reads** as `js` steps (Hands keeps each step's answer as `step-NN.result.txt`), so a replay on a later date reads the markup too.
+- [ ] **Nothing is sent to the page that is not a read.** Every committed expression is a read of the owner's own page (`document`, `getComputedStyle`, `location`, `performance`), and the routine-file test refuses an expression that assigns, calls `fetch`, `XMLHttpRequest`, `click`, `submit`, `dispatchEvent` or `localStorage`.
+
+Testing, added: **unit** `recon/src/hands-client.test.ts` (the `js` subcommand reads the file, sends it as `text`, saves the result file and the look, and prints the length and first line; a missing file is a usage error) and `recon/src/reads.test.ts` (every file under `recon/hands/reads/` passes the read-only rule above, and `styles.js` names every selector the Testing Plan lists). The `-dom`, `-styles` and `-page` results are STORY_029's input, and its revision says how they are filed.
+
+## Progress (2026-10-13)
+
+Landed ahead of the run, because none of it needs the Mac:
+
+- **The client's `js` subcommand** (`recon/run.sh hands <date> js <file> --as <state>@<width>`): sends a committed read as Hands' `js` act, saves the look as every act does, writes the answer to `NN-<state>@<width>.result.txt`, and prints its length and first line; the saved JSON names the file instead of carrying the text. An `act` whose answer carries a text result is saved the same way.
+- **The client's `routine` subcommand** (`recon/run.sh hands <date> routine <file>`): fills `{{HANDS_CHAT_URL}}` from `.env`, creates the routine, or replaces its steps when Hands answers 422 "already exists"; refuses an unfilled placeholder, a malformed file and a missing file; never prints the URL.
+- **The four reads** under `recon/hands/reads/` (`title.js`, `dom.js`, `styles.js`, `page.js`) with `recon/src/reads.test.ts`, which refuses a read that does anything but read.
+- **Tests:** `recon/src/hands-client.test.ts` gained the `js` and `routine` cases (the read sent as `text`, the result file, a missing read; the placeholder filled, the create, the replace on 422, the three refusals, Hands' other refusals in its words); recon's suite is 16 files.
+- **Hands' side:** the `js` act shipped as Hands v1.17.0 (its STORY_007) the same day; the Mac's deploy agent takes the container, and the native hand's reinstall is the owner's (EPIC_006, the owner's steps).
+
+Still to come, from the run itself: the capture, its log, the routine file `recon/hands/routines/qwen-recon-multi-turn-chat.json` and its shape test, and the routine's one replay.

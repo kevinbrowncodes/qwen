@@ -97,3 +97,15 @@ docs/recon/<date>/
 ## Estimated Complexity
 
 M–L: the mask derivation and PNG handling are new ground for `recon/`, and the three hand-written files plus the drafted tickets are the larger half of the work.
+
+## Revised before implementation (2026-10-13)
+
+STORY_028's revision adds three reads per state through Hands' `js` act, when the act is available: the rendered markup, a JSON of boxes and computed styles for named selectors, and the page's URL, size and `/api/` resource paths. The criteria above stand for every state, and these are added for a state that has them:
+
+- [ ] **A snapshot per `-dom` result:** `snapshots/<state>@<width>.html`, cleaned by the existing `cleanSnapshot` (scripts and handlers removed, the owner's name and avatar replaced, every `cdn.qwenlm.ai/output/` image replaced by the neutral placeholder, stylesheet links pointed at `../../2026-09-26/assets/css/`, since the stylesheets were harvested then and are re-harvested only if their names changed). The identity guard runs over it as over everything else.
+- [ ] **CSS px in the reading, from the `-styles` result:** the reading gains a `components` list in the 2026-09-26 shape (name, selector, `box` in CSS px from `getBoundingClientRect`, `style`), so the chat story cites CSS px with no points caveat for those states; the element frames in points stay beside them. The `-page` result gives `url_path` (ids as `:id`), the viewport in CSS px, `devicePixelRatio` and `maxTouchPoints`, and its `/api/` paths are listed in `endpoints.md` for the date, in the 2026-09-26 format, as paths only.
+- [ ] **The width check uses the page's own number** when a `-page` result exists: `innerWidth` must equal the asserted width, or the run stops naming the file; the web-area rule above stays for states without one.
+- [ ] **`coverage.md` says which states have a snapshot and styles** and which have pictures and frames only, so a reader knows which measurements are CSS px and which are points.
+- [ ] **Masks in pictures are unchanged**; a `-dom` result is checked for generated-image links and the owner's identity by the same guard, and nothing is written when it fails.
+
+Testing, added: **unit** `recon/src/hands-curate-model.test.ts` (a `-styles` fixture becomes `components` with CSS px boxes; a `-page` fixture sets `url_path` with `:id`, the viewport and the touch facts; an `innerWidth` that disagrees with the asserted width is refused; the `/api/` paths come out as 2026-09-26's `endpoints.md` lists them) and `recon/src/snapshot.test.ts` (extended: a `-dom` fixture holding a generated-image link and the owner's name is cleaned, and the stylesheet links point at the 2026-09-26 assets). `offline.test.ts` keeps `hands-curate.ts` offline.

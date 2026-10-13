@@ -63,12 +63,14 @@ export interface HandsVersion {
 export interface Settings {
   readonly url: string;
   readonly token: string | undefined;
+  /** The owner's chat on the reference, for the routine file's placeholder (STORY_028); never printed. */
+  readonly chatUrl: string | undefined;
 }
 
-/** HANDS_URL and HANDS_API_TOKEN from the text of the repo's .env; the token is never printed by anything here. */
+/** HANDS_URL, HANDS_API_TOKEN and HANDS_CHAT_URL from the text of the repo's .env; the token is never printed by anything here. */
 export function readSettings(envText: string): Settings {
   const url = (envValue(envText, "HANDS_URL") ?? DEFAULT_HANDS_URL).replace(/\/+$/, "");
-  return { url, token: envValue(envText, "HANDS_API_TOKEN") };
+  return { url, token: envValue(envText, "HANDS_API_TOKEN"), chatUrl: envValue(envText, "HANDS_CHAT_URL") };
 }
 
 // --- Type guards over what Hands answers ---------------------------------------------------------------------------
@@ -212,6 +214,20 @@ export class HandsApi {
     return body;
   }
 
+  /** `POST /api/routines`: a routine created from its name and steps (STORY_028); Hands' description of it. */
+  async routine(name: string, steps: readonly unknown[]): Promise<Record<string, unknown>> {
+    const body = await this.json("/api/routines", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, steps }) }, true);
+    if (!isRecord(body)) throw new HandsRefusal(200, "/api/routines did not answer with an object");
+    return body;
+  }
+
+  /** `PUT /api/routines/{slug}`: the steps replaced (STORY_028). */
+  async replaceRoutine(slug: string, steps: readonly unknown[]): Promise<Record<string, unknown>> {
+    const body = await this.json(`/api/routines/${encodeURIComponent(slug)}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ steps }) }, true);
+    if (!isRecord(body)) throw new HandsRefusal(200, "/api/routines did not answer with an object");
+    return body;
+  }
+
   /** A look's picture by the URL Hands gave; the route needs no token, so none is sent. */
   async picture(url: string): Promise<Uint8Array> {
     let response: FetchResponse;
@@ -309,6 +325,8 @@ export function signedOutVerdict(look: Look): "signed-out" | "not-signed-out" {
 export interface Files {
   /** The names in a folder; [] when it does not exist. */
   list(dir: string): string[];
+  /** A file's text, or null when it cannot be read. */
+  read(path: string): string | null;
   /** Writes a file, creating its folders. */
   write(path: string, data: string | Uint8Array): void;
   /** Appends one line to a file, creating it and its folders. */
@@ -322,6 +340,10 @@ export interface Deps {
   readonly fetch: FetchLike;
   /** recon/out/<date>/hands */
   readonly outDir: string;
+  /** recon/hands/reads: the committed JavaScript reads (STORY_028). */
+  readonly readsDir: string;
+  /** recon/hands/routines: the committed routine files (STORY_028). */
+  readonly routinesDir: string;
   readonly out: (line: string) => void;
   readonly now: () => string;
 }
@@ -330,8 +352,15 @@ export const USAGE = [
   "usage: recon/run.sh hands <date> preflight",
   "       recon/run.sh hands <date> look [--app <name>] --as <state>@<width>",
   "       recon/run.sh hands <date> act '<json>' --as <state>@<width>",
-  "The token and HANDS_URL come from the repo's .env (HANDS_API_TOKEN, HANDS_URL); see README → Running Recon.",
+  "       recon/run.sh hands <date> js <file under recon/hands/reads/> --as <state>@<width>",
+  "       recon/run.sh hands <date> routine <file under recon/hands/routines/>",
+  "The token and HANDS_URL come from the repo's .env (HANDS_API_TOKEN, HANDS_URL, HANDS_CHAT_URL); see README → Running Recon.",
 ].join("\n");
+
+/** The routine file's stand-in for the owner's chat URL, filled from .env at upload time (STORY_028). */
+export const CHAT_URL_PLACEHOLDER = "{{HANDS_CHAT_URL}}";
+
+const COMMANDS = ["preflight", "look", "act", "js", "routine"];
 
 interface Parsed {
   readonly command: string;
@@ -365,6 +394,39 @@ export function parseArgs(args: readonly string[]): Parsed | null {
   return { command, as, app, positional };
 }
 
+/** Hands' own slug rule (app/services/routines.py `slugify`), so a replace names the routine it created. */
+export function slugify(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug === "" ? "routine" : slug;
+}
+
+/** Every string in a routine's steps with the placeholder replaced; `left` says whether any placeholder remains. */
+export function fillPlaceholder(steps: readonly unknown[], chatUrl: string | undefined): { steps: unknown[]; left: boolean } {
+  let left = false;
+  const fill = (v: unknown): unknown => {
+    if (typeof v === "string") {
+      if (!v.includes(CHAT_URL_PLACEHOLDER)) return v;
+      if (chatUrl === undefined) {
+        left = true;
+        return v;
+      }
+      return v.split(CHAT_URL_PLACEHOLDER).join(chatUrl);
+    }
+    if (Array.isArray(v)) return v.map(fill);
+    if (isRecord(v)) {
+      const out: Record<string, unknown> = {};
+      for (const [k, x] of Object.entries(v)) out[k] = fill(x);
+      return out;
+    }
+    return v;
+  };
+  return { steps: steps.map(fill), left };
+}
+
 class Session {
   private readonly api: HandsApi;
   private hands: HandsVersion | null = null;
@@ -386,7 +448,7 @@ class Session {
     return this.api;
   }
 
-  private path(name: string): string {
+  path(name: string): string {
     return `${this.deps.outDir}/${name}`;
   }
 
@@ -472,21 +534,21 @@ function answerWithoutLook(answer: ActAnswer): Record<string, unknown> {
   return out;
 }
 
-async function actCommand(session: Session, deps: Deps, parsed: Parsed): Promise<number> {
-  const name = parsed.as === null ? null : parseStepName(parsed.as);
-  const raw = parsed.positional[0];
-  if (name === null || raw === undefined) return 2;
-  let act: unknown;
-  try {
-    act = JSON.parse(raw);
-  } catch {
-    deps.out("act: the argument is not JSON");
-    return 2;
-  }
-  if (!isRecord(act) || typeof act["do"] !== "string" || act["do"] === "") {
-    deps.out('act: the JSON needs a "do"');
-    return 2;
-  }
+/** A text result (a js act's, STORY_028) goes to its own file; the saved answer names the file instead. */
+function keepResult(session: Session, deps: Deps, base: string, rest: Record<string, unknown>): string[] {
+  const result = rest["result"];
+  if (typeof result !== "string") return [];
+  const name = `${base}.result.txt`;
+  deps.files.write(session.path(name), result);
+  delete rest["result"];
+  rest["result_file"] = name;
+  const firstLine = result.split("\n")[0] ?? "";
+  deps.out(`result: ${String(result.length)} characters, saved as ${name}; first line: ${JSON.stringify(firstLine.length > 80 ? `${firstLine.slice(0, 79)}…` : firstLine)}`);
+  return [name];
+}
+
+/** One act (or its chunks, for a long wait), saved and logged; the exit code. */
+async function performAct(session: Session, deps: Deps, name: { state: string; width: number }, act: Record<string, unknown>): Promise<number> {
   const base = session.nextBase(name.state, name.width);
   const seconds = act["seconds"];
   const chunks = act["do"] === "wait" && typeof seconds === "number" ? splitWait(seconds) : [null];
@@ -497,15 +559,17 @@ async function actCommand(session: Session, deps: Deps, parsed: Parsed): Promise
     try {
       const answer = await session.hand.act(body);
       const rest = answerWithoutLook(answer);
+      const extra = keepResult(session, deps, base, rest);
       if (answer.look === null) {
-        deps.files.write(`${deps.outDir}/${base}.act.json`, `${JSON.stringify({ step: base, act: redactAct(body), answer: rest }, null, 2)}\n`);
-        session.log({ step: base, do: answer.do, act: redactAct(body), outcome: answer.did, look: null, files: [`${base}.act.json`] });
-        deps.out(`saved: ${base}.act.json (Hands returned no look)`);
+        const actName = `${base}.act.json`;
+        deps.files.write(session.path(actName), `${JSON.stringify({ step: base, act: redactAct(body), answer: rest }, null, 2)}\n`);
+        session.log({ step: base, do: answer.do, act: redactAct(body), outcome: answer.did, look: null, files: [actName, ...extra] });
+        deps.out(`saved: ${actName} (Hands returned no look)`);
         deps.out(`did: ${answer.did}`);
         return 0;
       }
       const names = await session.save(answer.look, base, name.state, name.width, redactAct(body), rest);
-      session.log({ step: base, do: answer.do, act: redactAct(body), outcome: answer.did, look: answer.look.id, files: names });
+      session.log({ step: base, do: answer.do, act: redactAct(body), outcome: answer.did, look: answer.look.id, files: [...names, ...extra] });
       deps.out(`did: ${answer.did}`);
       session.describe(answer.look, names);
       return 0;
@@ -527,10 +591,88 @@ async function actCommand(session: Session, deps: Deps, parsed: Parsed): Promise
   return 1;
 }
 
+async function actCommand(session: Session, deps: Deps, parsed: Parsed): Promise<number> {
+  const name = parsed.as === null ? null : parseStepName(parsed.as);
+  const raw = parsed.positional[0];
+  if (name === null || raw === undefined) return 2;
+  let act: unknown;
+  try {
+    act = JSON.parse(raw);
+  } catch {
+    deps.out("act: the argument is not JSON");
+    return 2;
+  }
+  if (!isRecord(act) || typeof act["do"] !== "string" || act["do"] === "") {
+    deps.out('act: the JSON needs a "do"');
+    return 2;
+  }
+  return performAct(session, deps, name, act);
+}
+
+/** `js <file> --as <state>@<width>`: the committed read sent as a js act (STORY_028); its result saved beside the look. */
+async function jsCommand(session: Session, deps: Deps, parsed: Parsed): Promise<number> {
+  const name = parsed.as === null ? null : parseStepName(parsed.as);
+  const file = parsed.positional[0];
+  if (name === null || file === undefined) return 2;
+  const source = deps.files.read(`${deps.readsDir}/${file}`);
+  if (source === null || source.trim() === "") {
+    deps.out(`js: no read named ${file} under recon/hands/reads/`);
+    return 2;
+  }
+  return performAct(session, deps, name, { do: "js", text: source });
+}
+
+/** `routine <file>`: the committed routine created in Hands, or replaced when its name exists (STORY_028). */
+async function routineCommand(session: Session, deps: Deps, parsed: Parsed, chatUrl: string | undefined): Promise<number> {
+  const file = parsed.positional[0];
+  if (file === undefined) return 2;
+  const text = deps.files.read(`${deps.routinesDir}/${file}`);
+  if (text === null) {
+    deps.out(`routine: no file named ${file} under recon/hands/routines/`);
+    return 2;
+  }
+  let parsedFile: unknown;
+  try {
+    parsedFile = JSON.parse(text);
+  } catch {
+    deps.out(`routine: ${file} is not JSON`);
+    return 2;
+  }
+  if (!isRecord(parsedFile) || typeof parsedFile["name"] !== "string" || parsedFile["name"].trim() === "" || !Array.isArray(parsedFile["steps"]) || parsedFile["steps"].length === 0) {
+    deps.out(`routine: ${file} needs a name and a non-empty list of steps`);
+    return 2;
+  }
+  const routineName = parsedFile["name"];
+  const { steps, left } = fillPlaceholder(parsedFile["steps"], chatUrl);
+  if (left) {
+    deps.out(`routine: ${file} names ${CHAT_URL_PLACEHOLDER} and HANDS_CHAT_URL is not in .env`);
+    return 2;
+  }
+  const slug = slugify(routineName);
+  try {
+    await session.hand.routine(routineName, steps);
+    deps.out(`routine ${slug}: created, ${String(steps.length)} steps`);
+    return 0;
+  } catch (error) {
+    if (!(error instanceof HandsRefusal && error.status === 422 && error.detail.includes("already exists"))) {
+      deps.out(refusalLine(error));
+      return 1;
+    }
+  }
+  try {
+    await session.hand.replaceRoutine(slug, steps);
+    deps.out(`routine ${slug}: replaced, ${String(steps.length)} steps`);
+    return 0;
+  } catch (error) {
+    deps.out(refusalLine(error));
+    return 1;
+  }
+}
+
 /** Runs one `hands` command and returns the exit code: 0 done, 1 Hands said no or is not ready, 2 usage or configuration. */
 export async function runHands(args: readonly string[], deps: Deps): Promise<number> {
   const parsed = parseArgs(args);
-  if (parsed === null || !["preflight", "look", "act"].includes(parsed.command)) {
+  if (parsed === null || !COMMANDS.includes(parsed.command)) {
     deps.out(USAGE);
     return 2;
   }
@@ -542,13 +684,12 @@ export async function runHands(args: readonly string[], deps: Deps): Promise<num
   deps.out("Hands token: found in .env");
   const session = new Session(deps, settings.url, settings.token);
   try {
-    if (parsed.command === "preflight") return await preflight(session, deps);
-    if (parsed.command === "look") {
-      const code = await lookCommand(session, parsed);
-      if (code === 2) deps.out(USAGE);
-      return code;
-    }
-    const code = await actCommand(session, deps, parsed);
+    let code: number;
+    if (parsed.command === "preflight") code = await preflight(session, deps);
+    else if (parsed.command === "look") code = await lookCommand(session, parsed);
+    else if (parsed.command === "act") code = await actCommand(session, deps, parsed);
+    else if (parsed.command === "js") code = await jsCommand(session, deps, parsed);
+    else code = await routineCommand(session, deps, parsed, settings.chatUrl);
     if (code === 2) deps.out(USAGE);
     return code;
   } catch (error) {

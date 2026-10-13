@@ -1,9 +1,11 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  CHAT_URL_PLACEHOLDER,
   elementTable,
   type FetchInit,
   type FetchResponse,
+  fillPlaceholder,
   type Files,
   HandsApi,
   HandsRefusal,
@@ -17,6 +19,7 @@ import {
   redactAct,
   runHands,
   signedOutVerdict,
+  slugify,
   splitWait,
   stepBase,
 } from "./hands-client.ts";
@@ -24,6 +27,10 @@ import {
 // A made-up token: the real one is only ever read from the owner's .env at run time.
 const TOKEN = "fixture-token-0123456789";
 const ENV = `CIVITAI_TOKEN=zzz\nHANDS_API_TOKEN=${TOKEN}\nHANDS_URL=http://hands.test/\n`;
+const CHAT_URL = "https://reference.test/c/0123456789abcdef";
+const ENV_WITH_CHAT = `${ENV}HANDS_CHAT_URL=${CHAT_URL}\n`;
+const READS = "/repo/recon/hands/reads";
+const ROUTINES = "/repo/recon/hands/routines";
 
 function element(n: number, role: string, title: string, frame: readonly [number, number, number, number], extra: Partial<HandsElement> = {}): HandsElement {
   return { n, role, title, frame, actions: ["AXPress"], focusable: true, ...extra };
@@ -83,6 +90,10 @@ function memoryFiles() {
   const store = new Map<string, string | Uint8Array>();
   const files: Files = {
     list: (dir) => [...store.keys()].filter((k) => k.startsWith(`${dir}/`)).map((k) => k.slice(dir.length + 1)).filter((k) => !k.includes("/")),
+    read: (file) => {
+      const v = store.get(file);
+      return typeof v === "string" ? v : null;
+    },
     write: (file, data) => {
       store.set(file, data);
     },
@@ -108,6 +119,8 @@ function run(args: string[], routes: Record<string, Route>, env = ENV, seed: Rec
     files: mem.files,
     fetch: hands.fetchFn,
     outDir: "/out/2026-10-13/hands",
+    readsDir: READS,
+    routinesDir: ROUTINES,
     out: (l) => {
       lines.push(l);
     },
@@ -122,9 +135,27 @@ const LOOK = (l: Look): Route => () => ({ status: 200, body: l });
 const ACT = (l: Look | null, extra: Record<string, unknown> = {}): Route => () => ({ status: 200, body: { ok: true, id: "act1", do: "press", did: "AXPress", look: l, ...extra } });
 
 describe("readSettings", () => {
-  it("reads the token and the URL, trimming a trailing slash, and defaults the URL", () => {
-    expect(readSettings(ENV)).toEqual({ url: "http://hands.test", token: TOKEN });
-    expect(readSettings("HANDS_API_TOKEN=t\n")).toEqual({ url: "http://hands.local", token: "t" });
+  it("reads the token, the URL (trimming a trailing slash) and the chat URL, and defaults the URL", () => {
+    expect(readSettings(ENV)).toEqual({ url: "http://hands.test", token: TOKEN, chatUrl: undefined });
+    expect(readSettings("HANDS_API_TOKEN=t\n")).toEqual({ url: "http://hands.local", token: "t", chatUrl: undefined });
+    expect(readSettings(ENV_WITH_CHAT).chatUrl).toBe(CHAT_URL);
+  });
+});
+
+describe("routine files", () => {
+  it("slugs a name the way Hands does", () => {
+    expect(slugify("qwen recon: multi-turn chat")).toBe("qwen-recon-multi-turn-chat");
+    expect(slugify("  Open   Safari! ")).toBe("open-safari");
+    expect(slugify("首页")).toBe("routine");
+  });
+
+  it("fills the chat placeholder in every string and says when one is left", () => {
+    const steps = [{ do: "open", app: "Safari", url: CHAT_URL_PLACEHOLDER }, { do: "wait", title: "x" }];
+    const filled = fillPlaceholder(steps, CHAT_URL);
+    expect(filled.left).toBe(false);
+    expect(filled.steps[0]).toEqual({ do: "open", app: "Safari", url: CHAT_URL });
+    expect(fillPlaceholder(steps, undefined).left).toBe(true);
+    expect(fillPlaceholder([{ do: "wait", title: "x" }], undefined).left).toBe(false);
   });
 });
 
@@ -240,7 +271,9 @@ describe("runHands", () => {
     const json = r.text("/out/2026-10-13/hands/01-composer-typed@1920.json");
     expect(json).toContain('"text_length": 13');
     expect(json).not.toContain("a red bicycle");
-    expect(json).toContain('"result": "extra"');
+    // A text result goes to its own file (STORY_028); the saved answer names it instead.
+    expect(json).toContain('"result_file": "01-composer-typed@1920.result.txt"');
+    expect(r.text("/out/2026-10-13/hands/01-composer-typed@1920.result.txt")).toBe("extra");
     const log = r.text("/out/2026-10-13/hands/acts.jsonl");
     expect(log).toContain('"text_length":13');
     expect(log).not.toContain("a red bicycle");
@@ -314,6 +347,83 @@ describe("runHands", () => {
     const s = run(["preflight"], { "GET /health": () => ({ status: 401, body: { detail: "not authorized" } }) });
     await s.code;
     expect([...s.lines].join("\n")).not.toContain(TOKEN);
+  });
+});
+
+describe("js and routine (STORY_028)", () => {
+  const JS_ANSWER: Route = (_url, init) => {
+    const body = JSON.parse(init?.body ?? "{}") as { do: string; text: string };
+    return { status: 200, body: { ok: true, id: "a", do: body.do, did: `evaluated ${String(body.text.length)} characters`, result: "Qwen\nsecond line", look: look("l9", SIGNED_IN) } };
+  };
+
+  it("sends a committed read as a js act and saves the result beside the look", async () => {
+    const r = run(["js", "title.js", "--as", "chat-multi-top@1920"], { "GET /health": HEALTH, "POST /api/hand/act": JS_ANSWER }, ENV, { [`${READS}/title.js`]: "document.title\n" });
+    expect(await r.code).toBe(0);
+    const sent = JSON.parse(r.requests.find((q) => q.url.endsWith("/api/hand/act"))?.init?.body ?? "{}") as Record<string, unknown>;
+    expect(sent).toEqual({ do: "js", text: "document.title\n" });
+    const names = r.files.list("/out/2026-10-13/hands").sort();
+    expect(names).toEqual(["01-chat-multi-top@1920.json", "01-chat-multi-top@1920.marked.png", "01-chat-multi-top@1920.png", "01-chat-multi-top@1920.result.txt", "acts.jsonl"]);
+    expect(r.text("/out/2026-10-13/hands/01-chat-multi-top@1920.result.txt")).toBe("Qwen\nsecond line");
+    const record = JSON.parse(r.text("/out/2026-10-13/hands/01-chat-multi-top@1920.json")) as { answer: Record<string, unknown>; act: Record<string, unknown> };
+    expect(record.answer["result_file"]).toBe("01-chat-multi-top@1920.result.txt");
+    expect(record.answer["result"]).toBeUndefined();
+    expect(record.act).toEqual({ do: "js", text_length: 15 });
+    expect(r.lines.some((l) => l.startsWith('result: 16 characters, saved as 01-chat-multi-top@1920.result.txt; first line: "Qwen"'))).toBe(true);
+    expect(r.text("/out/2026-10-13/hands/acts.jsonl")).toContain("01-chat-multi-top@1920.result.txt");
+  });
+
+  it("refuses a read that is not under recon/hands/reads", async () => {
+    const r = run(["js", "missing.js", "--as", "x@1920"], { "GET /health": HEALTH });
+    expect(await r.code).toBe(2);
+    expect(r.lines).toContain("js: no read named missing.js under recon/hands/reads/");
+    expect(r.requests.map((q) => q.url)).not.toContain("http://hands.test/api/hand/act");
+  });
+
+  const ROUTINE = JSON.stringify({ name: "qwen recon: multi-turn chat", steps: [{ do: "open", app: "Safari", url: CHAT_URL_PLACEHOLDER }, { do: "look" }] });
+
+  it("creates the routine with the placeholder filled, and never prints the URL", async () => {
+    const r = run(["routine", "chat.json"], { "GET /health": HEALTH, "POST /api/routines": () => ({ status: 200, body: { slug: "qwen-recon-multi-turn-chat", count: 2 } }) }, ENV_WITH_CHAT, { [`${ROUTINES}/chat.json`]: ROUTINE });
+    expect(await r.code).toBe(0);
+    const sent = JSON.parse(r.requests.find((q) => q.url.endsWith("/api/routines"))?.init?.body ?? "{}") as { name: string; steps: Record<string, unknown>[] };
+    expect(sent.name).toBe("qwen recon: multi-turn chat");
+    expect(sent.steps[0]).toEqual({ do: "open", app: "Safari", url: CHAT_URL });
+    expect(r.lines).toContain("routine qwen-recon-multi-turn-chat: created, 2 steps");
+    expect(r.lines.join("\n")).not.toContain(CHAT_URL);
+  });
+
+  it("replaces the routine when Hands says the name already exists", async () => {
+    const r = run(
+      ["routine", "chat.json"],
+      {
+        "GET /health": HEALTH,
+        "POST /api/routines": () => ({ status: 422, body: { detail: "a routine named 'qwen recon: multi-turn chat' already exists" } }),
+        "PUT /api/routines/qwen-recon-multi-turn-chat": () => ({ status: 200, body: { slug: "qwen-recon-multi-turn-chat" } }),
+      },
+      ENV_WITH_CHAT,
+      { [`${ROUTINES}/chat.json`]: ROUTINE },
+    );
+    expect(await r.code).toBe(0);
+    expect(r.lines).toContain("routine qwen-recon-multi-turn-chat: replaced, 2 steps");
+    const put = r.requests.find((q) => q.init?.method === "PUT");
+    expect(JSON.parse(put?.init?.body ?? "{}")).toEqual({ steps: [{ do: "open", app: "Safari", url: CHAT_URL }, { do: "look" }] });
+  });
+
+  it("refuses an unfilled placeholder, a malformed file and a missing file", async () => {
+    const r = run(["routine", "chat.json"], { "GET /health": HEALTH }, ENV, { [`${ROUTINES}/chat.json`]: ROUTINE });
+    expect(await r.code).toBe(2);
+    expect(r.lines).toContain(`routine: chat.json names ${CHAT_URL_PLACEHOLDER} and HANDS_CHAT_URL is not in .env`);
+    expect(r.requests.map((q) => q.url)).not.toContain("http://hands.test/api/routines");
+    const s = run(["routine", "bad.json"], { "GET /health": HEALTH }, ENV_WITH_CHAT, { [`${ROUTINES}/bad.json`]: '{"name": "x"}' });
+    expect(await s.code).toBe(2);
+    const t = run(["routine", "none.json"], { "GET /health": HEALTH }, ENV_WITH_CHAT);
+    expect(await t.code).toBe(2);
+    expect(t.lines).toContain("routine: no file named none.json under recon/hands/routines/");
+  });
+
+  it("reports any other refusal in Hands' words", async () => {
+    const r = run(["routine", "chat.json"], { "GET /health": HEALTH, "POST /api/routines": () => ({ status: 422, body: { detail: "line 2: no step named 'dance'" } }) }, ENV_WITH_CHAT, { [`${ROUTINES}/chat.json`]: ROUTINE });
+    expect(await r.code).toBe(1);
+    expect(r.lines).toContain("Hands refused (422): line 2: no step named 'dance'");
   });
 });
 

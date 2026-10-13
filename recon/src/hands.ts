@@ -1,5 +1,5 @@
 /**
- * recon/run.sh hands <date> preflight | look | act  (STORY_027, EPIC_006)
+ * recon/run.sh hands <date> preflight | look | act | js | routine  (STORY_027 and STORY_028, EPIC_006)
  *
  * The recon client for Hands, the owner's tool that works the Mac the way a person does. Online to Hands only
  * (HANDS_URL from the repo's .env, mounted read-only by run.sh); it never addresses the reference. Every look is
@@ -8,7 +8,7 @@
  */
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { OUT_DIR } from "./config.ts";
+import { OUT_DIR, RECON_ROOT } from "./config.ts";
 import { type Files, runHands, USAGE } from "./hands-client.ts";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -27,6 +27,13 @@ if (date === undefined || !DATE.test(date)) {
   }
   const files: Files = {
     list: (dir) => (existsSync(dir) ? readdirSync(dir) : []),
+    read: (file) => {
+      try {
+        return readFileSync(file, "utf8");
+      } catch {
+        return null;
+      }
+    },
     write: (file, data) => {
       mkdirSync(path.dirname(file), { recursive: true });
       writeFileSync(file, data);
@@ -41,6 +48,8 @@ if (date === undefined || !DATE.test(date)) {
     files,
     fetch: (url, init) => fetch(url, init),
     outDir: path.join(OUT_DIR, date, "hands"),
+    readsDir: path.join(RECON_ROOT, "hands", "reads"),
+    routinesDir: path.join(RECON_ROOT, "hands", "routines"),
     out: (line) => {
       console.log(line);
     },
