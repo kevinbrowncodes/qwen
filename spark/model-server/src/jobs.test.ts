@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { BusyError, Jobs, RESTARTED } from "./jobs.ts";
 
@@ -60,7 +63,7 @@ describe("Jobs", () => {
     expect(jobs.next()).toBeUndefined();
   });
 
-  it("survives a restart: finished jobs keep their result, unfinished ones fail", () => {
+  it("survives a restart: finished jobs keep their result, a running one fails, a waiting one waits again", () => {
     const jobs = new Jobs(8, clock);
     jobs.add("done", req, ["/tmp/ref.png"]);
     jobs.start("done");
@@ -73,8 +76,34 @@ describe("Jobs", () => {
     const back = Jobs.fromIndex(index, 8, clock);
     expect(back.get("done")).toMatchObject({ status: "done", result: { file: "done.png" } });
     expect(back.get("running")).toMatchObject({ status: "failed", error: { message: RESTARTED } });
-    expect(back.get("queued")?.status).toBe("failed");
-    expect(back.next()).toBeUndefined();
+    // STORY_026: a waiting job used to fail here only because its upload paths were lost; they are now read back.
+    expect(back.get("queued")).toMatchObject({ status: "queued", references: [] });
+    expect(back.next()?.id).toBe("queued");
+  });
+
+  it("gives a waiting edit its references back from its upload folder, in order, or fails it when they are gone", () => {
+    const uploads = mkdtempSync(path.join(tmpdir(), "qwen-uploads-"));
+    try {
+      const jobs = new Jobs(8, clock);
+      const edit = { ...req, referenceImages: 2 };
+      jobs.add("kept", edit);
+      jobs.add("short", edit);
+      jobs.add("missing", edit);
+      jobs.add("plain", req);
+      mkdirSync(path.join(uploads, "kept"));
+      writeFileSync(path.join(uploads, "kept", "02.jpg"), "b");
+      writeFileSync(path.join(uploads, "kept", "01.png"), "a");
+      mkdirSync(path.join(uploads, "short"));
+      writeFileSync(path.join(uploads, "short", "01.png"), "a");
+      const back = Jobs.fromIndex(jobs.toIndex(), 8, clock, uploads);
+      expect(back.get("kept")).toMatchObject({ status: "queued", references: [path.join(uploads, "kept", "01.png"), path.join(uploads, "kept", "02.jpg")] });
+      expect(back.get("short")).toMatchObject({ status: "failed", references: [], error: { message: RESTARTED } });
+      expect(back.get("missing")).toMatchObject({ status: "failed", error: { message: RESTARTED } });
+      expect(back.get("plain")).toMatchObject({ status: "queued", references: [] });
+      expect(back.queued().map((j) => j.id)).toEqual(["kept", "plain"]);
+    } finally {
+      rmSync(uploads, { recursive: true, force: true });
+    }
   });
 
   it("reads a missing, corrupt or odd index as empty or skips what is odd", () => {

@@ -6,7 +6,7 @@
     "start": "node src/main.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage && python3 -B -m unittest discover -s ../model -p \"test_*.py\""
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

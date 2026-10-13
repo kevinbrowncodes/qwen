@@ -160,7 +160,7 @@ spark/fetch-loras.sh                   # fetch the add-ons in spark/loras.json; 
 spark/fetch-loras.sh status            # which add-ons are on disk
 spark/fetch-loras.sh verify            # hash every add-on on disk against the manifest
 spark/bench-loras.sh                   # run (or resume) the add-on bench into outputs/bench/<date>/ (STORY_022; 1-2 hours)
-curl -s 127.0.0.1:4120/health          # {"ok":true,...,"ready":true} once loaded
+curl -s 127.0.0.1:4120/health          # {"ok":true,...,"ready":true} once loaded; job, queued, lastRestart show a stall (STORY_026)
 docker logs -f qwen-model              # the server's and the worker's log
 docker compose -f spark/compose.yaml down   # stop it (frees about 37-54 GiB)
 ```

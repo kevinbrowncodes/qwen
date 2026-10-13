@@ -2,9 +2,12 @@
  * The model server (STORY_015): docs/contracts/job-api.md v1.3 in front of Qwen-Image-2.1. This process owns the
  * contract (HTTP, validation, the queue, cancel, results on disk); the Python worker (spark/model/worker.py) owns
  * the pipeline. One job runs at a time. Zero runtime dependencies, like the stub.
+ *
+ * A watchdog (STORY_026, BUG_011) keeps a silent worker from holding the queue: a stop it has not answered within
+ * `cancelGraceMs`, or a running job it has said nothing about for `silenceMs`, gets the worker restarted.
  */
 import { randomInt, randomUUID } from "node:crypto";
-import { createReadStream, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import path from "node:path";
 import { CAPABILITIES, STEPS } from "./capabilities.ts";
@@ -14,10 +17,11 @@ import { withTrigger, type Lora } from "./loras.ts";
 import { parametersFor } from "./parameters.ts";
 import { progressFor, type FromWorker } from "./protocol.ts";
 import { HttpError, validateRequest, type Capabilities } from "./validation.ts";
-import { Worker } from "./worker.ts";
+import { Worker, type ExitReason } from "./worker.ts";
 
 export const VERSION = "1.0.0";
 export const WORKER_STOPPED = "The model worker stopped unexpectedly.";
+export const WORKER_SILENT = "The model worker stopped responding during this image and was restarted.";
 const EXTENSIONS: Readonly<Record<string, string>> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
 export interface ModelServerOptions {
@@ -31,6 +35,12 @@ export interface ModelServerOptions {
   readonly log?: (line: string) => void;
   /** The add-ons fetched onto disk (loras.ts); offered once the worker reports them loaded (STORY_019). */
   readonly loras?: readonly Lora[];
+  /** The watchdog (STORY_026): how long a stop may go unanswered, how long a running job may go unheard, how often
+   * to look, and how long a SIGTERMed worker gets before SIGKILL. Defaults 60 s, 5 min, 5 s, 10 s. */
+  readonly cancelGraceMs?: number;
+  readonly silenceMs?: number;
+  readonly watchdogTickMs?: number;
+  readonly killAfterMs?: number;
 }
 
 export interface ModelServer {
@@ -78,9 +88,23 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
   const uploadsDir = path.join(outputDir, "uploads");
   const indexFile = path.join(outputDir, "jobs.json");
   mkdirSync(uploadsDir, { recursive: true });
-  const jobs = existsSync(indexFile) ? Jobs.fromIndex(readFileSync(indexFile, "utf8"), options.maxQueued) : new Jobs(options.maxQueued);
+  const jobs = existsSync(indexFile) ? Jobs.fromIndex(readFileSync(indexFile, "utf8"), options.maxQueued, undefined, uploadsDir) : new Jobs(options.maxQueued);
+  // Upload folders whose job is finished or forgotten are left over from an earlier run (BUG_011 found one).
+  for (const name of readdirSync(uploadsDir)) {
+    const job = jobs.get(name);
+    if (!job || isTerminal(job.status)) rmSync(path.join(uploadsDir, name), { recursive: true, force: true });
+  }
   /** The job the worker is busy with, until it answers done, failed or cancelled, or exits. */
   let current: string | null = null;
+  /** What the watchdog and /health know about `current` (epoch ms). */
+  let startedAt = 0;
+  let lastHeardAt = 0;
+  let stopRequestedAt: number | null = null;
+  let lastRestart: { at: string; reason: ExitReason } | null = null;
+  /** True from the watchdog's restart until the old worker has exited, so it is not asked twice. */
+  let replacing = false;
+  const cancelGraceMs = options.cancelGraceMs ?? 60_000;
+  const silenceMs = options.silenceMs ?? 300_000;
   /** A clean shutdown leaves a running job as it is, so the restart reports it as interrupted (RESTARTED). */
   let closing = false;
   const installed = options.loras ?? [];
@@ -105,8 +129,10 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       onMessage: (m: FromWorker) => {
         handle(m);
       },
-      onExit: (code) => {
+      onExit: (code, reason) => {
         log(`[model] worker exited (${String(code)})`);
+        if (!closing) lastRestart = { at: new Date().toISOString(), reason };
+        replacing = false;
         if (current !== null && !closing) {
           jobs.fail(current, WORKER_STOPPED);
           cleanup(jobs.get(current));
@@ -120,7 +146,26 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
     },
     options.restartDelayMs,
     installed.length > 0 ? { type: "init", loras: installed.map((l) => ({ id: l.id, path: l.path })) } : undefined,
+    options.killAfterMs,
   );
+
+  const watchdog = setInterval(() => {
+    if (current === null || replacing) return;
+    const now = Date.now();
+    if (stopRequestedAt !== null && now - stopRequestedAt > cancelGraceMs) {
+      log(`[model] the worker did not answer the stop of ${current} within ${String(Math.round(cancelGraceMs / 1000))} s; restarting it`);
+      replacing = true;
+      worker.restart("stop not answered");
+    } else if (stopRequestedAt === null && now - lastHeardAt > silenceMs) {
+      // Failed first, so the exit that follows finds it finished and keeps this message rather than WORKER_STOPPED.
+      jobs.fail(current, WORKER_SILENT);
+      save();
+      log(`[model] the worker said nothing about ${current} for ${String(Math.round(silenceMs / 1000))} s; restarting it`);
+      replacing = true;
+      worker.restart("silent");
+    }
+  }, options.watchdogTickMs ?? 5_000);
+  watchdog.unref();
 
   const pump = (): void => {
     if (current !== null || !worker.ready) return;
@@ -152,6 +197,8 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
     });
     if (!sent) return;
     current = job.id;
+    startedAt = lastHeardAt = Date.now();
+    stopRequestedAt = null;
     jobs.start(job.id);
     save();
   };
@@ -164,6 +211,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       pump();
       return;
     }
+    if (m.id === current) lastHeardAt = Date.now();
     const job = jobs.get(m.id);
     if (m.type === "progress") {
       if (job) jobs.progress(m.id, progressFor(m.step, m.steps, job.progress));
@@ -277,7 +325,20 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
     }
     let m: RegExpExecArray | null;
     if (method === "GET" && p === "/health") {
-      sendJson(res, 200, { ok: true, server: "qwen-model", version: VERSION, ready: worker.ready });
+      const iso = (ms: number): string => new Date(ms).toISOString();
+      const busy = current === null ? undefined : jobs.get(current);
+      sendJson(res, 200, {
+        ok: true,
+        server: "qwen-model",
+        version: VERSION,
+        ready: worker.ready,
+        // STORY_026: what the worker is busy with and when it last spoke, so a stall shows without the job index.
+        job: busy
+          ? { id: busy.id, status: busy.status, startedAt: iso(startedAt), lastHeardAt: iso(lastHeardAt), stopRequestedAt: stopRequestedAt === null ? null : iso(stopRequestedAt) }
+          : null,
+        queued: jobs.queued().length,
+        lastRestart,
+      });
       return;
     }
     if (method === "GET" && p === "/capabilities") {
@@ -298,7 +359,10 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       if (method === "DELETE") {
         const outcome = jobs.cancel(job.id);
         if (outcome === "already-terminal") throw new HttpError(409, "already_terminal", `job ${job.id} is already ${job.status}`);
-        if (outcome === "signal-worker") worker.send({ type: "cancel", id: job.id });
+        if (outcome === "signal-worker") {
+          worker.send({ type: "cancel", id: job.id });
+          if (job.id === current && stopRequestedAt === null) stopRequestedAt = Date.now();
+        }
         else cleanup(job);
         save();
         sendJson(res, 202, { id: job.id, status: "cancelled", progress: job.progress });
@@ -342,6 +406,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       }),
     close: async () => {
       closing = true;
+      clearInterval(watchdog);
       await worker.stop();
       await new Promise<void>((resolve) => {
         server.closeAllConnections();
@@ -349,7 +414,8 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
           resolve();
         });
       });
-      for (const job of jobs.all()) if (!isTerminal(job.status)) cleanup(job);
+      // Unfinished jobs keep their uploads: a waiting one runs after the restart (STORY_026), and the start removes
+      // whatever is left over.
     },
   };
 }

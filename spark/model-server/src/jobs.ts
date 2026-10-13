@@ -1,8 +1,12 @@
 /**
  * The model server's jobs (STORY_015): one runs at a time, the rest wait in order, and a terminal state is final.
- * The table is saved as a small JSON index beside the results, so finished images survive a restart; a job that was
- * queued or running when the server stopped is failed on the way back up.
+ * The table is saved as a small JSON index beside the results, so finished images survive a restart. A job that was
+ * running when the server stopped is failed on the way back up; one that was waiting waits again, with its references
+ * read back from its upload folder (STORY_026).
  */
+import { existsSync, readdirSync } from "node:fs";
+import path from "node:path";
+
 export type Status = "queued" | "running" | "done" | "failed" | "cancelled";
 
 export interface JobRequest {
@@ -154,8 +158,10 @@ export class Jobs {
     return `${JSON.stringify(saved, null, 2)}\n`;
   }
 
-  /** Reads a saved index; unfinished jobs are failed with RESTARTED; anything malformed is skipped. */
-  static fromIndex(text: string, maxQueued = 8, now: () => string = () => new Date().toISOString()): Jobs {
+  /** Reads a saved index; anything malformed is skipped. A running job is failed with RESTARTED. A queued one stays
+   * queued when `uploadsDir/<id>/` holds as many files as it had references (none for a text-to-image job), and is
+   * failed with RESTARTED otherwise. Restored jobs are not held to the cap: they were saved under it. */
+  static fromIndex(text: string, maxQueued = 8, now: () => string = () => new Date().toISOString(), uploadsDir?: string): Jobs {
     const jobs = new Jobs(maxQueued, now);
     let raw: unknown;
     try {
@@ -176,8 +182,11 @@ export class Jobs {
       const num = (v: unknown): number | null => (typeof v === "number" ? v : null);
       const promptSent = typeof r["promptSent"] === "string" ? r["promptSent"] : typeof r["prompt"] === "string" ? r["prompt"] : "";
       const request = { ...r, lora, loraScale: num(r["loraScale"]), loraGuidance: num(r["loraGuidance"]), promptSent };
-      const job = { ...item, request, references: [] } as unknown as JobRecord;
-      if (!isTerminal(job.status)) {
+      const references = referencesOf(uploadsDir, item["id"]);
+      const wanted = typeof r["referenceImages"] === "number" ? r["referenceImages"] : 0;
+      const keep = status === "queued" && references.length === wanted;
+      const job = { ...item, request, references: keep ? references : [] } as unknown as JobRecord;
+      if (!isTerminal(job.status) && !keep) {
         job.status = "failed";
         job.error = { code: "generation_failed", message: RESTARTED };
         job.updatedAt = now();
@@ -186,6 +195,14 @@ export class Jobs {
     }
     return jobs;
   }
+}
+
+/** A waiting job's uploaded references, in the order they were written (01.png, 02.jpg, …). */
+function referencesOf(uploadsDir: string | undefined, id: string): string[] {
+  if (uploadsDir === undefined) return [];
+  const dir = path.join(uploadsDir, id);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).sort().map((name) => path.join(dir, name));
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {

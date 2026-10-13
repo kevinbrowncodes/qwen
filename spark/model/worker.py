@@ -10,7 +10,8 @@ Protocol: one JSON object per line (spark/model-server/src/protocol.ts).
 
 stdout carries protocol lines only: the libraries' own prints and progress bars are sent to stderr, which the server
 logs. A cancel is honoured at the next denoising step: the step callback raises, the pipeline unwinds, and the worker
-is free for the next job.
+is free for the next job. Reading stdin, the stops and the loop that takes jobs are jobloop.py (STORY_026), which
+needs no torch and is tested in the gate.
 
 Add-ons (LoRAs, STORY_019) are loaded once, after the pipeline, and left unfused: each job enables the one it names
 at its strength, or disables them all, so switching costs nothing. One that fails to load is logged and left out, and
@@ -21,10 +22,11 @@ step, so such a job takes about twice as long.
 
 import json
 import os
-import queue
 import select
 import sys
 import threading
+
+from jobloop import JobLoop
 
 # Keep the real stdout for the protocol, and point fd 1 (and Python's print) at stderr before any library loads.
 _protocol = os.fdopen(os.dup(1), "w", buffering=1)
@@ -36,38 +38,11 @@ from PIL import Image  # noqa: E402
 from PIL.PngImagePlugin import PngInfo  # noqa: E402
 
 WEIGHTS = os.environ.get("WEIGHTS", "/weights")
-_lock = threading.Lock()
-_cancelled: set = set()
-_jobs: "queue.Queue[dict]" = queue.Queue()
+_loop = JobLoop(_protocol)
 
 
 class Cancelled(Exception):
     pass
-
-
-def say(message: dict) -> None:
-    with _lock:
-        _protocol.write(json.dumps(message) + "\n")
-        _protocol.flush()
-
-
-def read_stdin() -> None:
-    for line in sys.stdin:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            message = json.loads(line)
-        except json.JSONDecodeError:
-            print(f"worker: ignoring a line that is not JSON: {line[:80]}", file=sys.stderr)
-            continue
-        if message.get("type") == "cancel":
-            with _lock:
-                _cancelled.add(message.get("id"))
-        elif message.get("type") == "job":
-            _jobs.put(message)
-    # The server closed our stdin: finish.
-    _jobs.put({"type": "exit"})
 
 
 def load_image(path: str) -> Image.Image:
@@ -91,7 +66,7 @@ def read_init(timeout: float = 2.0) -> list:
     if message.get("type") == "init":
         return [l for l in message.get("loras") or [] if isinstance(l, dict) and l.get("id") and l.get("path")]
     if message.get("type") == "job":
-        _jobs.put(message)  # not expected before ready, but never dropped
+        _loop.put(message)  # not expected before ready, but never dropped
     return []
 
 
@@ -139,14 +114,14 @@ def png_info(job: dict, image: Image.Image) -> PngInfo:
     return info
 
 
-def run(pipe, job: dict, loaded: list) -> None:
+def run(pipe, job: dict, loaded: list, loop: JobLoop) -> None:
     job_id = job["id"]
+    say = loop.say
     steps = int(job.get("steps", 40))
 
     def on_step(_pipe, step: int, _timestep, callback_kwargs: dict) -> dict:
-        with _lock:
-            if job_id in _cancelled:
-                raise Cancelled()
+        if loop.stopped(job_id):
+            raise Cancelled()
         say({"type": "progress", "id": job_id, "step": step + 1, "steps": steps})
         return callback_kwargs
 
@@ -181,8 +156,6 @@ def run(pipe, job: dict, loaded: list) -> None:
     except Exception as error:  # the server reports the message; the worker stays up for the next job
         say({"type": "failed", "id": job_id, "message": f"{type(error).__name__}: {error}"[:300]})
     finally:
-        with _lock:
-            _cancelled.discard(job_id)
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
@@ -193,19 +166,9 @@ def main() -> int:
     pipe = QwenImage21Pipeline.from_pretrained(WEIGHTS, torch_dtype=torch.bfloat16).to("cuda")
     pipe.set_progress_bar_config(disable=True)
     loaded = load_loras(pipe, read_init())
-    threading.Thread(target=read_stdin, daemon=True).start()
-    say({"type": "ready", "loras": loaded})
-    while True:
-        job = _jobs.get()
-        if job.get("type") == "exit":
-            return 0
-        with _lock:
-            if job["id"] in _cancelled:
-                _cancelled.discard(job["id"])
-                say({"type": "cancelled", "id": job["id"]})
-                continue
-        run(pipe, job, loaded)
-
+    threading.Thread(target=_loop.read, args=(sys.stdin,), daemon=True).start()
+    _loop.say({"type": "ready", "loras": loaded})
+    return _loop.serve(lambda job, loop: run(pipe, job, loaded, loop))
 
 if __name__ == "__main__":
     sys.exit(main())

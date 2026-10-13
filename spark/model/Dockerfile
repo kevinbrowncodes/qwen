@@ -53,7 +53,7 @@ RUN /srv/model/venv/bin/pip install --quiet "peft==${PEFT_VERSION}" \
 
 # Node for the model server: the official binary, the same pinned image the app uses (glibc 2.36 → runs on 24.04).
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
-COPY --chown=model:model model/try.py model/worker.py /srv/model/
+COPY --chown=model:model model/try.py model/worker.py model/jobloop.py /srv/model/
 COPY --chown=model:model model-server/package.json /srv/model-server/
 COPY --chown=model:model model-server/src/ /srv/model-server/src/
 ENV PATH="/srv/model/venv/bin:${PATH}" DIFFUSERS_COMMIT="${DIFFUSERS_COMMIT}" \

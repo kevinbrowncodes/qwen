@@ -78,7 +78,14 @@ Community LoRAs for Qwen-Image-2.1 (never ones for the older 20B Qwen-Image, whi
 
 ## The model server (STORY_015, STORY_016)
 
-- **The image:** `qwen/model:dev` runs `node /srv/model-server/src/main.ts`. The server owns the contract (HTTP, validation, a queue that runs one job at a time and holds up to 8 waiting, cancel, results on disk). It starts `python3 /srv/model/worker.py` and talks to it in JSON lines (`spark/model-server/src/protocol.ts`). If the worker dies, the server fails the job it was running and restarts the worker.
+- **The image:** `qwen/model:dev` runs `node /srv/model-server/src/main.ts`. The server owns the contract (HTTP, validation, a queue that runs one job at a time and holds up to 8 waiting, cancel, results on disk). It starts `python3 /srv/model/worker.py` and talks to it in JSON lines (`spark/model-server/src/protocol.ts`). The worker's job loop (stdin, stops, protocol lines) is `spark/model/jobloop.py`, standard library only, so the gate tests it without torch (`spark/model/test_jobloop.py`, STORY_026). If the worker dies, the server fails the job it was running and restarts the worker.
+- **The watchdog (STORY_026, after BUG_011's two-day stall):**
+  - a Stop of the running job that the worker has not answered within **60 s** gets the worker restarted, and the job stays stopped;
+  - a running job the worker has said nothing about for **5 minutes** is failed ("The model worker stopped responding during this image and was restarted.") and the worker restarted.
+
+  A restart reloads the pipeline and add-ons for about 4 minutes. Waiting jobs stay queued through it.
+- **`GET /health`** adds, beyond the contract's fields and `ready`: `job` (the job in progress with `startedAt`, `lastHeardAt` and `stopRequestedAt`, or `null`), `queued` (how many are waiting) and `lastRestart` (`{at, reason}` with reason `exited`, `stop not answered` or `silent`, or `null`). A `job` whose `lastHeardAt` is minutes old is a stall in progress.
+- **Restarting the server keeps waiting jobs.** A job that was waiting comes back waiting, an edit with its references from `outputs/uploads/<id>/`. A job that was running fails with "The model server restarted before this job finished." Upload folders of finished jobs are removed at start.
 - **Starting it:** `spark/up.sh` builds and starts the `qwen-model` service (`spark/compose.yaml`, project `qwen-spark`):
   - GPU, `restart: unless-stopped`;
   - weights read-only, outputs in `spark/data/outputs/`;

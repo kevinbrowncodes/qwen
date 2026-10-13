@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RESTARTED } from "./jobs.ts";
 import type { Lora } from "./loras.ts";
-import { createModelServer, WORKER_STOPPED, type ModelServer } from "./server.ts";
+import { createModelServer, WORKER_SILENT, WORKER_STOPPED, type ModelServer, type ModelServerOptions } from "./server.ts";
 
 const FAKE = fileURLToPath(new URL("./fake-worker.ts", import.meta.url));
 const FIXTURES = fileURLToPath(new URL("../../../tools/stub-generation-server/fixtures/", import.meta.url));
@@ -19,7 +19,9 @@ let log = "";
 let model: ModelServer | null = null;
 let base = "";
 
-async function start(extra: { apiKey?: string; maxQueued?: number; loras?: readonly Lora[] } = {}): Promise<void> {
+type Extra = Partial<Pick<ModelServerOptions, "apiKey" | "maxQueued" | "cancelGraceMs" | "silenceMs" | "watchdogTickMs" | "killAfterMs">> & { loras?: readonly Lora[] };
+
+async function start(extra: Extra = {}): Promise<void> {
   process.env["FAKE_LOG"] = log;
   model = createModelServer({ outputDir: dir, workerCommand: ["node", FAKE], restartDelayMs: 50, log: () => undefined, ...extra });
   base = `http://127.0.0.1:${String(await model.listen(0))}`;
@@ -286,5 +288,91 @@ describe("add-ons (STORY_019)", () => {
     expect(await terminal(crash)).toMatchObject({ status: "failed" });
     expect(await terminal(waiting)).toMatchObject({ status: "failed", error: { message: "The add-on fake-detail is not loaded on the model server." } });
     expect(jobs().some((m) => m["id"] === waiting)).toBe(false);
+  });
+});
+
+describe("the watchdog and restarts (STORY_026, BUG_011)", () => {
+  const fast = { cancelGraceMs: 200, silenceMs: 300, watchdogTickMs: 20, killAfterMs: 500 };
+  const health = async (): Promise<Json> => json(await fetch(`${base}/health`));
+
+  it("restarts a worker that does not answer a stop, keeps the job stopped, and runs the next one", async () => {
+    await start(fast);
+    const deaf = await create({ prompt: "deaf", ratio: "1:1" });
+    const next = await create({ prompt: "after", ratio: "1:1" });
+    await until(async () => (await status(deaf))["status"] === "running");
+    expect((await fetch(`${base}/jobs/${deaf}`, { method: "DELETE" })).status).toBe(202);
+    expect(await terminal(next)).toMatchObject({ status: "done" });
+    expect(await status(deaf)).toMatchObject({ status: "cancelled" });
+    expect((await health())["lastRestart"]).toMatchObject({ reason: "stop not answered" });
+  });
+
+  it("fails a job the worker has gone silent on, restarts the worker, and runs the jobs waiting behind it", async () => {
+    await start(fast);
+    const hang = await create({ prompt: "hang", ratio: "1:1" });
+    const b = await create({ prompt: "second", ratio: "1:1" });
+    const c = await create({ prompt: "third", ratio: "1:1" });
+    expect(await terminal(hang)).toMatchObject({ status: "failed", error: { message: WORKER_SILENT } });
+    expect(await terminal(b)).toMatchObject({ status: "done" });
+    expect(await terminal(c)).toMatchObject({ status: "done" });
+    expect((await health())["lastRestart"]).toMatchObject({ reason: "silent" });
+  });
+
+  it("does not restart a worker that is answering", async () => {
+    await start({ ...fast, cancelGraceMs: 60_000, silenceMs: 60_000 });
+    expect(await terminal(await create({ prompt: "fine", ratio: "1:1" }))).toMatchObject({ status: "done" });
+    expect((await health())["lastRestart"]).toBeNull();
+  });
+
+  it("says on /health what the worker is busy with and when it last spoke", async () => {
+    await start();
+    expect(await health()).toMatchObject({ ok: true, ready: true, job: null, queued: 0, lastRestart: null });
+    const a = await create({ prompt: "slow", ratio: "1:1" });
+    await create({ prompt: "waiting", ratio: "1:1" });
+    await until(async () => (await status(a))["status"] === "running");
+    const first = await health();
+    expect(first).toMatchObject({ job: { id: a, status: "running", stopRequestedAt: null }, queued: 1 });
+    const heard = (h: Json): string => String((h["job"] as Json | null)?.["lastHeardAt"]);
+    await until(async () => heard(await health()) > heard(first));
+    await fetch(`${base}/jobs/${a}`, { method: "DELETE" });
+    expect(((await health())["job"] as Json)["stopRequestedAt"]).toEqual(expect.any(String));
+    await until(async () => (await health())["job"] === null || ((await health())["job"] as Json)["id"] !== a);
+  });
+
+  it("reports a worker that died by itself as exited", async () => {
+    await start();
+    await terminal(await create({ prompt: "crash now", ratio: "1:1" }));
+    expect((await health())["lastRestart"]).toMatchObject({ reason: "exited" });
+  });
+
+  it("keeps a waiting edit and its reference across a server restart and runs it after", async () => {
+    await start();
+    const running = await create({ prompt: "slow", ratio: "1:1" });
+    const form = new FormData();
+    form.set("prompt", "make it blue");
+    form.append("referenceImage", new Blob([new Uint8Array(reference)], { type: "image/png" }), "a.png");
+    const res = await fetch(`${base}/jobs`, { method: "POST", body: form });
+    const edit = String((await json(res))["id"]);
+    await until(async () => (await status(running))["status"] === "running");
+    await model?.close();
+    expect(existsSync(path.join(dir, "uploads", edit, "01.png"))).toBe(true);
+    await start();
+    expect(await status(running)).toMatchObject({ status: "failed", error: { message: RESTARTED } });
+    expect(await terminal(edit)).toMatchObject({ status: "done" });
+    const sent = sentToWorker().filter((m) => m["type"] === "job" && m["id"] === edit);
+    expect(sent.map((m) => m["references"])).toEqual([[path.join(dir, "uploads", edit, "01.png")]]);
+    expect(existsSync(path.join(dir, "uploads", edit))).toBe(false);
+  });
+
+  it("removes upload folders left over from finished or forgotten jobs at start", async () => {
+    await start();
+    const done = await create({ prompt: "done", ratio: "1:1" });
+    await terminal(done);
+    await model?.close();
+    for (const name of [done, "not-a-job"]) {
+      mkdirSync(path.join(dir, "uploads", name), { recursive: true });
+      writeFileSync(path.join(dir, "uploads", name, "01.png"), reference);
+    }
+    await start();
+    expect(readdirSync(path.join(dir, "uploads"))).toEqual([]);
   });
 });

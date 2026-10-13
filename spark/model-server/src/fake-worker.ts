@@ -1,7 +1,8 @@
 /**
  * A stand-in for spark/model/worker.py in the gate (STORY_015): the same line protocol, no GPU. It copies the stub's
  * fixture PNG as its "result", steps every FAKE_STEP_MS, and behaves by keyword in the prompt: "crash" exits,
- * "fail" reports a failure, "slow" takes 200 steps. Every message it receives is appended to FAKE_LOG. It reports
+ * "fail" reports a failure, "slow" takes 200 steps, "deaf" takes 200 steps and never answers a stop, and "hang" sends
+ * one progress line and then nothing (the two silences STORY_026's watchdog is for). Every message it receives is appended to FAKE_LOG. It reports
  * ready with the add-ons from `init` (STORY_019), except any named in FAKE_LORA_FAIL (comma-separated), which it
  * reports as failing to load, as the real worker does.
  */
@@ -27,10 +28,15 @@ setTimeout(() => {
 async function run(job: { id: string; prompt: string; steps: number; output: string; width?: number; height?: number }): Promise<void> {
   busy = true;
   if (job.prompt.includes("crash")) process.exit(3);
-  const steps = job.prompt.includes("slow") ? 200 : 4;
+  if (job.prompt.includes("hang")) {
+    say({ type: "progress", id: job.id, step: 1, steps: 4 });
+    return; // busy for good: only a restart frees it
+  }
+  const deaf = job.prompt.includes("deaf");
+  const steps = job.prompt.includes("slow") || deaf ? 200 : 4;
   for (let step = 1; step <= steps; step++) {
     await new Promise((r) => setTimeout(r, stepMs));
-    if (cancelled.has(job.id)) {
+    if (cancelled.has(job.id) && !deaf) {
       say({ type: "cancelled", id: job.id });
       busy = false;
       return;
