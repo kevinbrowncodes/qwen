@@ -22,8 +22,15 @@ services:
       # replacing node_modules, and with no terminal it aborts. CI=true lets it proceed (BUG_007).
       CI: "true"
       npm_config_store_dir: ${RECON_REPO}/recon/.cache/pnpm-store
+      # STORY_027: the repo's .env, mounted read-only below; hands.ts reads HANDS_API_TOKEN and HANDS_URL from it.
+      HANDS_ENV_FILE: /tmp/hands.env
+    extra_hosts:
+      # STORY_027: a container cannot resolve .local names; run.sh resolves hands.local on the host.
+      - "hands.local:${RECON_HANDS_HOST}"
     volumes:
       - ${RECON_REPO}:${RECON_REPO}
       # The Spark's desktop: the X socket and its auth cookie, read-only.
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - ${RECON_XAUTH}:/tmp/.Xauthority:ro
+      # STORY_027: .env for the hands command (an empty mount for every other command).
+      - ${RECON_ENV_FILE}:/tmp/hands.env:ro

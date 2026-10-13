@@ -117,6 +117,20 @@ Each step makes no network request. Each runs an identity guard first: it reads 
 
 `recon/run.sh login` and `recon/run.sh check` still exist from the withdrawn STORY_001, but nothing depends on them. The container's pnpm cache lives in `recon/.cache/`. See [CLAUDE.md → §3e](CLAUDE.md#3e-how-recon-is-recorded).
 
+### Through Hands, in the owner's signed-in Safari on the Mac (EPIC_006)
+
+The second recon pass is driven through [Hands](https://github.com/kevinbrowncodes/hands), the owner's tool that works a Mac through the macOS Accessibility API and the keyboard (no browser automation, no mouse). Hands runs on the Mac at `http://hands.local/`; the recon client runs on the Spark, in the same recon container, and files every look it takes:
+
+```bash
+recon/run.sh hands 2026-10-14 preflight                                   # Hands' version, the hand's grants, one look of Safari, signed-out or not
+recon/run.sh hands 2026-10-14 look --app Safari --as home-signed-in@1920  # one look, saved
+recon/run.sh hands 2026-10-14 act '{"do":"press","look":"<look id>","n":12}' --as mode-menu-open@1920   # one act, with the look after it
+```
+
+Each look lands at once in the gitignored `recon/out/<date>/hands/` as `NN-<state>@<width>.json` (the elements with their frames in screen points, the asserted width, the act that produced it with typed text reduced to a length, and Hands' version), `.png` (the screen) and `.marked.png` (the screen with every element numbered); `acts.jsonl` logs every command. Saving at once matters because Hands keeps only its newest 50 looks. A wait longer than Hands' 30-second cap is split, with a look saved between chunks. A full capture is on the order of half a gigabyte, on the Spark's disk.
+
+`HANDS_API_TOKEN` (the `API_TOKEN` from Hands' own `.env` on the Mac) and `HANDS_URL` (default `http://hands.local`) live in the repo's `.env`, which `run.sh` mounts read-only into the container; the shell never reads it and the client never prints the token. A container cannot resolve `.local` names, so `run.sh` resolves `hands.local` on the Spark and passes the address in (`HANDS_HOST=<address>` overrides). The client can address only Hands: a test fails it if it ever names the reference. Hands' own refusals (a missing grant, Safari not running, a look no longer held, a wait that ran out) are printed in Hands' words with exit code 1; a missing token or a usage error exits 2.
+
 ## Running the UI
 
 Everything runs on the Spark in containers from `compose.yaml` (project `qwen`); the host needs only Docker. Port **3100** is ours, and port 3000 belongs to the sibling minimax app. VS Code forwards 3100 to the Mac.
@@ -136,7 +150,7 @@ docker compose --profile dev up app-dev          # next dev with hot reload on h
 docker compose up -d --build app                 # the production image on http://localhost:3100 (stop app-dev first)
 ```
 
-The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL_API_KEY` (optional) and `HISTORY_FILE` (where history is kept; `/data/history.json` in the `app-data` volume). Set them in a gitignored `.env` beside `compose.yaml`; [.env.example](.env.example) shows its shape. The same file holds `CIVITAI_TOKEN`, the Civitai API key `spark/fetch-loras.sh` needs for the add-ons only Civitai hosts (CHORE_005): it is mounted read-only into the fetch container and never printed.
+The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL_API_KEY` (optional) and `HISTORY_FILE` (where history is kept; `/data/history.json` in the `app-data` volume). Set them in a gitignored `.env` beside `compose.yaml`; [.env.example](.env.example) shows its shape. The same file holds `CIVITAI_TOKEN`, the Civitai API key `spark/fetch-loras.sh` needs for the add-ons only Civitai hosts (CHORE_005): it is mounted read-only into the fetch container and never printed. It also holds `HANDS_API_TOKEN` and `HANDS_URL` for the recon client that drives Hands (STORY_027; see [Running Recon](#running-recon)).
 
 ## Running the Model
 
