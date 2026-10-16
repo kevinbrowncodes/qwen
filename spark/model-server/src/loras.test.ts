@@ -121,6 +121,15 @@ describe("the info card's fields (STORY_030)", () => {
       if (l.abilities?.some((a) => a.bench !== undefined)) expect(l.benchSource, l.id).toBeTruthy();
     }
   });
+
+  it("keeps the manifest's order, and the committed manifest is in order of downloads, most first (CHORE_006)", () => {
+    expect(parseManifest(manifest([{ ...entry, id: "z" }, { ...entry, id: "a" }, { ...entry, id: "m" }]), "/l").map((l) => l.id)).toEqual(["z", "a", "m"]);
+    const loras = parseManifest(readFileSync(new URL("../../loras.json", import.meta.url), "utf8"), "/l");
+    const counts = loras.map((l) => l.downloads ?? -1);
+    expect(counts.every((n) => n >= 0)).toBe(true);
+    expect(counts).toEqual([...counts].sort((x, y) => y - x));
+    for (const l of loras) expect(l.downloadsReadOn, l.id).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
 });
 
 describe("installedLoras", () => {
