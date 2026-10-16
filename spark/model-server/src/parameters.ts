@@ -27,7 +27,7 @@ export function parametersFor(request: JobRequest, labels: Labels = {}): Paramet
   const sizeLine = lines.length;
   lines.push(`Size: ${request.ratio ?? (request.referenceImages > 0 ? "as the reference" : "default")}`);
   lines.push(`Seed: ${String(request.seed)}`);
-  lines.push(request.lora === null ? "Add-on: None" : `Add-on: ${labels.lora ?? request.lora} · strength ${settingText(request.loraScale)} · guidance ${settingText(request.loraGuidance)}`);
+  lines.push(request.lora === null ? "LoRA: None" : `LoRA: ${labels.lora ?? request.lora} · strength ${settingText(request.loraScale)} · guidance ${settingText(request.loraGuidance)}`);
   if (request.referenceImages > 0) lines.push(`Edit of: ${String(request.referenceImages)} reference image${request.referenceImages === 1 ? "" : "s"}`);
   return { lines, sizeLine };
 }

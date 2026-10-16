@@ -153,10 +153,10 @@ export function scorecardTemplate(plan: Plan, index: BenchIndex, info: readonly 
     "| --- | --- | --- | --- |",
     ...plan.settings.map((s) => {
       const i = info.find((x) => x.id === s);
-      return `| \`${s}\` | ${s === NONE ? "no add-on" : (i?.label ?? "")} | ${i?.scale === undefined ? "" : String(i.scale)} | ${i?.guidance === undefined ? "default (none)" : String(i.guidance)} |`;
+      return `| \`${s}\` | ${s === NONE ? "no LoRA" : (i?.label ?? "")} | ${i?.scale === undefined ? "" : String(i.scale)} | ${i?.guidance === undefined ? "default (none)" : String(i.guidance)} |`;
     }),
     "",
-    "## Subjects (clothed, no add-on)",
+    "## Subjects (clothed, no LoRA)",
     "",
     "| Subject | Job | Seconds | Status |",
     "| --- | --- | --- | --- |",
@@ -176,7 +176,7 @@ export function scorecardTemplate(plan: Plan, index: BenchIndex, info: readonly 
     "",
     "## Decision (for STORY_023)",
     "",
-    "| Add-on | Keep? | Strength | Guidance | Why |",
+    "| LoRA | Keep? | Strength | Guidance | Why |",
     "| --- | --- | --- | --- | --- |",
     ...plan.settings.filter((s) => s !== NONE).map((s) => `| \`${s}\` |  |  |  |  |`),
     "",
@@ -315,7 +315,7 @@ function loadIndex(file: string, base: string): BenchIndex {
 export async function runBench(options: RunOptions): Promise<RunOutcome> {
   const report = options.report ?? ((): undefined => undefined);
   const c: Client = { base: options.base, pollMs: options.pollMs ?? 3000, ...(options.apiKey === undefined ? {} : { apiKey: options.apiKey }) };
-  const title = options.title ?? `Add-on bench, ${new Date().toISOString().slice(0, 10)}`;
+  const title = options.title ?? `LoRA bench, ${new Date().toISOString().slice(0, 10)}`;
   mkdirSync(options.outDir, { recursive: true });
   const indexFile = path.join(options.outDir, "index.json");
   const index = loadIndex(indexFile, options.base);

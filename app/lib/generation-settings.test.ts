@@ -19,7 +19,7 @@ describe("settingsRows", () => {
     expect(row(done, "model")?.value).toBe("Qwen-Image 2.1");
     expect(row(done, "size")?.value).toBe("16:9 · 1376 × 768");
     expect(row(done, "seed")?.value).toBe("42");
-    expect(row(done, "addOn")).toEqual({ key: "addOn", label: "Add-on", value: "None" });
+    expect(row(done, "addOn")).toEqual({ key: "addOn", label: "LoRA", value: "None" });
     expect(row(done, "time")?.value).toBe("2 min 6 s");
   });
 
@@ -72,7 +72,7 @@ describe("copyAllText", () => {
       "Model: Qwen-Image 2.1",
       "Size: as the reference · 1376 × 768",
       "Seed: 42",
-      "Add-on: Fake detail · strength 1 · guidance default",
+      "LoRA: Fake detail · strength 1 · guidance default",
       "Edit of: 1 reference image",
       "Time: 2 min 6 s",
     ]);

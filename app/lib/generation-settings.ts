@@ -81,13 +81,13 @@ export function settingsRows(source: SettingsSource, labels: Labels): SettingRow
   rows.push({ key: "size", label: "Size", value: source.result ? `${shape} · ${String(source.result.width)} × ${String(source.result.height)}` : shape });
   rows.push({ key: "seed", label: "Seed", value: r.seed === null ? NOT_RECORDED : String(r.seed) });
   if (lora === null) {
-    rows.push({ key: "addOn", label: "Add-on", value: "None" });
+    rows.push({ key: "addOn", label: "LoRA", value: "None" });
   } else {
     const label = labels.loras.find((l) => l.id === lora)?.label ?? lora;
     // An add-on always has a strength, so a missing one means this job's settings were not recorded (before v1.3).
     const scale = r.loraScale ?? null;
     const detail = scale === null ? `strength and guidance ${NOT_RECORDED}` : `strength ${settingText(scale)} · guidance ${settingText(r.loraGuidance ?? null)}`;
-    rows.push({ key: "addOn", label: "Add-on", value: label, detail });
+    rows.push({ key: "addOn", label: "LoRA", value: label, detail });
   }
   if (r.referenceImages > 0) rows.push({ key: "editOf", label: "Edit of", value: `${String(r.referenceImages)} reference image${r.referenceImages === 1 ? "" : "s"}` });
   const time = timeText(source);

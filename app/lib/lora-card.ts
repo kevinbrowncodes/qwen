@@ -8,8 +8,7 @@ import { settingText } from "./generation-settings";
 
 export const NOT_STATED = "not stated";
 export const NOT_TESTED = "not tested";
-/** Says "add-on" until CHORE_006 renames the menu to "LoRA" everywhere at once. */
-export const USE_LABEL = "Use this add-on";
+export const USE_LABEL = "Use this LoRA";
 export const IN_USE_LABEL = "In use";
 
 export interface CardAbility {

@@ -65,7 +65,7 @@ export function validateRequest(caps: Capabilities, fields: Record<string, unkno
   let lora: string | null = null;
   if (rawLora !== undefined && rawLora !== null && rawLora !== "" && rawLora !== "none") {
     if (typeof rawLora !== "string" || !caps.loras.some((l) => l.id === rawLora)) {
-      throw new HttpError(400, "unsupported_option", typeof rawLora === "string" ? `add-on ${rawLora} is not offered by this server` : "lora must be a string", "lora");
+      throw new HttpError(400, "unsupported_option", typeof rawLora === "string" ? `LoRA ${rawLora} is not offered by this server` : "lora must be a string", "lora");
     }
     lora = rawLora;
   }

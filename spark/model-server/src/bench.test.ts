@@ -64,7 +64,7 @@ describe("the plan", () => {
     const md = scorecardTemplate(plan, index, info, "Bench");
     expect(md).toContain("| `fake-detail` | Fake detail | 0.8 | 3 |");
     expect(md).toContain("| `fake-style` | Fake style | 1 | default (none) |");
-    expect(md).toContain("| `none` | no add-on |  | default (none) |");
+    expect(md).toContain("| `none` | no LoRA |  | default (none) |");
     expect(md).toContain("| A-1001 (seed 1001) | `subject-` | 60 | done |");
     expect(md).toContain("| `edit/A-1001/fake-style` | `01234567` | 100 | done |  |  |  |  |  |");
     expect(md).toContain("| `edit/A-1001/none` | `` |  | not run |  |  |  |  |  |");

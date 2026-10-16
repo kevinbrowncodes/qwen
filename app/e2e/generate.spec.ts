@@ -146,7 +146,7 @@ test("desktop: on a generation's page the composer's menus open upward, inside t
     expect(box?.y ?? -1).toBeGreaterThanOrEqual(0);
     expect((box?.y ?? 0) + (box?.height ?? Infinity)).toBeLessThanOrEqual(height);
   };
-  for (const name of ["Image model", "Aspect ratio", "Add-on"]) {
+  for (const name of ["Image model", "Aspect ratio", "LoRA"]) {
     await page.getByRole("combobox", { name }).click();
     await inside(page.getByRole("listbox", { name }));
     await page.keyboard.press("Escape");
@@ -169,8 +169,8 @@ test("Info shows the settings that made the image, Same seed again reproduces th
   await imageMode(page);
   await page.getByRole("combobox", { name: "Aspect ratio" }).click();
   await page.getByRole("option", { name: "1:1" }).click();
-  await page.getByRole("combobox", { name: "Add-on" }).click();
-  await page.getByRole("listbox", { name: "Add-on" }).getByRole("option", { name: "Fake detail" }).click();
+  await page.getByRole("combobox", { name: "LoRA" }).click();
+  await page.getByRole("listbox", { name: "LoRA" }).getByRole("option", { name: "Fake detail" }).click();
   await page.getByLabel("Prompt").fill("a red bicycle");
   await submitAndWait(page, () => page.getByRole("button", { name: "Send" }).click());
   const first = jobIdFromUrl(page);

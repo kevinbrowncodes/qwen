@@ -92,11 +92,11 @@ test("an add-on is chosen from the composer and the server receives it (STORY_01
   await page.goto("/");
   await page.getByRole("button", { name: "Select Mode" }).click();
   await page.getByRole("menuitem", { name: "Create Image" }).click();
-  const trigger = page.getByRole("combobox", { name: "Add-on" });
+  const trigger = page.getByRole("combobox", { name: "LoRA" });
   // Desktop shows the choice; narrow shows the icon alone, like the model's short label.
   if (info.project.name === "desktop") await expect(trigger).toHaveText("None");
   await trigger.click();
-  const list = page.getByRole("listbox", { name: "Add-on" });
+  const list = page.getByRole("listbox", { name: "LoRA" });
   await expect(list.getByRole("option")).toHaveText(["None", "Fake detail", "Fake style"]);
   await expect(list.getByRole("option", { selected: true })).toHaveText("None");
   if (info.project.name === "narrow") {
@@ -142,9 +142,9 @@ test("a LoRA's card says what it was made for and shows the facts, and choosing 
   await page.goto("/");
   await page.getByRole("button", { name: "Select Mode" }).click();
   await page.getByRole("menuitem", { name: "Create Image" }).click();
-  const trigger = page.getByRole("combobox", { name: "Add-on" });
+  const trigger = page.getByRole("combobox", { name: "LoRA" });
   await trigger.click();
-  const list = page.getByRole("listbox", { name: "Add-on" });
+  const list = page.getByRole("listbox", { name: "LoRA" });
   // Each option's text is still its label alone; the stub describes both of its LoRAs, so both have an info button.
   await expect(list.getByRole("option")).toHaveText(["None", "Fake detail", "Fake style"]);
   const infoButton = (name: string) => list.getByRole("option", { name }).locator(".clone-dropdown-item-info");
@@ -182,7 +182,7 @@ test("a LoRA's card says what it was made for and shows the facts, and choosing 
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - 8);
   expect(box.y).toBeGreaterThanOrEqual(0);
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
-  const pick = card.getByRole("button", { name: "Use this add-on" });
+  const pick = card.getByRole("button", { name: "Use this LoRA" });
   if (narrow) {
     // Inside the viewport and opening upward from its trigger, as the list does (it covers the prompt line, as the
     // list does), with 44px touch targets; the page itself does not scroll.
@@ -214,14 +214,14 @@ test("a LoRA's card opens and closes by keyboard (STORY_030)", async ({ page }, 
   await page.goto("/");
   await page.getByRole("button", { name: "Select Mode" }).click();
   await page.getByRole("menuitem", { name: "Create Image" }).click();
-  const trigger = page.getByRole("combobox", { name: "Add-on" });
+  const trigger = page.getByRole("combobox", { name: "LoRA" });
   await trigger.focus();
   await page.keyboard.press("Enter");
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("ArrowRight");
   await expect(page.getByRole("group", { name: "About Fake detail" })).toBeVisible();
   await page.keyboard.press("ArrowLeft");
-  await expect(page.getByRole("listbox", { name: "Add-on" }).getByRole("option", { name: "Fake detail" })).toHaveAttribute("data-active", "true");
+  await expect(page.getByRole("listbox", { name: "LoRA" }).getByRole("option", { name: "Fake detail" })).toHaveAttribute("data-active", "true");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("group", { name: /^About / })).toHaveCount(0);

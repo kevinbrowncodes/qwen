@@ -277,7 +277,7 @@ export function Composer({ onSubmit, externalError = null, busy = false, inject 
                         server describes has an info card (STORY_030). */}
                     {caps.loras.length > 0 ? (
                       <Dropdown
-                        label="Add-on"
+                        label="LoRA"
                         className="clone-dropdown-icon-only"
                         display={narrow ? <Icon id="appicon-toolbox" /> : <span>{caps.loras.find((l) => l.id === state.lora)?.label ?? "None"}</span>}
                         items={[{ id: NO_LORA, label: "None" }, ...caps.loras.map((l) => ({ id: l.id, label: l.label, ...(l.info ? { detail: <LoraCard info={l.info} /> } : {}) }))]}

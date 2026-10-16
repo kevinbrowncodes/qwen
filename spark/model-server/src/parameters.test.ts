@@ -7,17 +7,17 @@ const base: JobRequest = { prompt: "a red bicycle", ratio: "3:4", model: "qwen-i
 
 describe("parametersFor", () => {
   it("writes a text-to-image with no add-on as prompt, model, size, seed and None, the Size line marked", () => {
-    expect(parametersFor(base, { model: "Qwen-Image 2.1" })).toEqual({ lines: ["Prompt: a red bicycle", "Model: Qwen-Image 2.1", "Size: 3:4", "Seed: 42", "Add-on: None"], sizeLine: 2 });
+    expect(parametersFor(base, { model: "Qwen-Image 2.1" })).toEqual({ lines: ["Prompt: a red bicycle", "Model: Qwen-Image 2.1", "Size: 3:4", "Seed: 42", "LoRA: None"], sizeLine: 2 });
   });
 
   it("adds the prompt as sent, and the add-on with its strength and guidance, when one was used", () => {
     const p = parametersFor({ ...base, lora: "fake-detail", loraScale: 0.8, loraGuidance: 3, promptSent: "a red bicycle, sharp focus" }, { lora: "Fake detail" });
-    expect(p.lines).toEqual(["Prompt: a red bicycle", "Sent: a red bicycle, sharp focus", "Model: qwen-image-2.1", "Size: 3:4", "Seed: 42", "Add-on: Fake detail · strength 0.8 · guidance 3"]);
+    expect(p.lines).toEqual(["Prompt: a red bicycle", "Sent: a red bicycle, sharp focus", "Model: qwen-image-2.1", "Size: 3:4", "Seed: 42", "LoRA: Fake detail · strength 0.8 · guidance 3"]);
     expect(p.sizeLine).toBe(3);
   });
 
   it("says default for a missing guidance, and falls back to the id without a label", () => {
-    expect(parametersFor({ ...base, lora: "fake-style", loraScale: 1 }).lines).toContain("Add-on: fake-style · strength 1 · guidance default");
+    expect(parametersFor({ ...base, lora: "fake-style", loraScale: 1 }).lines).toContain("LoRA: fake-style · strength 1 · guidance default");
   });
 
   it("describes an edit's size and reference count", () => {

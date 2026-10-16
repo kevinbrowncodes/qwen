@@ -263,8 +263,8 @@ describe("add-ons (STORY_019)", () => {
     const c = await create({ prompt: "a red bicycle", ratio: "3:4" });
     expect(await terminal(c)).toMatchObject({ request: { lora: null, loraScale: null, loraGuidance: null, promptSent: "a red bicycle" } });
     const [first, , third] = jobs();
-    expect(first?.["parameters"]).toEqual({ lines: ["Prompt: a red bicycle", "Sent: a red bicycle, sharp focus", "Model: Qwen-Image 2.1", "Size: 3:4", "Seed: 7", "Add-on: Fake detail · strength 0.8 · guidance 3"], sizeLine: 3 });
-    expect(JSON.stringify(third?.["parameters"])).toContain('"Add-on: None"');
+    expect(first?.["parameters"]).toEqual({ lines: ["Prompt: a red bicycle", "Sent: a red bicycle, sharp focus", "Model: Qwen-Image 2.1", "Size: 3:4", "Seed: 7", "LoRA: Fake detail · strength 0.8 · guidance 3"], sizeLine: 3 });
+    expect(JSON.stringify(third?.["parameters"])).toContain('"LoRA: None"');
   });
 
   it("keeps a finished job's recorded settings when the server restarts with a changed strength (STORY_024)", async () => {
@@ -302,7 +302,7 @@ describe("add-ons (STORY_019)", () => {
     const crash = await create({ prompt: "crash now", ratio: "1:1" });
     const waiting = await create({ prompt: "a portrait", ratio: "1:1", lora: "fake-detail" });
     expect(await terminal(crash)).toMatchObject({ status: "failed" });
-    expect(await terminal(waiting)).toMatchObject({ status: "failed", error: { message: "The add-on fake-detail is not loaded on the model server." } });
+    expect(await terminal(waiting)).toMatchObject({ status: "failed", error: { message: "The LoRA fake-detail is not loaded on the model server." } });
     expect(jobs().some((m) => m["id"] === waiting)).toBe(false);
   });
 });

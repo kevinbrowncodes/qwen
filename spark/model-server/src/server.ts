@@ -175,7 +175,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
     const lora = job.request.lora === null ? undefined : loaded.find((l) => l.id === job.request.lora);
     if (job.request.lora !== null && !lora) {
       // The worker restarted and this add-on did not load again: fail the job rather than run it without.
-      jobs.fail(job.id, `The add-on ${job.request.lora} is not loaded on the model server.`);
+      jobs.fail(job.id, `The LoRA ${job.request.lora} is not loaded on the model server.`);
       cleanup(job);
       save();
       pump();

@@ -72,7 +72,7 @@ describe("Dropdown", () => {
 });
 
 describe("Dropdown with an info card (STORY_030)", () => {
-  const detailOptions = { infoIcon: "qwpcicon-info", backIcon: "qwpcicon-arrowLeft", pickLabel: "Use this add-on", selectedLabel: "In use" };
+  const detailOptions = { infoIcon: "qwpcicon-info", backIcon: "qwpcicon-arrowLeft", pickLabel: "Use this LoRA", selectedLabel: "In use" };
   const loras = [
     { id: "none", label: "None" },
     { id: "a", label: "Alpha", detail: <p>Alpha card</p> },
@@ -82,10 +82,10 @@ describe("Dropdown with an info card (STORY_030)", () => {
     const onSelect = vi.fn<(id: string) => void>();
     render(
       <StrictMode>
-        <Dropdown label="Add-on" display={<span>{selected}</span>} items={loras} selected={selected} onSelect={onSelect} detailOptions={detailOptions} />
+        <Dropdown label="LoRA" display={<span>{selected}</span>} items={loras} selected={selected} onSelect={onSelect} detailOptions={detailOptions} />
       </StrictMode>,
     );
-    const trigger = screen.getByRole("combobox", { name: "Add-on" });
+    const trigger = screen.getByRole("combobox", { name: "LoRA" });
     fireEvent.click(trigger);
     return { onSelect, trigger };
   }
@@ -119,7 +119,7 @@ describe("Dropdown with an info card (STORY_030)", () => {
   it("picks from the card and closes; an outside click closes without picking", () => {
     const first = setupCards();
     fireEvent.click(infoButton("Alpha"));
-    fireEvent.click(screen.getByRole("button", { name: "Use this add-on" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use this LoRA" }));
     expect(first.onSelect).toHaveBeenCalledWith("a");
     expect(screen.queryByRole("group")).toBeNull();
     expect(document.activeElement).toBe(first.trigger);
@@ -162,8 +162,8 @@ describe("Dropdown with an info card (STORY_030)", () => {
 
   it("shows no info button and ignores ArrowRight without detail options", () => {
     const onSelect = vi.fn<(id: string) => void>();
-    render(<Dropdown label="Add-on" display={<span>x</span>} items={loras} selected="none" onSelect={onSelect} />);
-    const trigger = screen.getByRole("combobox", { name: "Add-on" });
+    render(<Dropdown label="LoRA" display={<span>x</span>} items={loras} selected="none" onSelect={onSelect} />);
+    const trigger = screen.getByRole("combobox", { name: "LoRA" });
     fireEvent.click(trigger);
     expect(document.querySelector(".clone-dropdown-item-info")).toBeNull();
     fireEvent.keyDown(trigger, { key: "ArrowDown" });

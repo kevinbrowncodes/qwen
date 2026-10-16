@@ -66,7 +66,7 @@ describe("the Info panel", () => {
       "Model: Qwen-Image 2.1",
       "Size: 16:9 · 1376 × 768",
       "Seed: 42",
-      "Add-on: Fake detail · strength 0.8 · guidance default",
+      "LoRA: Fake detail · strength 0.8 · guidance default",
       "Time: 2 min 6 s",
     ]);
   });
