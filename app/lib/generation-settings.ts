@@ -45,7 +45,7 @@ export interface SettingRow {
 }
 
 /** A strength or guidance as the owner reads it: "1", "0.9", or "default" for none. */
-const settingText = (v: number | null): string => (v === null ? "default" : String(v));
+export const settingText = (v: number | null): string => (v === null ? "default" : String(v));
 
 /** "40 s", "2 min 6 s", "2 min", "1 h 5 min". */
 export function durationText(ms: number): string {

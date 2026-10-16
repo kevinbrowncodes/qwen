@@ -39,6 +39,37 @@ describe("parseCapabilities", () => {
   });
 });
 
+describe("a LoRA's info card in the capabilities (v1.4, STORY_030)", () => {
+  const base = { models: [{ id: "m", label: "M" }], ratios: [{ id: "1:1", width: 1, height: 1 }] };
+  const info = { scale: 0.8, guidance: 3, trigger: "sharp focus", madeFor: "Detail.", madeForReadOn: "2026-10-16", creator: "Someone", origin: "https://civitai.com/models/1", downloads: 605, downloadsReadOn: "2026-10-07", abilities: [{ subject: "Penis", claimed: "Trained on it.", bench: null }], benchSource: "A bench." };
+  const loras = (l: unknown[]): ReturnType<typeof parseCapabilities> => parseCapabilities({ ...base, loras: l });
+
+  it("keeps a contract-shaped info intact", () => {
+    expect(loras([{ id: "a", label: "A", info }])?.loras).toEqual([{ id: "a", label: "A", info }]);
+  });
+
+  it("gives a LoRA from a server before v1.4 no info", () => {
+    expect(loras([{ id: "a", label: "A" }])?.loras).toEqual([{ id: "a", label: "A" }]);
+  });
+
+  it("keeps the LoRA without its info when the info is off-contract, never dropping the LoRA", () => {
+    for (const bad of [{ ...info, scale: "1" }, { ...info, abilities: "Penis" }, "info", null]) {
+      expect(loras([{ id: "a", label: "A", info: bad }])?.loras, JSON.stringify(bad)).toEqual([{ id: "a", label: "A" }]);
+    }
+  });
+
+  it("drops an origin that is not http(s), so no other scheme can become a link", () => {
+    for (const origin of ["javascript:alert(1)", "data:text/html,x", "civitai.com/models/1"]) {
+      expect(loras([{ id: "a", label: "A", info: { ...info, origin } }])?.loras[0]?.info?.origin, origin).toBeNull();
+    }
+  });
+
+  it("reads off-contract fields as unknown, and skips an ability without a subject", () => {
+    const read = loras([{ id: "a", label: "A", info: { ...info, guidance: "3", creator: "", downloads: Number.NaN, abilities: [{ subject: "" }, { subject: "Anus", claimed: 4 }, "x"] } }])?.loras[0]?.info;
+    expect(read).toMatchObject({ guidance: null, creator: null, downloads: null, abilities: [{ subject: "Anus", claimed: null, bench: null }] });
+  });
+});
+
 describe("reduce", () => {
   const start = initialState();
 

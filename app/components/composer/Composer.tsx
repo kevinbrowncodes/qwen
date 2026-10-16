@@ -8,10 +8,12 @@
 import { useCallback, useEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { activeRatio, canSend, FALLBACK_CAPABILITIES, initialState, MATCH_REFERENCE, MAX_COUNT, NO_LORA, parseCapabilities, reduce, restore, serialize, shortModelLabel, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
 import { useFileDrop } from "@/lib/use-file-drop";
+import { IN_USE_LABEL, USE_LABEL } from "@/lib/lora-card";
 import { useNarrow } from "@/lib/use-narrow";
 import { Dropdown } from "../Dropdown";
 import { DropOverlay } from "./DropOverlay";
 import { Icon } from "../Icon";
+import { LoraCard } from "./LoraCard";
 import { ModeMenu } from "./ModeMenu";
 import { ReferenceThumbs } from "./ReferenceThumbs";
 
@@ -271,13 +273,15 @@ export function Composer({ onSubmit, externalError = null, busy = false, inject 
                       }}
                       placement={placement}
                     />
-                    {/* Community add-ons (STORY_019), only when the server has some; narrow shows the icon alone. */}
+                    {/* Community add-ons (STORY_019), only when the server has some; narrow shows the icon alone. Each one the
+                        server describes has an info card (STORY_030). */}
                     {caps.loras.length > 0 ? (
                       <Dropdown
                         label="Add-on"
                         className="clone-dropdown-icon-only"
                         display={narrow ? <Icon id="appicon-toolbox" /> : <span>{caps.loras.find((l) => l.id === state.lora)?.label ?? "None"}</span>}
-                        items={[{ id: NO_LORA, label: "None" }, ...caps.loras.map((l) => ({ id: l.id, label: l.label }))]}
+                        items={[{ id: NO_LORA, label: "None" }, ...caps.loras.map((l) => ({ id: l.id, label: l.label, ...(l.info ? { detail: <LoraCard info={l.info} /> } : {}) }))]}
+                        detailOptions={{ infoIcon: `${iconSet}-info`, backIcon: `${iconSet}-arrowLeft`, pickLabel: USE_LABEL, selectedLabel: IN_USE_LABEL }}
                         selected={state.lora}
                         onSelect={(id) => {
                           dispatch({ type: "setLora", lora: id });

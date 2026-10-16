@@ -13,7 +13,7 @@ import path from "node:path";
 import { CAPABILITIES, STEPS } from "./capabilities.ts";
 import { BusyError, isTerminal, Jobs, type JobRecord, type JobRequest } from "./jobs.ts";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
-import { withTrigger, type Lora } from "./loras.ts";
+import { loraInfo, withTrigger, type Lora } from "./loras.ts";
 import { parametersFor } from "./parameters.ts";
 import { progressFor, type FromWorker } from "./protocol.ts";
 import { HttpError, validateRequest, type Capabilities } from "./validation.ts";
@@ -110,7 +110,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
   const installed = options.loras ?? [];
   /** The add-ons the worker reported loaded in its last `ready`; one that failed to load is never offered. */
   let loaded: readonly Lora[] = [];
-  const capabilities = (): Capabilities => ({ ...CAPABILITIES, loras: loaded.map((l) => ({ id: l.id, label: l.label })) });
+  const capabilities = (): Capabilities => ({ ...CAPABILITIES, loras: loaded.map((l) => ({ id: l.id, label: l.label, info: loraInfo(l) })) });
 
   const save = (): void => {
     const temp = `${indexFile}.tmp`;

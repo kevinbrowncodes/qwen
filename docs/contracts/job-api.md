@@ -1,6 +1,6 @@
 # Job API contract: create, then status, then result
 
-**Version 1.3 (2026-10-07, STORY_024; v1.2 2026-09-29, STORY_019; v1.1 2026-09-27, STORY_017; v1 2026-09-26, STORY_006).** v1.1 lets an edit choose its ratio; v1.2 adds community add-ons (LoRAs); v1.3 echoes what the add-on contributed to each job. This is the one protocol the UI speaks to an image generation server. Two servers implement it:
+**Version 1.4 (2026-10-16, STORY_030; v1.3 2026-10-07, STORY_024; v1.2 2026-09-29, STORY_019; v1.1 2026-09-27, STORY_017; v1 2026-09-26, STORY_006).** v1.1 lets an edit choose its ratio; v1.2 adds community add-ons (LoRAs); v1.3 echoes what the add-on contributed to each job; v1.4 describes each add-on for the UI's info card. This is the one protocol the UI speaks to an image generation server. Two servers implement it:
 - the **stub** (`tools/stub-generation-server/`, STORY_006), with scripted outcomes for the test gate;
 - the **model server** on the Spark (`spark/`, EPIC_004), in front of Qwen-Image-2.1.
 
@@ -28,7 +28,7 @@ The browser never calls either directly. It calls the app's own routes (STORY_00
   "defaultRatio": "16:9",
   "prompt": { "maxChars": 4000 },
   "referenceImages": { "max": 10, "maxBytes": 20971520, "types": ["image/png", "image/jpeg", "image/webp"] },
-  "loras": [{ "id": "uncensored", "label": "Uncensored" }]
+  "loras": [{ "id": "uncensored", "label": "Uncensored", "info": { "scale": 1, "guidance": null, "trigger": null, "madeFor": "…", "madeForReadOn": "2026-10-16", "creator": "abenzerps", "origin": "https://…", "downloads": null, "downloadsReadOn": null, "abilities": [{ "subject": "Penis", "claimed": null, "bench": "…" }], "benchSource": "…" } }]
 }
 ```
 
@@ -36,6 +36,13 @@ The browser never calls either directly. It calls the app's own routes (STORY_00
 - `width` and `height` are what the server produces for a text-to-image job at that ratio. The model server's are about 1 megapixel, chosen from measurements on the Spark (STORY_014); the stub reports the same.
 - An edit takes the shape of its last reference at about 1 MP, unless it names a ratio (v1.1), in which case it is produced at that ratio's size.
 - `loras` (v1.2) lists the add-ons the server has loaded and can apply, by id and a label for the UI. It is `[]` when there are none. The strength each is applied at is the server's own setting.
+- `loras[].info` (v1.4) describes an add-on for the UI's info card. Every field is present, with `null` (or `[]`) where the server knows nothing:
+  - `scale`, `guidance` (number or `null`) and `trigger` (string or `null`): the strength, guidance and trigger words a job with this add-on gets. They report the server's setting; a client cannot change it.
+  - `madeFor` and `madeForReadOn`: one line from the creator's page on what the add-on is for (at most 200 characters), and the `YYYY-MM-DD` day it was read.
+  - `creator`, `origin` (the creator's page, an `http(s)` URL), and `downloads` with `downloadsReadOn`.
+  - `abilities`: up to six `{ subject, claimed, bench }`, where `subject` is free text (at most 24 characters) and `claimed` (what the creator's page says) and `bench` (what a bench showed) are text of at most 120 characters or `null`. `benchSource` says whose judgement the bench lines are, and when.
+
+  A client must read a server before v1.4, or an entry without `info`, as having no card.
 
 ## `POST /jobs`: create a job
 

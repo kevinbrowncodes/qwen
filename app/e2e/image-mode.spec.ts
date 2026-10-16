@@ -2,6 +2,7 @@
  * STORY_010: the composer enters image mode and offers the model and the aspect ratio. Reference readings:
  * docs/recon/2026-09-26/states/composer-image-mode@1437.json, aspect-ratio-open@1437.json, composer-typed@1437.json.
  */
+import type { Locator } from "@playwright/test";
 import { expect, expectImageLoaded, settledBox, submitAndWait, test } from "./fixtures";
 
 const RATIOS = ["1:1", "2:3", "3:2", "3:4", "4:3", "16:9", "9:16"];
@@ -121,4 +122,110 @@ test("an add-on is chosen from the composer and the server receives it (STORY_01
   const id = decodeURIComponent(new URL(page.url()).pathname.replace(/^\/g\//, ""));
   expect(await stub.received(id)).toMatchObject({ request: { lora: "fake-detail", prompt: "a portrait in a garden" } });
   await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${id}/result`, 64);
+});
+
+/** The element's box grown by its ::before's negative insets: the area a tap lands on (the touch-area rule). */
+async function touchArea(locator: Locator): Promise<{ width: number; height: number }> {
+  const box = await settledBox(locator);
+  const inset = await locator.evaluate((el) => {
+    const before = getComputedStyle(el, "::before");
+    if (before.content === "none" || before.position !== "absolute") return { x: 0, y: 0 };
+    const px = (v: string): number => Math.max(0, -parseFloat(v) || 0);
+    return { x: px(before.left) + px(before.right), y: px(before.top) + px(before.bottom) };
+  });
+  return { width: box.width + inset.x, height: box.height + inset.y };
+}
+
+test("a LoRA's card says what it was made for and shows the facts, and choosing from it sends that LoRA (STORY_030)", async ({ page, stub }, info) => {
+  const narrow = info.project.name === "narrow";
+  await page.route("**/api/jobs", (route) => (route.request().method() === "POST" ? route.continue({ headers: { ...route.request().headers(), "x-stub-script": "done-after-1-poll" } }) : route.continue()));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Select Mode" }).click();
+  await page.getByRole("menuitem", { name: "Create Image" }).click();
+  const trigger = page.getByRole("combobox", { name: "Add-on" });
+  await trigger.click();
+  const list = page.getByRole("listbox", { name: "Add-on" });
+  // Each option's text is still its label alone; the stub describes both of its LoRAs, so both have an info button.
+  await expect(list.getByRole("option")).toHaveText(["None", "Fake detail", "Fake style"]);
+  const infoButton = (name: string) => list.getByRole("option", { name }).locator(".clone-dropdown-item-info");
+  await expect(list.getByRole("option", { name: "None" }).locator(".clone-dropdown-item-info")).toHaveCount(0);
+  await expect(infoButton("Fake detail")).toHaveCount(1);
+  if (narrow) {
+    const area = await touchArea(infoButton("Fake style"));
+    expect(area.width).toBeGreaterThanOrEqual(44);
+    expect(area.height).toBeGreaterThanOrEqual(44);
+  }
+
+  // The bare card: the trigger, strength and guidance only, and nothing was picked.
+  await infoButton("Fake style").click();
+  const bare = page.getByRole("group", { name: "About Fake style" });
+  await expect(bare.getByTestId(/^lora-fact-/)).toHaveText(["Trigger—", "Strength1", "Guidancedefault"]);
+  await expect(bare.getByText("Made for")).toHaveCount(0);
+  await expect(bare.getByText("Capabilities")).toHaveCount(0);
+  if (!narrow) await expect(trigger).toHaveText("None");
+
+  // Back to the list, then the fully described card.
+  await bare.getByRole("button", { name: "Back to the list" }).click();
+  await infoButton("Fake detail").click();
+  const card = page.getByRole("group", { name: "About Fake detail" });
+  await expect(card.getByText("Sharper fine detail in skin, hair and fabric, for text-to-image and edits.")).toBeVisible();
+  await expect(card.getByTestId("lora-ability")).toHaveText(["DetailClaimedTrained on close-ups.BenchSharp in 3 of 4 edits.", "HandsClaimednot statedBenchnot tested"]);
+  await expect(card.getByText("Bench: The stub's own bench.")).toBeVisible();
+  await expect(card.getByTestId(/^lora-fact-/)).toHaveText(["CreatorStub Creator", "Sourceexample.com ↗", "Downloads18,951 (2026-10-07)", "Triggersharp focus", "Strength0.8", "Guidance3"]);
+  const source = card.getByRole("link", { name: /example\.com/ });
+  await expect(source).toHaveAttribute("href", "https://example.com/loras/fake-detail");
+  await expect(source).toHaveAttribute("target", "_blank");
+
+  const viewport = page.viewportSize() ?? { width: 0, height: 0 };
+  const box = await settledBox(card);
+  expect(box.x).toBeGreaterThanOrEqual(8);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - 8);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  const pick = card.getByRole("button", { name: "Use this add-on" });
+  if (narrow) {
+    // Inside the viewport and opening upward from its trigger, as the list does (it covers the prompt line, as the
+    // list does), with 44px touch targets; the page itself does not scroll.
+    const opener = await settledBox(trigger);
+    expect(box.y + box.height).toBeLessThanOrEqual(opener.y);
+    const back = await touchArea(card.getByRole("button", { name: "Back to the list" }));
+    expect(back.width).toBeGreaterThanOrEqual(44);
+    expect(back.height).toBeGreaterThanOrEqual(44);
+    expect((await settledBox(pick)).height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.scrollingElement?.scrollTop ?? 0)).toBe(0);
+    expect(await page.locator(".message-input-column-footer").evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
+  } else {
+    expect(Math.round(box.width)).toBe(300);
+  }
+
+  // Choosing from the card picks the LoRA, and the server receives it.
+  await pick.click();
+  await expect(card).toHaveCount(0);
+  if (!narrow) await expect(trigger).toHaveText("Fake detail");
+  await page.getByLabel("Prompt").fill("a portrait in a garden");
+  await submitAndWait(page, () => page.getByRole("button", { name: "Send" }).click());
+  const id = decodeURIComponent(new URL(page.url()).pathname.replace(/^\/g\//, ""));
+  expect(await stub.received(id)).toMatchObject({ request: { lora: "fake-detail" } });
+  await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${id}/result`, 64);
+});
+
+test("a LoRA's card opens and closes by keyboard (STORY_030)", async ({ page }, info) => {
+  test.skip(info.project.name === "narrow", "the keyboard path is the desktop's; the phone is covered by the touch test above");
+  await page.goto("/");
+  await page.getByRole("button", { name: "Select Mode" }).click();
+  await page.getByRole("menuitem", { name: "Create Image" }).click();
+  const trigger = page.getByRole("combobox", { name: "Add-on" });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("group", { name: "About Fake detail" })).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByRole("listbox", { name: "Add-on" }).getByRole("option", { name: "Fake detail" })).toHaveAttribute("data-active", "true");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("group", { name: /^About / })).toHaveCount(0);
+  await expect(page.getByRole("listbox")).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toHaveText("None");
 });

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createStubServer, type StubServer } from "./server.ts";
+import { CAPABILITIES, createStubServer, FAKE_LORA_SETTINGS, type StubServer } from "./server.ts";
 
 const result = readFileSync(new URL("../fixtures/result.png", import.meta.url));
 const reference = readFileSync(new URL("../fixtures/reference.png", import.meta.url));
@@ -267,6 +267,18 @@ describe("the contract's shared add-on vectors (v1.2, STORY_019)", () => {
   const loraCases: LoraCase[] = typeof vectors === "object" && vectors !== null && "loraCases" in vectors && Array.isArray(vectors.loraCases) ? (vectors.loraCases as LoraCase[]) : [];
   it("offers the two fake add-ons", async () => {
     expect(await json(await fetch(`${base}/capabilities`))).toMatchObject({ loras: [{ id: "fake-detail" }, { id: "fake-style" }] });
+  });
+  it("describes one add-on fully and the other bare, as the info card's two shapes (v1.4, STORY_030)", async () => {
+    const caps = await json(await fetch(`${base}/capabilities`));
+    expect(caps).toMatchObject({
+      loras: [
+        { id: "fake-detail", info: { scale: 0.8, guidance: 3, trigger: "sharp focus", creator: "Stub Creator", origin: "https://example.com/loras/fake-detail", downloads: 18951, downloadsReadOn: "2026-10-07", abilities: [{ subject: "Detail" }, { subject: "Hands", claimed: null, bench: null }] } },
+        { id: "fake-style", info: { scale: 1, guidance: null, trigger: null, madeFor: null, creator: null, origin: null, downloads: null, abilities: [], benchSource: null } },
+      ],
+    });
+  });
+  it("applies to a job exactly the strength, guidance and trigger its info card states", () => {
+    for (const l of CAPABILITIES.loras) expect(FAKE_LORA_SETTINGS[l.id]).toEqual({ scale: l.info.scale, guidance: l.info.guidance, trigger: l.info.trigger });
   });
   it.each(loraCases)("add-on $body.lora → $status", async (c) => {
     const res = await create(c.body);

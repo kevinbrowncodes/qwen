@@ -4,6 +4,7 @@
  */
 import type { MultipartFile } from "./multipart.ts";
 import type { ValidatedRequest } from "./jobs.ts";
+import type { LoraInfo } from "./loras.ts";
 
 export interface Capabilities {
   readonly models: ReadonlyArray<{ readonly id: string; readonly label: string }>;
@@ -11,8 +12,8 @@ export interface Capabilities {
   readonly defaultRatio: string;
   readonly prompt: { readonly maxChars: number };
   readonly referenceImages: { readonly max: number; readonly maxBytes: number; readonly types: readonly string[] };
-  /** The add-ons installed and loaded (v1.2, STORY_019); empty when there are none. */
-  readonly loras: ReadonlyArray<{ readonly id: string; readonly label: string }>;
+  /** The add-ons installed and loaded (v1.2, STORY_019); empty when there are none. v1.4 (STORY_030) adds each one's `info`. */
+  readonly loras: ReadonlyArray<{ readonly id: string; readonly label: string; readonly info?: LoraInfo }>;
 }
 
 export class HttpError extends Error {

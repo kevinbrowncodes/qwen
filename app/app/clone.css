@@ -640,6 +640,159 @@ html.mobile .clone-dropdown-icon-only .qwen-chat-v2-dropdown-menu-select::before
   inset: -6px -10px;
 }
 
+/* ---- A LoRA's info card (STORY_030, ours: the reference has no LoRAs) ---- */
+/* The info button at the end of a row, before the check; on the phone its ::before gives it a 44×44 touch area. The
+   rows are 36px tall (BACKLOG_002), so that area reaches 4px into the rows above and below: a tap there opens the
+   card, which Back undoes. */
+.qwen-chat-v2-dropdown-menu-item .clone-dropdown-item-info {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  color: var(--text-caption);
+  font-size: 16px;
+  border-radius: 6px;
+}
+.qwen-chat-v2-dropdown-menu-item .clone-dropdown-item-info:hover {
+  color: var(--text-primary);
+}
+html.mobile .clone-dropdown-item-info::before,
+html.mobile .clone-dropdown-detail-back::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
+}
+/* The card is drawn on the popup's own surface; its height is set from the space left (components/Dropdown.tsx). */
+.qwen-chat-v2-dropdown-menu-popup.clone-dropdown-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 300px;
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+}
+html.mobile .qwen-chat-v2-dropdown-menu-popup.clone-dropdown-detail {
+  width: calc(100vw - 16px);
+}
+.clone-dropdown-detail-head {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 24px;
+  border-bottom: 1px solid var(--line-border);
+}
+.clone-dropdown-detail-back {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+.clone-dropdown-detail-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.clone-dropdown-detail-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px 12px;
+  overflow-y: auto;
+}
+.clone-dropdown-detail-foot {
+  flex: none;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line-border);
+}
+.clone-dropdown-detail-pick {
+  width: 100%;
+  height: 36px;
+  color: var(--text-primary);
+  font-size: 14px;
+  background: var(--background-option);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+html.mobile .clone-dropdown-detail-pick {
+  height: 44px;
+}
+.clone-dropdown-detail-pick:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+.clone-lora-card {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+.clone-lora-card-section {
+  margin: 0;
+}
+.clone-lora-card-section + .clone-lora-card-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-border);
+}
+.clone-lora-card-heading {
+  margin: 0 0 4px;
+  color: var(--text-caption);
+  font-weight: 600;
+  font-size: 12px;
+}
+.clone-lora-card-text,
+.clone-lora-card-note {
+  margin: 0;
+}
+.clone-lora-card-ability + .clone-lora-card-ability {
+  margin-top: 6px;
+}
+.clone-lora-card-subject {
+  font-weight: 600;
+}
+.clone-lora-card-pairs {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  column-gap: 8px;
+  margin: 0;
+}
+.clone-lora-card-fact {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  column-gap: 8px;
+}
+.clone-lora-card-pairs dt,
+.clone-lora-card-fact dt {
+  color: var(--text-caption);
+}
+.clone-lora-card-pairs dd,
+.clone-lora-card-fact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.clone-lora-card-note {
+  margin-top: 6px;
+  color: var(--text-caption);
+  font-size: 12px;
+}
+.clone-lora-card a {
+  color: var(--text-link);
+}
+
 /* ---- Interface zoom (STORY_020) ---- */
 /* CSS zoom multiplies viewport units too, so the full-height frame is divided back to the window's height. */
 html[data-zoom] .app,

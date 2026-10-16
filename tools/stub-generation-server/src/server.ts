@@ -34,20 +34,44 @@ export const CAPABILITIES = {
   prompt: { maxChars: 4000 },
   referenceImages: { max: 10, maxBytes: MAX_FILE_BYTES, types: ["image/png", "image/jpeg", "image/webp"] },
   // Contract v1.2 (STORY_019): two fake add-ons, so the UI's picker and the shared vectors have something to choose.
+  // v1.4 (STORY_030): each with its info card, one fully described and one bare, so the card's two shapes can be tested.
   loras: [
-    { id: "fake-detail", label: "Fake detail" },
-    { id: "fake-style", label: "Fake style" },
+    {
+      id: "fake-detail",
+      label: "Fake detail",
+      info: {
+        scale: 0.8,
+        guidance: 3,
+        trigger: "sharp focus",
+        madeFor: "Sharper fine detail in skin, hair and fabric, for text-to-image and edits.",
+        madeForReadOn: "2026-10-16",
+        creator: "Stub Creator",
+        origin: "https://example.com/loras/fake-detail",
+        downloads: 18951,
+        downloadsReadOn: "2026-10-07",
+        abilities: [
+          { subject: "Detail", claimed: "Trained on close-ups.", bench: "Sharp in 3 of 4 edits." },
+          { subject: "Hands", claimed: null, bench: null },
+        ],
+        benchSource: "The stub's own bench.",
+      },
+    },
+    {
+      id: "fake-style",
+      label: "Fake style",
+      info: { scale: 1, guidance: null, trigger: null, madeFor: null, madeForReadOn: null, creator: null, origin: null, downloads: null, downloadsReadOn: null, abilities: [], benchSource: null },
+    },
   ],
 } as const;
 
 const MAX_SEED = 4294967295;
 
 /** What each fake add-on applies (contract v1.3, STORY_024): one with a trigger and guidance, one with neither, so
- * the echo of both shapes can be tested. The model server reads the same things from spark/loras.json. */
-export const FAKE_LORA_SETTINGS: Readonly<Record<string, { readonly scale: number; readonly guidance: number | null; readonly trigger: string | null }>> = {
-  "fake-detail": { scale: 0.8, guidance: 3, trigger: "sharp focus" },
-  "fake-style": { scale: 1, guidance: null, trigger: null },
-};
+ * the echo of both shapes can be tested. The model server reads the same things from spark/loras.json. Taken from the
+ * info the capabilities send (STORY_030), so what the card says is what a job gets. */
+export const FAKE_LORA_SETTINGS: Readonly<Record<string, { readonly scale: number; readonly guidance: number | null; readonly trigger: string | null }>> = Object.fromEntries(
+  CAPABILITIES.loras.map((l) => [l.id, { scale: l.info.scale, guidance: l.info.guidance, trigger: l.info.trigger }]),
+);
 
 export interface JobRequest {
   readonly prompt: string;

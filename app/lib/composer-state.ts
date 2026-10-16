@@ -16,10 +16,33 @@ export interface RatioOption {
   readonly width: number;
   readonly height: number;
 }
-/** A community add-on (LoRA) the server has loaded (contract v1.2, STORY_019). */
+/** A community add-on (LoRA) the server has loaded (contract v1.2, STORY_019), with its info card (v1.4, STORY_030). */
 export interface LoraOption {
   readonly id: string;
   readonly label: string;
+  /** Absent from a server before v1.4, or when the server's answer is off-contract: the LoRA then has no card. */
+  readonly info?: LoraInfo;
+}
+/** One subject on the card (STORY_030): what the creator claims, and what a bench showed; null when nothing is known. */
+export interface LoraAbility {
+  readonly subject: string;
+  readonly claimed: string | null;
+  readonly bench: string | null;
+}
+/** What the info card shows (contract v1.4, STORY_030). */
+export interface LoraInfo {
+  readonly scale: number;
+  readonly guidance: number | null;
+  readonly trigger: string | null;
+  readonly madeFor: string | null;
+  readonly madeForReadOn: string | null;
+  readonly creator: string | null;
+  /** Only ever an http(s) URL: anything else is dropped here, so no other scheme can be rendered as a link. */
+  readonly origin: string | null;
+  readonly downloads: number | null;
+  readonly downloadsReadOn: string | null;
+  readonly abilities: readonly LoraAbility[];
+  readonly benchSource: string | null;
 }
 export interface Capabilities {
   readonly models: readonly ModelOption[];
@@ -102,11 +125,41 @@ export function parseCapabilities(v: unknown): Capabilities | null {
   const defaultRatio = ratios.some((r) => r.id === wanted) ? wanted : first.id;
   const refs = v["referenceImages"];
   const maxReferences = isRecord(refs) && typeof refs["max"] === "number" ? refs["max"] : FALLBACK_CAPABILITIES.maxReferences;
-  // A server before v1.2 has no add-ons.
+  // A server before v1.2 has no add-ons; one before v1.4 sends no info, and an add-on is never dropped for its info.
   const loras = Array.isArray(v["loras"])
-    ? v["loras"].filter(isRecord).flatMap((l) => (typeof l["id"] === "string" && l["id"] !== NO_LORA && typeof l["label"] === "string" ? [{ id: l["id"], label: l["label"] }] : []))
+    ? v["loras"].filter(isRecord).flatMap((l): LoraOption[] => {
+        if (typeof l["id"] !== "string" || l["id"] === NO_LORA || typeof l["label"] !== "string") return [];
+        const info = parseLoraInfo(l["info"]);
+        return [info ? { id: l["id"], label: l["label"], info } : { id: l["id"], label: l["label"] }];
+      })
     : [];
   return { models, ratios, defaultRatio, maxReferences, loras };
+}
+
+const textOrNull = (v: unknown): string | null => (typeof v === "string" && v.trim() !== "" ? v : null);
+const numberOrNull = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+
+/** A LoRA's info card (v1.4, STORY_030), or null when it is not contract-shaped. Fields the server could not know are null. */
+export function parseLoraInfo(v: unknown): LoraInfo | null {
+  if (!isRecord(v) || typeof v["scale"] !== "number" || !Array.isArray(v["abilities"])) return null;
+  const origin = textOrNull(v["origin"]);
+  const abilities = v["abilities"].filter(isRecord).flatMap((a) => {
+    const subject = textOrNull(a["subject"]);
+    return subject === null ? [] : [{ subject, claimed: textOrNull(a["claimed"]), bench: textOrNull(a["bench"]) }];
+  });
+  return {
+    scale: v["scale"],
+    guidance: numberOrNull(v["guidance"]),
+    trigger: textOrNull(v["trigger"]),
+    madeFor: textOrNull(v["madeFor"]),
+    madeForReadOn: textOrNull(v["madeForReadOn"]),
+    creator: textOrNull(v["creator"]),
+    origin: origin !== null && /^https?:\/\//i.test(origin) ? origin : null,
+    downloads: numberOrNull(v["downloads"]),
+    downloadsReadOn: textOrNull(v["downloadsReadOn"]),
+    abilities,
+    benchSource: textOrNull(v["benchSource"]),
+  };
 }
 
 export function initialState(capabilities: Capabilities = FALLBACK_CAPABILITIES): ComposerState {

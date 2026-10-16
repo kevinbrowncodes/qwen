@@ -14,6 +14,7 @@ import { GET as getHistory } from "@/app/api/history/route";
 import { DELETE as cancelJob, GET as getJob } from "@/app/api/jobs/[id]/route";
 import { GET as getResult } from "@/app/api/jobs/[id]/result/route";
 import { POST as createJob } from "@/app/api/jobs/route";
+import { parseCapabilities } from "@/lib/composer-state";
 import { parseEntries } from "@/lib/history";
 import { NOT_CONFIGURED, NOT_REACHABLE } from "@/lib/model-client";
 
@@ -194,6 +195,16 @@ describe("edits", () => {
 
   it("passes the stub's add-ons through in the capabilities (contract v1.2, STORY_019)", async () => {
     expect(await json(await getCapabilities())).toMatchObject({ loras: [{ id: "fake-detail", label: "Fake detail" }, { id: "fake-style", label: "Fake style" }] });
+  });
+
+  it("passes each add-on's info card through unchanged, and the app reads both shapes (contract v1.4, STORY_030)", async () => {
+    const body = await json(await getCapabilities());
+    const upstream = await json(await fetch(`${stubUrl}/capabilities`));
+    expect(field(body, "loras")).toEqual(field(upstream, "loras"));
+    const [detail, style] = parseCapabilities(body)?.loras ?? [];
+    expect(detail?.info).toMatchObject({ scale: 0.8, guidance: 3, trigger: "sharp focus", creator: "Stub Creator", origin: "https://example.com/loras/fake-detail", downloads: 18951 });
+    expect(detail?.info?.abilities.map((a) => a.subject)).toEqual(["Detail", "Hands"]);
+    expect(style?.info).toMatchObject({ scale: 1, guidance: null, trigger: null, madeFor: null, abilities: [] });
   });
 
   it("forwards an add-on in JSON and in an edit's form, and records it; none records null (STORY_019)", async () => {
