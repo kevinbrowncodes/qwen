@@ -640,6 +640,14 @@ html.mobile .clone-dropdown-icon-only .qwen-chat-v2-dropdown-menu-select::before
   inset: -6px -10px;
 }
 
+/* ---- Chats (STORY_031, ours) ---- */
+/* The turn My Library opened the chat at, until the next click or key. */
+.clone-messages.clone-turn-highlight {
+  border-radius: 16px;
+  outline: 2px solid var(--text-link);
+  outline-offset: 6px;
+}
+
 /* ---- A LoRA's info card (STORY_030, ours: the reference has no LoRAs) ---- */
 /* The info button at the end of a row, before the check; on the phone its ::before gives it a 44×44 touch area. The
    rows are 36px tall (BACKLOG_002), so that area reaches 4px into the rows above and below: a tap there opens the

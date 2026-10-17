@@ -178,14 +178,17 @@ test("Info shows the settings that made the image, Same seed again reproduces th
   const seed = (await receivedRequest(stub, first))["seed"];
   expect(typeof seed).toBe("number");
 
-  const infoButton = page.getByRole("button", { name: "Info" });
+  // The first image's card: after Same seed again and Regenerate the chat holds three (STORY_031), and a reload shows
+  // them all, so the panel is read from this card.
+  const firstCard = page.locator(`[data-testid="generation"][data-job-id="${first}"]`);
+  const infoButton = firstCard.getByRole("button", { name: "Info" });
   if (info.project.name === "narrow") {
     const box = await settledBox(infoButton);
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
   }
   const expectPanel = async (): Promise<void> => {
     await infoButton.click();
-    const panel = page.getByRole("region", { name: "Settings" });
+    const panel = firstCard.getByRole("region", { name: "Settings" });
     const value = (row: string) => panel.locator(`[data-row="${row}"] dd`);
     await expect(value("prompt")).toHaveText("a red bicycle");
     // The stub's add-on has a trigger word, which the server appended.
@@ -216,6 +219,6 @@ test("Info shows the settings that made the image, Same seed again reproduces th
 
   // Loaded afresh, the first job's panel reads the same values from its echo, not from this page's memory.
   await submitAndWait(page, () => page.goto(`/g/${encodeURIComponent(first)}`));
-  await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${first}/result`, 64);
+  await expectImageLoaded(firstCard.getByTestId("result-image"), `/api/jobs/${first}/result`, 64);
   await expectPanel();
 });

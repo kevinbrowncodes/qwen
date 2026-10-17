@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { historyFile } from "./config";
-import { addEntry, applyStatus, markCancelled, parseEntries, removeEntry, type HistoryEntry, type NewEntry, type RemoveOutcome } from "./history";
+import { addEntry, applyStatus, markCancelled, parseEntries, removeChat, removeEntry, type HistoryEntry, type NewEntry, type RemoveChatOutcome, type RemoveOutcome } from "./history";
 import type { JobStatusResponse } from "./job-api";
 
 export interface HistoryStore {
@@ -14,6 +14,8 @@ export interface HistoryStore {
   recordStatus(status: Pick<JobStatusResponse, "id" | "status" | "progress" | "error" | "result">): void;
   cancelled(id: string, progress: number): void;
   remove(id: string): RemoveOutcome;
+  /** Every turn of a chat (STORY_031). */
+  removeChat(chatId: string): RemoveChatOutcome;
 }
 
 export function createHistoryStore(file: string, now: () => string = () => new Date().toISOString()): HistoryStore {
@@ -46,6 +48,11 @@ export function createHistoryStore(file: string, now: () => string = () => new D
     remove: (id) => {
       const outcome = removeEntry(read(), id);
       if (outcome.removed) write(outcome.entries);
+      return outcome;
+    },
+    removeChat: (chatId) => {
+      const outcome = removeChat(read(), chatId);
+      if (outcome.removed > 0) write(outcome.entries);
       return outcome;
     },
   };

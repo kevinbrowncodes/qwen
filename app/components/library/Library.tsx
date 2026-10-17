@@ -1,11 +1,11 @@
 "use client";
 /**
  * My Library at /library (STORY_013): every finished image in a masonry grid of 276px cards (2 columns of 180px on the
- * phone), each opening its generation, with a Download bar that shows on hover (always on touch). Readings:
+ * phone), each opening its chat at that image (STORY_031), with a Download bar that shows on hover (always on touch). Readings:
  * docs/recon/2026-09-26/states/my-library@1437.json and @393.json.
  */
 import Link from "next/link";
-import { finished, resultUrl } from "@/lib/history-view";
+import { finished, resultUrl, turnHref } from "@/lib/history-view";
 import { useHistory } from "@/lib/use-history";
 import { useNarrow } from "@/lib/use-narrow";
 import { Icon } from "../Icon";
@@ -33,7 +33,7 @@ export function Library() {
               const h = e.result?.height ?? 1;
               return (
                 <div key={e.id} className="clone-card" data-testid="library-card">
-                  <Link href={`/g/${encodeURIComponent(e.id)}`} className="clone-card-img" aria-label={`Open ${e.prompt}`} style={{ aspectRatio: `${String(w)} / ${String(h)}` }}>
+                  <Link href={turnHref(e)} className="clone-card-img" aria-label={`Open ${e.prompt}`} style={{ aspectRatio: `${String(w)} / ${String(h)}` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element -- a result from our own route */}
                     <img src={resultUrl(e.id)} alt={e.prompt} />
                   </Link>

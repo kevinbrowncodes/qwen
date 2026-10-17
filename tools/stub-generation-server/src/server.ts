@@ -97,6 +97,8 @@ interface Job {
   readonly script: ScriptName;
   readonly request: JobRequest;
   readonly uploads: readonly ReceivedUpload[];
+  /** The names of the fields the request carried, sorted, so a test can prove a field was never sent (STORY_031). */
+  readonly fields: readonly string[];
   readonly createdAt: string;
   updatedAt: string;
   pollCount: number;
@@ -308,6 +310,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
       uploads: uploads
         .filter((u) => u.field === "referenceImage")
         .map((u) => ({ filename: u.filename, contentType: u.contentType, size: u.data.length, sha256: createHash("sha256").update(u.data).digest("hex") })),
+      fields: Object.keys(fields).sort(),
       createdAt: now,
       updatedAt: now,
       pollCount: 0,
@@ -395,7 +398,7 @@ export function createStubServer(options: StubOptions = {}): StubServer {
     }
     if (method === "GET" && (m = /^\/__stub\/jobs\/([^/]+)\/received$/.exec(p)) && m[1] !== undefined) {
       const job = jobOr404(m[1]);
-      sendJson(res, 200, { id: job.id, script: job.script, request: job.request, uploads: job.uploads });
+      sendJson(res, 200, { id: job.id, script: job.script, request: job.request, uploads: job.uploads, fields: job.fields });
       return;
     }
     throw new HttpError(404, "not_found", `no route ${method} ${p}`);

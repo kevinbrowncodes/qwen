@@ -3,12 +3,13 @@
  * in a real temp file. Each test points MODEL_BASE_URL at the stub; the handlers read it through lib/config per call.
  */
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createStubServer, DEFAULT_FIXTURES_DIR, type StubServer } from "stub-generation-server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { GET as getCapabilities } from "@/app/api/capabilities/route";
+import { DELETE as deleteChat } from "@/app/api/chats/[id]/route";
 import { DELETE as deleteHistory } from "@/app/api/history/[id]/route";
 import { GET as getHistory } from "@/app/api/history/route";
 import { DELETE as cancelJob, GET as getJob } from "@/app/api/jobs/[id]/route";
@@ -337,5 +338,63 @@ describe("history", () => {
     expect(stored().map((e) => e.id)).toEqual([second]);
     expect((await deleteHistory(new Request("http://app/api/history/nope"), ctx("nope"))).status).toBe(404);
     await cancelJob(new Request(`http://app/api/jobs/${second}`), ctx(second));
+  });
+});
+
+describe("chats (STORY_031)", () => {
+  const received = async (id: string): Promise<Json> => json(await fetch(`${stubUrl}/__stub/jobs/${id}/received`));
+  const idOf = async (res: Response): Promise<string> => {
+    expect(res.status).toBe(202);
+    return String(field(await json(res), "id"));
+  };
+
+  it("starts a chat with a create that names none, and joins a later create that names it, never forwarding the field", async () => {
+    const first = await idOf(await post({ prompt: "a red bicycle", ratio: "16:9" }, "done-after-1-poll"));
+    const second = await idOf(await post({ prompt: "make it blue", ratio: "16:9", chat: first }, "done-after-1-poll"));
+    expect(stored().map((e) => [e.id, e.chatId])).toEqual([
+      [second, first],
+      [first, first],
+    ]);
+    expect(field(await received(second), "fields")).toEqual(["prompt", "ratio"]);
+  });
+
+  it("joins a chat named by one of its later turns, and starts its own chat for an unknown one", async () => {
+    const first = await idOf(await post({ prompt: "a", ratio: "1:1" }, "done-after-1-poll"));
+    const second = await idOf(await post({ prompt: "b", ratio: "1:1", chat: first }, "done-after-1-poll"));
+    const third = await idOf(await post({ prompt: "c", ratio: "1:1", chat: second }, "done-after-1-poll"));
+    const stray = await idOf(await post({ prompt: "d", ratio: "1:1", chat: "no-such-chat" }, "done-after-1-poll"));
+    const chatOf = (id: string): string | undefined => stored().find((e) => e.id === id)?.chatId;
+    expect([chatOf(third), chatOf(stray)]).toEqual([first, stray]);
+  });
+
+  it("joins an edit to its chat through the form, without forwarding the field", async () => {
+    const first = await idOf(await post({ prompt: "a", ratio: "1:1" }, "done-after-1-poll"));
+    const form = new FormData();
+    form.set("prompt", "make it blue");
+    form.set("chat", first);
+    form.append("referenceImage", new Blob([new Uint8Array(reference)], { type: "image/png" }), "reference.png");
+    const edited = await idOf(await createJob(new Request("http://app/api/jobs?script=done-after-1-poll", { method: "POST", body: form })));
+    expect(stored().find((e) => e.id === edited)?.chatId).toBe(first);
+    expect(field(await received(edited), "fields")).toEqual(["prompt"]);
+  });
+
+  it("deletes a whole chat, but not while a turn runs", async () => {
+    const first = await idOf(await post({ prompt: "a", ratio: "1:1" }, "done-after-1-poll"));
+    const running = await idOf(await post({ prompt: "b", ratio: "1:1", chat: first }, "cancel-midway"));
+    const refused = await deleteChat(new Request(`http://app/api/chats/${first}`, { method: "DELETE" }), ctx(first));
+    expect(refused.status).toBe(409);
+    expect(field(await json(refused), "error")).toMatchObject({ code: "not_finished" });
+    await cancelJob(new Request(`http://app/api/jobs/${running}`, { method: "DELETE" }), ctx(running));
+    await status(first);
+    const removed = await deleteChat(new Request(`http://app/api/chats/${first}`, { method: "DELETE" }), ctx(first));
+    expect(await json(removed)).toMatchObject({ id: first, removed: 2 });
+    expect(stored()).toEqual([]);
+    expect((await deleteChat(new Request("http://app/api/chats/gone", { method: "DELETE" }), ctx("gone"))).status).toBe(404);
+  });
+
+  it("reads history saved before chats as one chat per image", async () => {
+    writeFileSync(historyPath, JSON.stringify([{ id: "old", prompt: "p", ratio: "1:1", model: "m", referenceImages: 0, createdAt: "2026-09-27T10:00:00.000Z", updatedAt: "2026-09-27T10:00:00.000Z", status: "done", progress: 100 }]));
+    const entries = field(await json(await getHistory()), "entries");
+    expect(Array.isArray(entries) ? entries[0] : null).toMatchObject({ id: "old", chatId: "old" });
   });
 });

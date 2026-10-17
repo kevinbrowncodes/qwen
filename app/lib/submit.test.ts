@@ -16,6 +16,17 @@ describe("requestFrom", () => {
 });
 
 describe("buildBody", () => {
+  it("names the chat in JSON and in the form when given, and not otherwise (STORY_031)", () => {
+    const req: GenerationRequest = { prompt: "p", ratio: "1:1", model: "m", lora: null, references: [] };
+    const json = (body: BodyInit): unknown => JSON.parse(typeof body === "string" ? body : "{}");
+    expect(json(buildBody({ ...req, chat: "c1" }).body)).toMatchObject({ chat: "c1" });
+    expect(json(buildBody(req).body)).not.toHaveProperty("chat");
+    const form = buildBody({ ...req, references: [a], chat: "c1" }).body;
+    expect(form instanceof FormData ? form.get("chat") : null).toBe("c1");
+    const plain = buildBody({ ...req, references: [a] }).body;
+    expect(plain instanceof FormData ? plain.has("chat") : true).toBe(false);
+  });
+
   it("sends JSON without references", () => {
     const { body, headers } = buildBody({ prompt: "p", ratio: "16:9", model: "m", lora: null, references: [] });
     expect(headers).toEqual({ "content-type": "application/json" });
@@ -109,7 +120,7 @@ describe("submitBatch (STORY_025)", () => {
     return { submitOne, log, sent };
   }
 
-  it("sends a count of 3 one after another, with no seed, and returns the ids in order", async () => {
+  it("sends a count of 3 one after another, with no seed, the first starting a chat the rest join, and returns the ids in order", async () => {
     const f = fake([
       { ok: true, id: "a" },
       { ok: true, id: "b" },
@@ -117,7 +128,19 @@ describe("submitBatch (STORY_025)", () => {
     ]);
     expect(await submitBatch(req, 3, f.submitOne)).toEqual({ ids: ["a", "b", "c"], message: null });
     expect(f.log).toEqual(["start 0", "end 0", "start 1", "end 1", "start 2", "end 2"]);
-    expect(f.sent.every((r) => r === req && !("seed" in r))).toBe(true);
+    expect(f.sent.every((r) => !("seed" in r))).toBe(true);
+    // STORY_031: the first names no chat, so it starts one; the others join it.
+    expect(f.sent.map((r) => r.chat)).toEqual([undefined, "a", "a"]);
+    expect(f.sent[0]).toBe(req);
+  });
+
+  it("sends every image of a send from inside a chat to that chat (STORY_031)", async () => {
+    const f = fake([
+      { ok: true, id: "a" },
+      { ok: true, id: "b" },
+    ]);
+    await submitBatch({ ...req, chat: "c1" }, 2, f.submitOne);
+    expect(f.sent.map((r) => r.chat)).toEqual(["c1", "c1"]);
   });
 
   it("stops at the first refusal and sends no more", async () => {

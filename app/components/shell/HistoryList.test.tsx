@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { HistoryEntry } from "@/lib/history";
+import { chatsOf, type ChatSummary } from "@/lib/history-view";
 import { HistoryList } from "./HistoryList";
 
 vi.mock("next/link", () => ({
@@ -17,8 +18,9 @@ const ago = (days: number): string => {
   d.setDate(now.getDate() - days);
   return d.toISOString();
 };
-const entry = (id: string, days: number, status: HistoryEntry["status"] = "done"): HistoryEntry => ({
+const entry = (id: string, days: number, status: HistoryEntry["status"] = "done", chatId = id): HistoryEntry => ({
   id,
+  chatId,
   lora: null,
   seed: null,
   loraScale: null,
@@ -34,16 +36,18 @@ const entry = (id: string, days: number, status: HistoryEntry["status"] = "done"
   progress: 0,
 });
 
+// STORY_031: a row per chat. Chat "b" has two turns (b, then b2), newest first as history keeps them.
 function setup(confirmAnswer = true) {
-  const onDelete = vi.fn<(id: string) => void>();
-  const onStop = vi.fn<(id: string) => void>();
-  const confirm = vi.fn(() => confirmAnswer);
-  render(<HistoryList entries={[entry("a", 0, "running"), entry("b", 0), entry("c", 1)]} activeId="b" now={now} iconSet="qwpcicon" onDelete={onDelete} onStop={onStop} confirm={confirm} />);
+  const onDelete = vi.fn<(chat: ChatSummary) => void>();
+  const onStop = vi.fn<(chat: ChatSummary) => void>();
+  const confirm = vi.fn<(message: string) => boolean>(() => confirmAnswer);
+  const chats = chatsOf([entry("a", 0, "running"), entry("b2", 0, "done", "b"), entry("b", 0), entry("c", 1)]);
+  render(<HistoryList chats={chats} activeId="b" now={now} iconSet="qwpcicon" onDelete={onDelete} onStop={onStop} confirm={confirm} />);
   return { onDelete, onStop, confirm };
 }
 
 describe("HistoryList", () => {
-  it("groups by day, titles rows by the prompt's first line, and highlights the open one", () => {
+  it("lists one row per chat, groups by day, titles rows by the first prompt's first line, and highlights the open one", () => {
     setup();
     expect(screen.getByRole("group", { name: "Today" })).toBeTruthy();
     expect(screen.getByRole("group", { name: "Yesterday" })).toBeTruthy();
@@ -60,7 +64,7 @@ describe("HistoryList", () => {
     expect(within(running).getByLabelText("Generating")).toBeTruthy();
     fireEvent.click(within(running).getByRole("button", { name: "Chat Menu" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Stop" }));
-    expect(onStop).toHaveBeenCalledWith("a");
+    expect(onStop).toHaveBeenCalledWith(expect.objectContaining({ id: "a", runningIds: ["a"] }));
   });
 
   it("asks before deleting, and deletes only when confirmed", () => {
@@ -68,8 +72,8 @@ describe("HistoryList", () => {
     const row = screen.getAllByTestId("history-row")[1] ?? document.body;
     fireEvent.click(within(row).getByRole("button", { name: "Chat Menu" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
-    expect(yes.confirm).toHaveBeenCalled();
-    expect(yes.onDelete).toHaveBeenCalledWith("b");
+    expect(yes.confirm).toHaveBeenCalledWith("Delete this chat and its 2 images? This cannot be undone.");
+    expect(yes.onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: "b", count: 2 }));
   });
 
   it("does not delete when the question is declined, and closes the menu on an outside click", () => {
@@ -84,7 +88,7 @@ describe("HistoryList", () => {
   });
 
   it("says so when there is nothing yet", () => {
-    render(<HistoryList entries={[]} activeId={null} now={now} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} />);
+    render(<HistoryList chats={[]} activeId={null} now={now} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} />);
     expect(screen.getByText("No images yet")).toBeTruthy();
   });
 });

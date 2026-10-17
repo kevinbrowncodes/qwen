@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HistoryEntry } from "./history";
 import { announceHistoryChanged, RUNNING_REFRESH_MS, useHistory, type History } from "./use-history";
 
-const entry = (id: string, createdAt = "2026-01-01T00:00:00Z"): HistoryEntry => ({ id, prompt: id, ratio: "1:1", model: "m", referenceImages: 0, lora: null, seed: null, loraScale: null, loraGuidance: null, promptSent: null, createdAt, updatedAt: "t", status: "done", progress: 100 });
+const entry = (id: string, createdAt = "2026-01-01T00:00:00Z"): HistoryEntry => ({ id, chatId: id, prompt: id, ratio: "1:1", model: "m", referenceImages: 0, lora: null, seed: null, loraScale: null, loraGuidance: null, promptSent: null, createdAt, updatedAt: "t", status: "done", progress: 100 });
 
 let list: HistoryEntry[] = [];
 let deleteStatus = 200;
@@ -21,6 +21,7 @@ beforeEach(() => {
       if (method === "DELETE") {
         // Like the real route: a 200 removes the entry, anything else leaves it.
         if (deleteStatus === 200 && url.startsWith("/api/history/")) list = list.filter((e) => e.id !== decodeURIComponent(url.slice("/api/history/".length)));
+        if (deleteStatus === 200 && url.startsWith("/api/chats/")) list = list.filter((e) => e.chatId !== decodeURIComponent(url.slice("/api/chats/".length)));
         return Promise.resolve(new Response("{}", { status: deleteStatus }));
       }
       return Promise.resolve(new Response(JSON.stringify({ entries: list }), { status: 200 }));
@@ -95,6 +96,43 @@ describe("useHistory", () => {
       await into.current?.stop("a");
     });
     expect(calls.some((c) => c.method === "DELETE" && c.url === "/api/jobs/a")).toBe(true);
+    expect(heard).toHaveBeenCalled();
+    window.removeEventListener("qwen:history-changed", heard);
+  });
+
+  it("removes a whole chat only after the server agreed (STORY_031)", async () => {
+    list = [{ ...entry("a2"), chatId: "a" }, entry("a"), entry("b")];
+    const into: { current: History | null } = { current: null };
+    const { container } = render(<Probe into={into} />);
+    await waitFor(() => {
+      expect(container.textContent).toBe("a2,a,b");
+    });
+    let removed = false;
+    await act(async () => {
+      removed = (await into.current?.removeChat("a")) ?? false;
+    });
+    expect(removed).toBe(true);
+    expect(calls.find((c) => c.method === "DELETE")?.url).toBe("/api/chats/a");
+    expect(container.textContent).toBe("b");
+
+    deleteStatus = 409;
+    await act(async () => {
+      removed = (await into.current?.removeChat("b")) ?? true;
+    });
+    expect(removed).toBe(false);
+    expect(container.textContent).toBe("b");
+  });
+
+  it("stopAll cancels every running turn of a chat and announces the change (STORY_031)", async () => {
+    const into: { current: History | null } = { current: null };
+    render(<Probe into={into} />);
+    await settle();
+    const heard = vi.fn();
+    window.addEventListener("qwen:history-changed", heard);
+    await act(async () => {
+      await into.current?.stopAll(["a", "b"]);
+    });
+    expect(calls.filter((c) => c.method === "DELETE").map((c) => c.url)).toEqual(["/api/jobs/a", "/api/jobs/b"]);
     expect(heard).toHaveBeenCalled();
     window.removeEventListener("qwen:history-changed", heard);
   });

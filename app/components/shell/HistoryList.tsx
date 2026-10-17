@@ -1,28 +1,29 @@
 "use client";
 /**
- * Every generation in the sidebar (STORY_013), in the reference's session-list markup: an "All images" folder, day
- * labels (`.list-folder-chats`), and a row per generation titled by its prompt, the open one highlighted. Each row's
- * "…" (Chat Menu) offers Delete, or Stop while it runs; Delete asks first.
+ * Every chat in the sidebar (STORY_013; STORY_031: a row per chat, not per image), in the reference's session-list
+ * markup: an "All images" folder, day labels (`.list-folder-chats`), and a row per chat titled by its first prompt,
+ * the open one highlighted. Each row's "…" (Chat Menu) offers Delete for the whole chat, or Stop while any turn runs;
+ * Delete asks first.
  */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import type { HistoryEntry } from "@/lib/history";
-import { groupByDay, isRunning, titleOf } from "@/lib/history-view";
+import { deleteChatMessage, groupChatsByDay, titleOf, type ChatSummary } from "@/lib/history-view";
 import { Icon } from "../Icon";
 
 export interface HistoryListProps {
-  readonly entries: readonly HistoryEntry[];
+  readonly chats: readonly ChatSummary[];
+  /** The open chat's id. */
   readonly activeId: string | null;
   readonly now: Date;
   readonly iconSet: "qwpcicon" | "appicon";
-  readonly onDelete: (id: string) => void;
-  readonly onStop: (id: string) => void;
+  readonly onDelete: (chat: ChatSummary) => void;
+  readonly onStop: (chat: ChatSummary) => void;
   readonly onNavigate?: () => void;
   /** Asks before deleting; injected so tests need no dialog. */
   readonly confirm?: (message: string) => boolean;
 }
 
-function RowMenu({ entry, iconSet, onDelete, onStop, confirm }: { readonly entry: HistoryEntry; readonly iconSet: string; readonly onDelete: () => void; readonly onStop: () => void; readonly confirm: (m: string) => boolean }) {
+function RowMenu({ chat, iconSet, onDelete, onStop, confirm }: { readonly chat: ChatSummary; readonly iconSet: string; readonly onDelete: () => void; readonly onStop: () => void; readonly confirm: (m: string) => boolean }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -35,7 +36,7 @@ function RowMenu({ entry, iconSet, onDelete, onStop, confirm }: { readonly entry
       document.removeEventListener("mousedown", onDown);
     };
   }, [open]);
-  const running = isRunning(entry);
+  const running = chat.running;
   return (
     <div className={`chat-item-drag-web${open ? " clone-menu-open" : ""}`} ref={root}>
       <div className="qwen-chat-v2-dropdown-menu clone-dropdown">
@@ -64,7 +65,7 @@ function RowMenu({ entry, iconSet, onDelete, onStop, confirm }: { readonly entry
               onClick={() => {
                 setOpen(false);
                 if (running) onStop();
-                else if (confirm("Delete this image? This cannot be undone.")) onDelete();
+                else if (confirm(deleteChatMessage(chat.count))) onDelete();
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.currentTarget.click();
@@ -79,8 +80,8 @@ function RowMenu({ entry, iconSet, onDelete, onStop, confirm }: { readonly entry
   );
 }
 
-export function HistoryList({ entries, activeId, now, iconSet, onDelete, onStop, onNavigate, confirm = (m) => window.confirm(m) }: HistoryListProps) {
-  const groups = groupByDay(entries, now);
+export function HistoryList({ chats, activeId, now, iconSet, onDelete, onStop, onNavigate, confirm = (m) => window.confirm(m) }: HistoryListProps) {
+  const groups = groupChatsByDay(chats, now);
   return (
     <div className="session-list-wrapper">
       <div className="session-list">
@@ -93,25 +94,25 @@ export function HistoryList({ entries, activeId, now, iconSet, onDelete, onStop,
             {groups.map((g) => (
               <div key={g.label} className="list-folder-pt" role="group" aria-label={g.label}>
                 <div className="list-folder-chats">{g.label}</div>
-                {g.entries.map((e) => (
-                  <div key={e.id} className="chat-item-drag" data-testid="history-row">
-                    <Link href={`/g/${encodeURIComponent(e.id)}`} className={`chat-item-drag-link${e.id === activeId ? " chat-item-drag-active" : ""}`} aria-current={e.id === activeId ? "page" : undefined} onClick={onNavigate}>
+                {g.chats.map((c) => (
+                  <div key={c.id} className="chat-item-drag" data-testid="history-row">
+                    <Link href={`/g/${encodeURIComponent(c.id)}`} className={`chat-item-drag-link${c.id === activeId ? " chat-item-drag-active" : ""}`} aria-current={c.id === activeId ? "page" : undefined} onClick={onNavigate}>
                       <div className="chat-item-drag-link-content">
                         <div className="chat-item-drag-link-content-tip-text chat-item-drag-link-content-tip">
-                          <span className="chat-item-title-text">{titleOf(e.prompt)}</span>
-                          {isRunning(e) ? <span className="clone-spinner" aria-label="Generating" /> : null}
+                          <span className="chat-item-title-text">{titleOf(c.prompt)}</span>
+                          {c.running ? <span className="clone-spinner" aria-label="Generating" /> : null}
                         </div>
                       </div>
                     </Link>
                     <RowMenu
-                      entry={e}
+                      chat={c}
                       iconSet={iconSet}
                       confirm={confirm}
                       onDelete={() => {
-                        onDelete(e.id);
+                        onDelete(c);
                       }}
                       onStop={() => {
-                        onStop(e.id);
+                        onStop(c);
                       }}
                     />
                   </div>

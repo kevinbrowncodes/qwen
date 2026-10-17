@@ -33,6 +33,10 @@ export interface GenerationViewProps {
   readonly onSameSeed?: () => void;
   /** Cancels this card's job (STORY_025: Stop moved from the composer to each queued or running card). */
   readonly onStop?: () => void;
+  /** Removes this finished image from its chat (STORY_031); the page asks first. */
+  readonly onDelete?: () => void;
+  /** Outlined: the turn the page was opened at from My Library (STORY_031). */
+  readonly highlighted?: boolean;
 }
 
 function ReferenceTile({ file }: { readonly file: File }) {
@@ -89,7 +93,7 @@ function Skeleton({ ratio, status, narrow, onStop }: { readonly ratio: string | 
   );
 }
 
-export function GenerationView({ id, job, prompt, ratio, referenceFiles, referenceCount, problem, onEdit, onRegenerate, labels, onSameSeed, onStop }: GenerationViewProps) {
+export function GenerationView({ id, job, prompt, ratio, referenceFiles, referenceCount, problem, onEdit, onRegenerate, labels, onSameSeed, onStop, onDelete, highlighted = false }: GenerationViewProps) {
   const narrow = useNarrow();
   const [hover, setHover] = useState(false);
   // Closed by default, and not remembered (STORY_024).
@@ -116,7 +120,7 @@ export function GenerationView({ id, job, prompt, ratio, referenceFiles, referen
   const panel = info && job ? <SettingsPanel id={panelId} rows={settingsRows(job, labels)} onSameSeed={onSameSeed} /> : null;
 
   return (
-    <div className="clone-messages" data-testid="generation" data-job-id={id}>
+    <div className={`clone-messages${highlighted ? " clone-turn-highlight" : ""}`} data-testid="generation" data-job-id={id}>
       <div className="qwen-chat-message qwen-chat-message-user">
         <div className="chat-user-message-container">
           {referenceFiles.length > 0 || referenceCount > 0 ? (
@@ -203,6 +207,11 @@ export function GenerationView({ id, job, prompt, ratio, referenceFiles, referen
               {onRegenerate ? (
                 <button type="button" className="clone-icon-button clone-action" aria-label="Regenerate" onClick={onRegenerate}>
                   <Icon id={`${iconSet}-refresh`} />
+                </button>
+              ) : null}
+              {onDelete ? (
+                <button type="button" className="clone-icon-button clone-action" aria-label="Delete" onClick={onDelete}>
+                  <Icon id={`${iconSet}-delete`} />
                 </button>
               ) : null}
             </div>

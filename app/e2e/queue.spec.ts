@@ -67,6 +67,11 @@ test("three prompts sent in a row stack on the first one's page, in order, and e
 
   expect(new Set(await terminals)).toEqual(new Set(ids));
   for (const [i, id] of ids.entries()) await expectImageLoaded(cards(page).nth(i).getByTestId("result-image"), `/api/jobs/${id}/result`, 64);
+
+  // STORY_031: they are one chat, so a reload shows all three again, in order.
+  await page.reload();
+  await expect(page.getByTestId("user-bubble")).toHaveText(["a red bicycle", "a blue boat", "a green kite"]);
+  expect(await cardIds(page)).toEqual(ids);
 });
 
 test("Stop on one card stops that job only; the other carries on to its image", async ({ page, stub }, info) => {
@@ -116,7 +121,7 @@ test("a full server adds no card, and the prompt stays in the composer with the 
   expect(await stub.jobs()).toHaveLength(1);
 });
 
-test("leaving the page stops nothing: both jobs finish and the sidebar shows them", async ({ page }, info) => {
+test("leaving the page stops nothing: both jobs finish and the sidebar shows their chat", async ({ page }, info) => {
   test.skip(info.project.name === "narrow", "the sidebar is a drawer on the phone; the jobs' lifetime is the same at both widths");
   await useScripts(page, ["done-after-3-polls"]);
   await page.goto("/");
@@ -137,8 +142,10 @@ test("leaving the page stops nothing: both jobs finish and the sidebar shows the
   await page.goto("/");
   await settled;
   await expect(page.getByLabel("Generating")).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "first away" }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "second away" }).first()).toBeVisible();
+  // STORY_031: the second was sent from the first's page, so both are turns of one chat, listed once by its first prompt.
+  const rows = page.getByTestId("history-row");
+  await expect(rows.filter({ hasText: "first away" }).first()).toBeVisible();
+  await expect(rows.filter({ hasText: "second away" })).toHaveCount(0);
 });
 
 test("a count of 3 from the home page sends three jobs with their own seeds, and lands on a page showing all three", async ({ page, stub }) => {
@@ -166,9 +173,12 @@ test("a count of 3 from the home page sends three jobs with their own seeds, and
   await terminals;
   for (const [i, id] of ids.entries()) await expectImageLoaded(cards(page).nth(i).getByTestId("result-image"), `/api/jobs/${id}/result`, 64);
 
-  // The count is an option like the ratio: it survives a reload within the session.
+  // The count is an option like the ratio: it survives a reload within the session. The three are one chat (STORY_031),
+  // so the reload shows all three again.
   await page.reload();
   await expect(page.getByRole("combobox", { name: "Number of images" })).toHaveText("×3");
+  await expect(cards(page)).toHaveCount(3);
+  expect(await cardIds(page)).toEqual(ids);
 });
 
 test("a count the server stops part-way says how many went, and keeps the prompt", async ({ page, request, stub }) => {

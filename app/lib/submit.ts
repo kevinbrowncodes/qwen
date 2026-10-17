@@ -14,6 +14,8 @@ export interface GenerationRequest {
   readonly references: readonly File[];
   /** "Same seed again" (STORY_024) sends this generation's seed; absent, the server draws one (Regenerate). */
   readonly seed?: number;
+  /** The chat this image joins (STORY_031); absent from the home page, where the send starts a chat. */
+  readonly chat?: string;
 }
 
 export type SubmitOutcome = { readonly ok: true; readonly id: string } | { readonly ok: false; readonly message: string };
@@ -28,7 +30,7 @@ export function requestFrom(state: ComposerState): GenerationRequest {
 export function buildBody(req: GenerationRequest): { readonly body: BodyInit; readonly headers: Record<string, string> } {
   if (req.references.length === 0) {
     // No add-on sends no `lora` field (contract v1.2, STORY_019).
-    const json = { prompt: req.prompt, ratio: req.ratio, model: req.model, ...(req.lora === null ? {} : { lora: req.lora }), ...(req.seed === undefined ? {} : { seed: req.seed }) };
+    const json = { prompt: req.prompt, ratio: req.ratio, model: req.model, ...(req.lora === null ? {} : { lora: req.lora }), ...(req.seed === undefined ? {} : { seed: req.seed }), ...(req.chat === undefined ? {} : { chat: req.chat }) };
     return { body: JSON.stringify(json), headers: { "content-type": "application/json" } };
   }
   const form = new FormData();
@@ -37,6 +39,7 @@ export function buildBody(req: GenerationRequest): { readonly body: BodyInit; re
   if (req.ratio !== null) form.set("ratio", req.ratio);
   if (req.lora !== null) form.set("lora", req.lora);
   if (req.seed !== undefined) form.set("seed", String(req.seed));
+  if (req.chat !== undefined) form.set("chat", req.chat);
   for (const file of req.references) form.append("referenceImage", file, file.name);
   return { body: form, headers: {} };
 }
@@ -72,14 +75,17 @@ export interface BatchOutcome {
 /**
  * Creates `count` jobs from one request, one after another, each answered before the next is sent, so the server
  * sees them in order and a full queue stops the rest rather than racing them. No seed is added: the server draws one
- * for each, so the images differ. A count of 1 is exactly one `submitGeneration`.
+ * for each, so the images differ. A count of 1 is exactly one `submitGeneration`. A send that names no chat starts one
+ * with its first image, and the rest of the send joins it (STORY_031).
  */
 export async function submitBatch(req: GenerationRequest, count: number, submitOne: (req: GenerationRequest) => Promise<SubmitOutcome> = submitGeneration): Promise<BatchOutcome> {
   const ids: string[] = [];
+  let next = req;
   for (let i = 0; i < count; i++) {
-    const outcome = await submitOne(req);
+    const outcome = await submitOne(next);
     if (!outcome.ok) return { ids, message: outcome.message };
     ids.push(outcome.id);
+    if (next.chat === undefined) next = { ...next, chat: outcome.id };
   }
   return { ids, message: null };
 }

@@ -41,6 +41,14 @@ const edit = (files: Array<{ name: string; type: string; bytes: Uint8Array }>, s
   return fetch(`${base}/jobs${script ? `?script=${script}` : ""}`, { method: "POST", body: form });
 };
 
+describe("what the stub records of a request (STORY_031)", () => {
+  it("names the fields a JSON create carried, sorted", async () => {
+    const res = await create({ prompt: "a cat", ratio: "1:1", seed: 3 });
+    const id = String((await json(res))["id"]);
+    expect((await json(await fetch(`${base}/__stub/jobs/${id}/received`)))["fields"]).toEqual(["prompt", "ratio", "seed"]);
+  });
+});
+
 describe("health and capabilities", () => {
   it("answers health", async () => {
     expect(await json(await fetch(`${base}/health`))).toMatchObject({ ok: true, server: "stub" });

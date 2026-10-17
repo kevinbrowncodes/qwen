@@ -64,11 +64,12 @@ test("My Library shows every finished image, opens one, and offers Download", as
   }
   await expect(cards.nth(1).getByRole("link", { name: "Download" })).toHaveAttribute("href", `/api/jobs/${older}/result?download=1`);
   await cards.nth(1).getByRole("link", { name: "Open library one" }).click();
-  await expect(page).toHaveURL(new RegExp(`/g/${older}$`));
+  // STORY_031: an image opens in its chat, at its turn.
+  await expect(page).toHaveURL(new RegExp(`/g/${older}#${older}$`));
   await expectImageLoaded(page.getByTestId("result-image"), `/api/jobs/${older}/result`, 64);
 });
 
-test("deleting the open generation asks first, removes it everywhere, and goes home", async ({ page }, info) => {
+test("deleting the open chat asks first, removes it everywhere, and goes home", async ({ page }, info) => {
   const narrow = info.project.name === "narrow";
   await generate(page, "keep this one");
   await generate(page, "delete this one");
@@ -77,10 +78,11 @@ test("deleting the open generation asks first, removes it everywhere, and goes h
   await expect(rows).toHaveCount(2);
 
   page.once("dialog", (dialog) => {
-    expect(dialog.message()).toBe("Delete this image? This cannot be undone.");
+    // STORY_031: the row is a chat; this one holds one image.
+    expect(dialog.message()).toBe("Delete this chat and its image? This cannot be undone.");
     void dialog.accept();
   });
-  const removed = page.waitForResponse((r) => r.request().method() === "DELETE" && new URL(r.url()).pathname.startsWith("/api/history/"));
+  const removed = page.waitForResponse((r) => r.request().method() === "DELETE" && new URL(r.url()).pathname.startsWith("/api/chats/"));
   // Desktop reveals a row's menu on hover, as the reference does; touch shows it always.
   if (!narrow) await rows.first().hover();
   await rows.first().getByRole("button", { name: "Chat Menu" }).click();

@@ -21,6 +21,10 @@ export interface History {
   readonly loaded: boolean;
   readonly remove: (id: string) => Promise<boolean>;
   readonly stop: (id: string) => Promise<void>;
+  /** Every image of a chat (STORY_031); false when the server refused (a turn still running). */
+  readonly removeChat: (chatId: string) => Promise<boolean>;
+  /** Stops every turn of a chat still queued or running. */
+  readonly stopAll: (ids: readonly string[]) => Promise<void>;
 }
 
 async function read(): Promise<HistoryEntry[]> {
@@ -80,5 +84,18 @@ export function useHistory(): History {
     announceHistoryChanged();
   }, []);
 
-  return { entries, loaded, remove, stop };
+  const removeChat = useCallback(async (chatId: string): Promise<boolean> => {
+    const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}`, { method: "DELETE" });
+    if (!res.ok) return false;
+    setEntries((list) => list.filter((e) => e.chatId !== chatId));
+    announceHistoryChanged();
+    return true;
+  }, []);
+
+  const stopAll = useCallback(async (ids: readonly string[]): Promise<void> => {
+    await Promise.all(ids.map((id) => fetch(`/api/jobs/${encodeURIComponent(id)}`, { method: "DELETE" })));
+    announceHistoryChanged();
+  }, []);
+
+  return { entries, loaded, remove, stop, removeChat, stopAll };
 }
