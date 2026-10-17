@@ -21,7 +21,7 @@ N/A (no UI code changes). The Add-on dropdown shrinks by data to the kept add-on
 - [ ] **The input is the scorecard's decision table,** filled in by the owner, with a keep/drop, a strength and a guidance per add-on, and a reason. The story quotes it in the Done note.
 - [ ] **A kept add-on stays in the manifest** with the strength and guidance the table names. If a kept add-on's guidance changes, the Done note records one generation with it at the new value.
 - [ ] **A dropped add-on is removed from the manifest** and its directory under `models/loras/<id>/` is deleted, each named with its size in the Done note, **with the owner's say-so in that session** ([CLAUDE.md §4a](../../CLAUDE.md#4a-two-machines-the-mac-and-the-spark): nothing under the models directory is deleted without it).
-- [ ] **TheseAlpacas v1 against v2:** if v2 is kept and v1 (`nsfw-f23gg`) is not, v1 goes; the manifest never lists both as kept unless the table says so.
+- [ ] **TheseAlpacas v1 against v2:** if v2 is kept and v1 (`nsfw-f23gg`) is not, v1 goes; the manifest never lists both as kept unless the table says so. *(Done ahead of this story on 2026-10-17 at the owner's request: v1 was removed by CHORE_008, from the manifest and from disk.)*
 - [ ] **The model is restarted** when no job is running, and `/capabilities` lists exactly the kept add-ons.
 - [ ] **The README's add-on row and `spark/README.md`** name the kept add-ons and their settings, and the epic records the decision and its date.
 

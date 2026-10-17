@@ -111,7 +111,7 @@ describe("the info card's fields (STORY_030)", () => {
     const warnings: string[] = [];
     const loras = parseManifest(readFileSync(new URL("../../loras.json", import.meta.url), "utf8"), "/l", (w) => warnings.push(w));
     expect(warnings).toEqual([]);
-    expect(loras).toHaveLength(7);
+    expect(loras).toHaveLength(6);
     for (const l of loras) {
       expect(l.creator, l.id).toBeTruthy();
       expect(l.madeFor?.length ?? 0, l.id).toBeGreaterThan(0);

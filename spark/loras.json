@@ -14,35 +14,13 @@
       "downloadsReadOn": "2026-10-16",
       "license": "Derivatives and commercial use allowed (the creator's Civitai page)",
       "readOn": "2026-10-02",
-      "note": "TheseAlpacas' 'NSFW LORA | Qwen Image 2.1' v2.0: better anatomy, prompt following and realism than v1.0 (nsfw-f23gg), per the creator. The Hugging Face repo is a third-party mirror, byte-identical to Civitai's file 3244894. The creator recommends 25+ steps, CFG 3-6 and strength 0.8-1.",
+      "note": "TheseAlpacas' 'NSFW LORA | Qwen Image 2.1' v2.0: better anatomy, prompt following and realism than v1.0, per the creator (v1.0 was installed as nsfw-f23gg and removed on 2026-10-17, CHORE_008). The Hugging Face repo is a third-party mirror, byte-identical to Civitai's file 3244894. The creator recommends 25+ steps, CFG 3-6 and strength 0.8-1.",
       "creator": "TheseAlpacas",
       "madeFor": "General NSFW for text-to-image and edits. Mostly trained on oral, cowgirl, doggystyle, missionary, anal, penis, vagina, cum and dildos. Better anatomy and realism than v1, per the creator.",
       "madeForReadOn": "2026-10-16",
       "abilities": [
         { "subject": "Penis", "claimed": "Trained on it, among other subjects.", "bench": "Plausible in its one undressed edit (1 of 4). Text-to-image: short, partly merged." },
         { "subject": "Anus", "claimed": "Trained on anal; page tagged anus. Not male-specific." }
-      ],
-      "benchSource": "Assistant's review (2026-10-11) of the 2026-10-02 bench; not yet confirmed by the owner."
-    },
-    {
-      "id": "nsfw-f23gg",
-      "label": "NSFW (f23gg)",
-      "source": { "kind": "huggingface", "repo": "f23gg/NSFW-LORA-Qwen-Image-2.1", "revision": "ed1acb15578a4d16d26032e8b8c10ca439843ecf" },
-      "file": "NSFW Qwen Lora.safetensors",
-      "sha256": "c29f503f3515877882fd6b10f6849c78a4f2337c09021f4bd4b93d060c311aea",
-      "scale": 1.0,
-      "origin": "https://civitai.com/models/2958918?modelVersionId=3351951",
-      "downloads": 8301,
-      "downloadsReadOn": "2026-10-16",
-      "license": "The repo states none. Identified by its sha256 on 2026-10-02 as TheseAlpacas' 'NSFW LORA | Qwen Image 2.1' v1.0, whose Civitai page allows derivatives and commercial use.",
-      "readOn": "2026-10-02",
-      "note": "Installed by the owner's decision on 2026-09-29, for personal, private, non-commercial use only. The creator calls v1.0 experimental; v2.0 is nsfw-thesealpacas-v2.",
-      "creator": "TheseAlpacas",
-      "madeFor": "TheseAlpacas' general NSFW LoRA, first release (\"experimental\"). Page tags: sex acts, genitals, toys. Replaced two days later by v2, which the creator says has better anatomy and realism.",
-      "madeForReadOn": "2026-10-16",
-      "abilities": [
-        { "subject": "Penis", "bench": "No edit undressed (0 of 4). Text-to-image: plausible, scrotum elongated." },
-        { "subject": "Anus", "claimed": "The page's anus tag, shared with v2." }
       ],
       "benchSource": "Assistant's review (2026-10-11) of the 2026-10-02 bench; not yet confirmed by the owner."
     },
