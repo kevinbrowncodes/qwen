@@ -640,6 +640,146 @@ html.mobile .clone-dropdown-icon-only .qwen-chat-v2-dropdown-menu-select::before
   inset: -6px -10px;
 }
 
+/* ---- History (STORY_032, ours): the sidebar row is My Library's; the page uses My Library's frame ---- */
+.clone-history-head-active {
+  background: var(--background-option);
+  border-radius: 8px;
+}
+.clone-history {
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 24px 20px 40px;
+}
+html:not(.mobile) .clone-history {
+  padding-top: 94px;
+}
+html.mobile .clone-history {
+  padding: 13px 13px 40px;
+}
+.clone-history > * {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.clone-history-sub,
+.clone-history-empty {
+  margin-top: 0;
+  color: var(--text-caption);
+  font-size: 14px;
+}
+.clone-history-empty {
+  margin-top: 32px;
+  text-align: center;
+}
+.clone-history-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.clone-history-day {
+  flex: 1;
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 16px;
+  text-align: center;
+}
+.clone-history-step {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--text-primary);
+  font-size: 18px;
+  border-radius: 8px;
+}
+.clone-history-step:disabled {
+  color: var(--text-disabled);
+  cursor: default;
+}
+html.mobile .clone-history-step {
+  width: 44px;
+  height: 44px;
+}
+/* The date input sits over the calendar button, transparent, so a click or tap on it opens the browser's picker. */
+.clone-history-pick {
+  position: relative;
+  display: inline-flex;
+}
+.clone-history-date {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.clone-history-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line-border);
+  border-radius: 12px;
+}
+.clone-history-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+}
+.clone-history-row + .clone-history-row {
+  border-top: 1px solid var(--line-border);
+}
+.clone-history-link {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.clone-history-thumb {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  background: var(--background-option);
+  border-radius: 8px;
+}
+.clone-history-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.clone-history-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.clone-history-title {
+  overflow: hidden;
+  font-size: 14px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.clone-history-meta,
+.clone-history-count {
+  color: var(--text-caption);
+  font-size: 12px;
+}
+.clone-history-count {
+  flex: none;
+}
+/* The row's Chat Menu shows always here, as it does on touch in the sidebar. */
+.clone-history-row .chat-item-drag-web {
+  display: flex;
+}
+
 /* ---- Chats (STORY_031, ours) ---- */
 /* The turn My Library opened the chat at, until the next click or key. */
 .clone-messages.clone-turn-highlight {

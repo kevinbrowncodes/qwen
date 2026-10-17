@@ -37,20 +37,21 @@ const entry = (id: string, days: number, status: HistoryEntry["status"] = "done"
 });
 
 // STORY_031: a row per chat. Chat "b" has two turns (b, then b2), newest first as history keeps them.
+// STORY_032: the sidebar passes today's chats only; the list shows what it is given under one "Today" label.
 function setup(confirmAnswer = true) {
   const onDelete = vi.fn<(chat: ChatSummary) => void>();
   const onStop = vi.fn<(chat: ChatSummary) => void>();
   const confirm = vi.fn<(message: string) => boolean>(() => confirmAnswer);
-  const chats = chatsOf([entry("a", 0, "running"), entry("b2", 0, "done", "b"), entry("b", 0), entry("c", 1)]);
-  render(<HistoryList chats={chats} activeId="b" now={now} iconSet="qwpcicon" onDelete={onDelete} onStop={onStop} confirm={confirm} />);
+  const chats = chatsOf([entry("a", 0, "running"), entry("b2", 0, "done", "b"), entry("b", 0), entry("c", 0)]);
+  render(<HistoryList chats={chats} activeId="b" iconSet="qwpcicon" onDelete={onDelete} onStop={onStop} confirm={confirm} />);
   return { onDelete, onStop, confirm };
 }
 
 describe("HistoryList", () => {
-  it("lists one row per chat, groups by day, titles rows by the first prompt's first line, and highlights the open one", () => {
+  it("lists one row per chat under Today, titles rows by the first prompt's first line, and highlights the open one", () => {
     setup();
     expect(screen.getByRole("group", { name: "Today" })).toBeTruthy();
-    expect(screen.getByRole("group", { name: "Yesterday" })).toBeTruthy();
+    expect(screen.queryByText("All images")).toBeNull();
     const rows = screen.getAllByTestId("history-row");
     expect(rows.map((r) => r.textContent)).toEqual(["a prompt for a", "a prompt for b", "a prompt for c"]);
     const active = within(rows[1] ?? document.body).getByRole("link");
@@ -88,7 +89,13 @@ describe("HistoryList", () => {
   });
 
   it("says so when there is nothing yet", () => {
-    render(<HistoryList chats={[]} activeId={null} now={now} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} />);
+    render(<HistoryList chats={[]} activeId={null} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} />);
     expect(screen.getByText("No images yet")).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Today" })).toBeNull();
+  });
+
+  it("says no chats yet today, under Today, when only earlier days have chats (STORY_032)", () => {
+    render(<HistoryList chats={[]} hasEarlier activeId={null} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} />);
+    expect(screen.getByRole("group", { name: "Today" }).textContent).toBe("TodayNo chats yet today");
   });
 });

@@ -13,6 +13,14 @@ const stubUrl = `http://127.0.0.1:${String(STUB_PORT)}`;
 const appUrl = `http://127.0.0.1:${String(APP_PORT)}`;
 export const STUB_URL = stubUrl;
 
+/**
+ * The app's history file for this run, in the environment so the test workers (which inherit it) can backdate chats
+ * the app made (STORY_032: chats from earlier days). Set once, here in the runner; a worker re-reading this file keeps
+ * the runner's value.
+ */
+process.env["QWEN_E2E_HISTORY_FILE"] ??= path.join(tmpdir(), `qwen-e2e-history-${String(process.pid)}.json`);
+const historyFile = process.env["QWEN_E2E_HISTORY_FILE"];
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -52,7 +60,7 @@ export default defineConfig({
         PORT: String(APP_PORT),
         HOSTNAME: "127.0.0.1",
         MODEL_BASE_URL: stubUrl,
-        HISTORY_FILE: path.join(tmpdir(), `qwen-e2e-history-${String(process.pid)}.json`),
+        HISTORY_FILE: historyFile,
         NEXT_TELEMETRY_DISABLED: "1",
       },
     },

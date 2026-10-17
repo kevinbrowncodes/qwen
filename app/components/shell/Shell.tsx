@@ -13,7 +13,9 @@ import { Sidebar } from "./Sidebar";
 
 export function Shell({ children }: { readonly children: ReactNode }) {
   const narrow = useNarrow();
-  const onLibrary = usePathname() === "/library";
+  // Pages named in the top bar, as the reference names My Library; History is ours (STORY_032).
+  const pathname = usePathname();
+  const routeTitle = pathname === "/library" ? "My Library" : pathname === "/history" ? "History" : null;
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -66,8 +68,8 @@ export function Shell({ children }: { readonly children: ReactNode }) {
                           <button type="button" className="clone-icon-button sidebar-toggle-icon" aria-label="Open sidebar" onClick={() => { setDrawerOpen(true); }}>
                             <Icon id="appicon-menu" />
                           </button>
-                          {onLibrary ? (
-                            <div className="header-mobile-title">My Library</div>
+                          {routeTitle !== null ? (
+                            <div className="header-mobile-title">{routeTitle}</div>
                           ) : (
                             <div className="mms-trigger">
                               <div className="mms-trigger__name">Qwen-Image 2.1</div>
@@ -81,9 +83,9 @@ export function Shell({ children }: { readonly children: ReactNode }) {
                     <header className="header-desktop">
                       <div className="header-content" id="qwen-chat-header-content">
                         <div className="header-left" id="qwen-chat-header-left">
-                          {onLibrary ? (
+                          {routeTitle !== null ? (
                             <div className="header-route clone-library-header">
-                              <h1 className="header-title">My Library</h1>
+                              <h1 className="header-title">{routeTitle}</h1>
                             </div>
                           ) : (
                             <div className="wms-trigger" aria-label="Model">

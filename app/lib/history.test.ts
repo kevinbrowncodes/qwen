@@ -147,8 +147,8 @@ describe("chats in history (STORY_031)", () => {
 
   it("summarises one chat per row: titled by its first turn, ordered by its newest, with its count and running turns", () => {
     expect(chatsOf(all())).toEqual([
-      { id: "x", prompt: "p x", newestAt: "t5", count: 3, running: false, runningIds: [] },
-      { id: "y", prompt: "p y", newestAt: "t4", count: 2, running: true, runningIds: ["y2"] },
+      { id: "x", prompt: "p x", newestAt: "t5", count: 3, running: false, runningIds: [], thumbId: null },
+      { id: "y", prompt: "p y", newestAt: "t4", count: 2, running: true, runningIds: ["y2"], thumbId: null },
     ]);
   });
 

@@ -2,12 +2,15 @@
 /**
  * The sidebar (STORY_009 entries, STORY_013 history): New image, My Library with the two newest finished images
  * (68×68, the reference's `.my-library-content-item`), and every generation grouped by day.
+ *
+ * STORY_032: only today's chats are listed; a History row under My Library opens the earlier days.
  */
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type RefObject } from "react";
-import { chatIdOf, chatsOf, latestFinished, resultUrl, turnHref } from "@/lib/history-view";
+import { type RefObject } from "react";
+import { chatIdOf, chatsOf, latestFinished, pastDays, resultUrl, todaysChats, turnHref } from "@/lib/history-view";
 import { useHistory } from "@/lib/use-history";
+import { useNow } from "@/lib/use-now";
 import { Icon } from "../Icon";
 import { HistoryList } from "./HistoryList";
 
@@ -30,11 +33,16 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { entries, removeChat, stopAll } = useHistory();
-  const [now] = useState(() => new Date());
+  const now = useNow();
   const openId = pathname.startsWith("/g/") ? decodeURIComponent(pathname.slice(3)) : null;
   // The open chat (STORY_031): the URL names the chat, or, from an old link, one of its later turns.
   const activeId = openId === null ? null : (chatIdOf(entries, openId) ?? openId);
   const thumbs = latestFinished(entries);
+  const chats = chatsOf(entries);
+  const today = todaysChats(chats, now);
+  const hasEarlier = pastDays(chats, now).length > 0;
+  // History is the open place on its page, and while a chat from an earlier day is open (it has no row here).
+  const onHistory = pathname === "/history" || (activeId !== null && !today.some((c) => c.id === activeId) && chats.some((c) => c.id === activeId));
 
   // Collapsed on desktop: the reference's 60px icon rail (BUG_008), not the full sidebar clipped.
   if (rail) {
@@ -94,10 +102,21 @@ export function Sidebar({
             </div>
           </div>
         ) : null}
+        {hasEarlier ? (
+          <Link href="/history" className={`my-library-head clone-history-head${onHistory ? " clone-history-head-active" : ""}`} aria-current={onHistory ? "page" : undefined} onClick={onNavigate}>
+            <div className="my-library-head-left">
+              <Icon id={`${iconSet}-history`} className="my-library-head-left-icon" />
+              <div className="my-library-head-left-text">History</div>
+            </div>
+            <div className="my-library-head-right">
+              <Icon id={`${iconSet}-rightMini`} className="my-library-head-right-icon" />
+            </div>
+          </Link>
+        ) : null}
         <HistoryList
-          chats={chatsOf(entries)}
+          chats={today}
+          hasEarlier={hasEarlier}
           activeId={activeId}
-          now={now}
           iconSet={iconSet}
           onNavigate={onNavigate}
           onStop={(chat) => void stopAll(chat.runningIds)}

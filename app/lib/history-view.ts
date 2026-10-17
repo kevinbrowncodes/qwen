@@ -9,7 +9,8 @@ export interface DayGroup {
   readonly entries: readonly HistoryEntry[];
 }
 
-function dayKey(d: Date): string {
+/** A day as `YYYY-MM-DD` in the viewer's local time. */
+export function dayKey(d: Date): string {
   return `${String(d.getFullYear())}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
@@ -98,6 +99,8 @@ export interface ChatSummary {
   readonly running: boolean;
   /** The chat's turns that are still queued or running, for the row's Stop. */
   readonly runningIds: readonly string[];
+  /** The newest finished image, for a thumbnail (STORY_032); null when no turn has finished. */
+  readonly thumbId: string | null;
 }
 
 /**
@@ -131,6 +134,90 @@ export function chatsOf(entries: readonly HistoryEntry[]): ChatSummary[] {
     const newest = list[0];
     const first = list[list.length - 1];
     const runningIds = list.filter(isRunning).map((e) => e.id);
-    return { id, prompt: first?.prompt ?? "", newestAt: newest?.createdAt ?? "", count: list.length, running: runningIds.length > 0, runningIds };
+    const thumbId = list.find((e) => e.status === "done" && e.result !== undefined)?.id ?? null;
+    return { id, prompt: first?.prompt ?? "", newestAt: newest?.createdAt ?? "", count: list.length, running: runningIds.length > 0, runningIds, thumbId };
   });
+}
+
+// ---- Today and earlier days (STORY_032): a chat belongs to the local calendar day of its newest turn. ----
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The local day of an ISO time, or null for a time that does not parse. */
+export function dayOf(iso: string): string | null {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : dayKey(d);
+}
+
+/** A `YYYY-MM-DD` key as local midnight, or null for anything else. */
+export function parseDay(key: string): Date | null {
+  if (!DAY.test(key)) return null;
+  const [y, m, d] = key.split("-").map(Number);
+  if (y === undefined || m === undefined || d === undefined) return null;
+  const date = new Date(y, m - 1, d);
+  return dayKey(date) === key ? date : null;
+}
+
+/** The chats whose newest turn is today: the sidebar's list. */
+export function todaysChats(chats: readonly ChatSummary[], now: Date): ChatSummary[] {
+  const today = dayKey(now);
+  return chats.filter((c) => dayOf(c.newestAt) === today);
+}
+
+/** The days before today that have chats, newest first. */
+export function pastDays(chats: readonly ChatSummary[], now: Date): string[] {
+  const today = dayKey(now);
+  const days = new Set<string>();
+  for (const c of chats) {
+    const day = dayOf(c.newestAt);
+    if (day !== null && day < today) days.add(day);
+  }
+  return [...days].sort().reverse();
+}
+
+/** A day's chats, newest first (chats are kept newest first). */
+export function chatsOn(chats: readonly ChatSummary[], day: string): ChatSummary[] {
+  return chats.filter((c) => dayOf(c.newestAt) === day);
+}
+
+/** The nearest day with chats before ("older") or after ("newer") `day`, which itself may have none; null at either end. */
+export function stepDay(days: readonly string[], day: string, direction: "older" | "newer"): string | null {
+  if (direction === "older") return days.find((d) => d < day) ?? null;
+  return [...days].reverse().find((d) => d > day) ?? null;
+}
+
+/** The day before `now`, as a key: the latest day the History page shows. */
+export function yesterdayOf(now: Date): string {
+  const d = new Date(now);
+  d.setDate(now.getDate() - 1);
+  return dayKey(d);
+}
+
+function dateText(key: string, now: Date, style: "long" | "short"): string {
+  const date = parseDay(key);
+  if (date === null) return key;
+  const year = date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" as const };
+  return date.toLocaleDateString("en-US", { weekday: style, month: style, day: "numeric", ...year });
+}
+
+/** "Thursday, October 16": the History page's day on desktop. */
+export function longDate(key: string, now: Date): string {
+  return dateText(key, now, "long");
+}
+
+/** "Thu, Oct 16": the same on the phone. */
+export function shortDate(key: string, now: Date): string {
+  return dateText(key, now, "short");
+}
+
+/** "21:40": the local time of an ISO time, 24-hour. */
+export function timeOf(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** "1 image" or "3 images". */
+export function imageCount(n: number): string {
+  return n === 1 ? "1 image" : `${String(n)} images`;
 }

@@ -1,20 +1,24 @@
 "use client";
 /**
- * Every chat in the sidebar (STORY_013; STORY_031: a row per chat, not per image), in the reference's session-list
- * markup: an "All images" folder, day labels (`.list-folder-chats`), and a row per chat titled by its first prompt,
- * the open one highlighted. Each row's "…" (Chat Menu) offers Delete for the whole chat, or Stop while any turn runs;
+ * The sidebar's chats (STORY_013; STORY_031: a row per chat, not per image), in the reference's session-list markup: a
+ * day label (`.list-folder-chats`) and a row per chat titled by its first prompt, the open one highlighted. Each row's "…" (Chat Menu) offers Delete for the whole chat, or Stop while any turn runs;
  * Delete asks first.
+ *
+ * STORY_032: the sidebar passes today's chats only, so the list is one "Today" group; earlier days are on the History
+ * page, which shares this row menu.
  */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { deleteChatMessage, groupChatsByDay, titleOf, type ChatSummary } from "@/lib/history-view";
+import { deleteChatMessage, titleOf, type ChatSummary } from "@/lib/history-view";
 import { Icon } from "../Icon";
 
 export interface HistoryListProps {
+  /** Today's chats (STORY_032), newest first. */
   readonly chats: readonly ChatSummary[];
+  /** Whether any chat is from an earlier day: then an empty Today says so, rather than "No images yet". */
+  readonly hasEarlier?: boolean;
   /** The open chat's id. */
   readonly activeId: string | null;
-  readonly now: Date;
   readonly iconSet: "qwpcicon" | "appicon";
   readonly onDelete: (chat: ChatSummary) => void;
   readonly onStop: (chat: ChatSummary) => void;
@@ -23,7 +27,8 @@ export interface HistoryListProps {
   readonly confirm?: (message: string) => boolean;
 }
 
-function RowMenu({ chat, iconSet, onDelete, onStop, confirm }: { readonly chat: ChatSummary; readonly iconSet: string; readonly onDelete: () => void; readonly onStop: () => void; readonly confirm: (m: string) => boolean }) {
+/** A chat row's "…" (Chat Menu): Stop while a turn runs, otherwise Delete the chat after asking. */
+export function RowMenu({ chat, iconSet, onDelete, onStop, confirm }: { readonly chat: ChatSummary; readonly iconSet: string; readonly onDelete: () => void; readonly onStop: () => void; readonly confirm: (m: string) => boolean }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -80,21 +85,18 @@ function RowMenu({ chat, iconSet, onDelete, onStop, confirm }: { readonly chat: 
   );
 }
 
-export function HistoryList({ chats, activeId, now, iconSet, onDelete, onStop, onNavigate, confirm = (m) => window.confirm(m) }: HistoryListProps) {
-  const groups = groupChatsByDay(chats, now);
+export function HistoryList({ chats, hasEarlier = false, activeId, iconSet, onDelete, onStop, onNavigate, confirm = (m) => window.confirm(m) }: HistoryListProps) {
   return (
     <div className="session-list-wrapper">
       <div className="session-list">
         <div className="list-folder">
-          <div className="folder-button">
-            <div className="folder-name">All images</div>
-          </div>
           <div className="folder-content">
-            {groups.length === 0 ? <div className="list-folder-chats clone-empty-list">No images yet</div> : null}
-            {groups.map((g) => (
-              <div key={g.label} className="list-folder-pt" role="group" aria-label={g.label}>
-                <div className="list-folder-chats">{g.label}</div>
-                {g.chats.map((c) => (
+            {chats.length === 0 && !hasEarlier ? <div className="list-folder-chats clone-empty-list">No images yet</div> : null}
+            {chats.length > 0 || hasEarlier ? (
+              <div className="list-folder-pt" role="group" aria-label="Today">
+                <div className="list-folder-chats">Today</div>
+                {chats.length === 0 ? <div className="list-folder-chats clone-empty-list">No chats yet today</div> : null}
+                {chats.map((c) => (
                   <div key={c.id} className="chat-item-drag" data-testid="history-row">
                     <Link href={`/g/${encodeURIComponent(c.id)}`} className={`chat-item-drag-link${c.id === activeId ? " chat-item-drag-active" : ""}`} aria-current={c.id === activeId ? "page" : undefined} onClick={onNavigate}>
                       <div className="chat-item-drag-link-content">
@@ -118,7 +120,7 @@ export function HistoryList({ chats, activeId, now, iconSet, onDelete, onStop, o
                   </div>
                 ))}
               </div>
-            ))}
+            ) : null}
           </div>
         </div>
       </div>

@@ -40,11 +40,12 @@ test("desktop: the sidebar collapses to the reference's 60px icon rail and expan
   expect((await settledBox(page.locator("#sidebar"))).width).toBe(60);
   await expect(page.getByRole("link", { name: "New image" })).toBeVisible();
   await expect(page.getByRole("link", { name: "My Library" })).toBeVisible();
-  await expect(page.getByText("All images")).toHaveCount(0);
+  // The full sidebar's labels are absent from the rail (STORY_032 removed "All images", the marker this used).
+  await expect(page.getByText("My Library", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Toggle sidebar" })).toHaveCount(1);
   await page.getByRole("button", { name: "Toggle sidebar" }).click();
   expect((await settledBox(page.locator("#sidebar"))).width).toBe(240);
-  await expect(page.getByText("All images")).toBeVisible();
+  await expect(page.getByText("My Library", { exact: true })).toBeVisible();
 });
 
 test("narrow: the drawer opens from the menu and closes from the backdrop; the composer is pinned at the bottom", async ({ page }, info) => {
