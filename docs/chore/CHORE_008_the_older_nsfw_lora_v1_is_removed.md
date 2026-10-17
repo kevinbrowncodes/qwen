@@ -1,6 +1,6 @@
 # CHORE_008 — The older NSFW LoRA (version 1) is removed
 
-**Status:** Approved by the owner on 2026-10-17 ("get rid of the older version then"), in progress
+**Status:** Done 2026-10-17. Approved by the owner that day ("get rid of the older version then")
 
 ## Summary
 
@@ -14,11 +14,11 @@
 
 ## Changes
 
-- [ ] **The manifest.** The `nsfw-f23gg` entry is removed from `spark/loras.json`. v2's provenance `note`, which compares it to v1.0, says v1.0 was removed by this chore.
-- [ ] **The file on disk.** `models/loras/nsfw-f23gg/` (153 MB, one `.safetensors` file) is deleted, with the owner's say-so given that session (CLAUDE.md §4a). It can be fetched again from its pinned source (`f23gg/NSFW-LORA-Qwen-Image-2.1` at `ed1acb1…`, sha256 `c29f503f…`) if it is ever wanted.
-- [ ] **The model server** is restarted when no job is running and memory allows (`spark/up.sh`), and `/capabilities` lists six LoRAs, without `nsfw-f23gg`.
-- [ ] **The README's** installed list drops it.
-- [ ] **STORY_023** notes that v1.0 was removed ahead of it.
+- [x] **The manifest.** The `nsfw-f23gg` entry is removed from `spark/loras.json`. v2's provenance `note`, which compares it to v1.0, says v1.0 was removed by this chore.
+- [x] **The file on disk.** `models/loras/nsfw-f23gg/` (153 MB, one `.safetensors` file) is deleted, with the owner's say-so given that session (CLAUDE.md §4a). It can be fetched again from its pinned source (`f23gg/NSFW-LORA-Qwen-Image-2.1` at `ed1acb1…`, sha256 `c29f503f…`) if it is ever wanted.
+- [x] **The model server** is restarted when no job is running and memory allows (`spark/up.sh`), and `/capabilities` lists six LoRAs, without `nsfw-f23gg`.
+- [x] **The README's** installed list drops it.
+- [x] **STORY_023** notes that v1.0 was removed ahead of it.
 
 Older tickets (STORY_019, STORY_021, STORY_022, STORY_030, CHORE_006) and the bench scorecard mention `nsfw-f23gg` as history and are left as they are.
 
@@ -28,3 +28,9 @@ Older tickets (STORY_019, STORY_021, STORY_022, STORY_030, CHORE_006) and the be
 - **Integration and e2e:** none new. They run against the stub's two fake LoRAs, so no real LoRA appears in them. Both stay green in the gate.
 - **Manual, on the Spark:** after the restart, the worker's `ready` line and `/capabilities` list the six, and `spark/fetch-loras.sh status` shows nothing missing.
 - **Old images made with it stay readable.** The Info panel shows a LoRA's label while the server still offers it and its id otherwise (STORY_024), so their Info reads `nsfw-f23gg` from then on.
+
+## Done note (2026-10-17)
+
+- **Gate:** green on the pre-push hook for the commit (`d797414`).
+- **On disk:** `models/loras/nsfw-f23gg/` (153 MB: `NSFW Qwen Lora.safetensors`, 159,436,456 bytes, and its fetch cache) was deleted after the owner's go-ahead. `spark/fetch-loras.sh status` shows the six remaining LoRAs fetched and nothing missing.
+- **The restart** was held from 12:41 to 16:55 UTC, at the owner's choice after the evidence now in BUG_013: minimax was rendering, and only 23–24 GiB was available. A background check restarted the model server once qwen was idle and 29 GiB was available, with minimax's ComfyUI at 40 GiB. `spark/up.sh` reported ready. The worker's `ready` line and `/api/capabilities` list the six: NSFW v2 (TheseAlpacas), Erect penis (FriendOfMale), Penis (CoachBate), Uncensored, Uncut penis (CoachBate) and Flaccid uncut (LonelyCoyote). minimax's ComfyUI stayed up, and the kernel logged no `NV_ERR_NO_MEMORY` during the load.
