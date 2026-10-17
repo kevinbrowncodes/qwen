@@ -79,6 +79,17 @@ test("today's chats are in the sidebar, and History steps through earlier days",
   await expect(rows.first()).toContainText("1 image");
   await expect.poll(() => rows.first().locator("img").evaluate((el) => (el instanceof HTMLImageElement ? el.naturalWidth : 0))).toBe(64);
 
+  // Layout, found by the manual check after the first deploy: the list lines up with the day's header, and the row's
+  // "…" sits after the image count instead of over it.
+  const nav = await settledBox(page.locator(".clone-history-nav"));
+  const list = await settledBox(page.locator(".clone-history-rows"));
+  expect(Math.abs(list.x - nav.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(list.width - nav.width)).toBeLessThanOrEqual(1);
+  const count = await settledBox(rows.first().locator(".clone-history-count"));
+  const menu = await settledBox(rows.first().getByRole("button", { name: "Chat Menu" }));
+  expect(menu.x).toBeGreaterThanOrEqual(count.x + count.width);
+  expect(menu.x + menu.width).toBeLessThanOrEqual(list.x + list.width);
+
   // ‹ skips the empty day in between; ‹ is then disabled; Back returns.
   await page.getByRole("button", { name: "Earlier day" }).click();
   await expect(page).toHaveURL(new RegExp(`day=${dayKey(noonDaysAgo(4))}$`));

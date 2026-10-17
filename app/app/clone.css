@@ -719,7 +719,8 @@ html.mobile .clone-history-step {
   cursor: pointer;
 }
 .clone-history-rows {
-  margin: 0;
+  /* Centred like the heading above it (the page's blocks share one 720px column). */
+  margin: 0 auto;
   padding: 0;
   list-style: none;
   border: 1px solid var(--line-border);
@@ -775,9 +776,15 @@ html.mobile .clone-history-step {
 .clone-history-count {
   flex: none;
 }
-/* The row's Chat Menu shows always here, as it does on touch in the sidebar. */
-.clone-history-row .chat-item-drag-web {
+/* The row's Chat Menu shows always here, as it does on touch in the sidebar, and sits after the count in the row's
+   flow instead of over its right edge. The reference's `.chat-item-drag .chat-item-drag-web` (hidden, absolute) loads
+   after this file at the same specificity, so this names the row's two classes to outrank it. */
+.clone-history-row.chat-item-drag .chat-item-drag-web {
+  position: static;
   display: flex;
+  flex: none;
+  margin: 0 0 0 8px;
+  transform: none;
 }
 
 /* ---- Chats (STORY_031, ours) ---- */
