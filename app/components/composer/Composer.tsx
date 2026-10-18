@@ -1,9 +1,12 @@
 "use client";
 /**
  * The composer (STORY_009 resting, STORY_010 image mode), in the reference's markup. Resting: one row with `+`, the
- * textarea and Send. Image mode: the textarea, then a footer with `+`, the blue "Create Image" pill and the model and
+ * textarea and Send. Image mode: the textarea, then a footer with `+`, the blue Create Image pill and the model and
  * aspect-ratio dropdowns (docs/recon/2026-09-26/states/composer-image-mode@1437.json). The state is a pure reducer
  * (lib/composer-state.ts); options survive a reload within the session.
+ *
+ * CHORE_009: the pill is its icon and × at both widths (the reference adds the words on desktop), named "Create Image"
+ * for screen readers and as a tooltip.
  */
 import { useCallback, useEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { activeRatio, canSend, FALLBACK_CAPABILITIES, initialState, MATCH_REFERENCE, MAX_COUNT, NO_LORA, parseCapabilities, reduce, restore, serialize, shortModelLabel, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
@@ -234,9 +237,8 @@ export function Composer({ onSubmit, externalError = null, busy = false, inject 
               <div className="message-input-column-footer">
                 <div className="mode-select">
                   {modeMenu}
-                  <div className="mode-select-current-mode" data-testid="image-pill">
+                  <div className="mode-select-current-mode" data-testid="image-pill" role="group" aria-label="Create Image" title="Create Image">
                     <Icon id={`${iconSet}-aiPicture`} className="mode-select-current-mode-icon" />
-                    {narrow ? null : <span>Create Image</span>}
                     <button
                       type="button"
                       className="clone-icon-button mode-select-current-mode-close"

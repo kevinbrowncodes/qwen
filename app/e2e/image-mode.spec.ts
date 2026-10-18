@@ -17,8 +17,10 @@ test("+ opens the menu, Create Image enters image mode with the pill, the model 
 
   const pill = page.getByTestId("image-pill");
   await expect(pill).toBeVisible();
-  if (info.project.name === "desktop") await expect(pill).toContainText("Create Image");
-  else await expect(pill).not.toContainText("Create Image");
+  // CHORE_009: icon and × only, at both widths, named for screen readers and as a tooltip.
+  await expect(pill).toHaveText("");
+  await expect(pill).toHaveAccessibleName("Create Image");
+  await expect(pill).toHaveAttribute("title", "Create Image");
   await expect(page.getByRole("combobox", { name: "Aspect ratio" })).toHaveText("16:9");
   await expect(page.getByRole("combobox", { name: "Image model" })).toHaveText(info.project.name === "desktop" ? "Qwen-Image 2.1" : "Model 2.1");
   expect(await pill.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(66, 110, 255)");
