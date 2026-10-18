@@ -41,10 +41,11 @@ const entry = (id: string, days: number, status: HistoryEntry["status"] = "done"
 function setup(confirmAnswer = true) {
   const onDelete = vi.fn<(chat: ChatSummary) => void>();
   const onStop = vi.fn<(chat: ChatSummary) => void>();
+  const onRename = vi.fn<(chat: ChatSummary, title: string | null) => void>();
   const confirm = vi.fn<(message: string) => boolean>(() => confirmAnswer);
   const chats = chatsOf([entry("a", 0, "running"), entry("b2", 0, "done", "b"), entry("b", 0), entry("c", 0)]);
-  render(<HistoryList chats={chats} activeId="b" iconSet="qwpcicon" onDelete={onDelete} onStop={onStop} confirm={confirm} />);
-  return { onDelete, onStop, confirm };
+  render(<HistoryList chats={chats} activeId="b" iconSet="qwpcicon" onDelete={onDelete} onStop={onStop} onRename={onRename} confirm={confirm} />);
+  return { onDelete, onStop, onRename, confirm };
 }
 
 describe("HistoryList", () => {
@@ -89,13 +90,78 @@ describe("HistoryList", () => {
   });
 
   it("says so when there is nothing yet", () => {
-    render(<HistoryList chats={[]} activeId={null} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} />);
+    render(<HistoryList chats={[]} activeId={null} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} onRename={() => undefined} />);
     expect(screen.getByText("No images yet")).toBeTruthy();
     expect(screen.queryByRole("group", { name: "Today" })).toBeNull();
   });
 
   it("says no chats yet today, under Today, when only earlier days have chats (STORY_032)", () => {
-    render(<HistoryList chats={[]} hasEarlier activeId={null} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} />);
+    render(<HistoryList chats={[]} hasEarlier activeId={null} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} onRename={() => undefined} />);
     expect(screen.getByRole("group", { name: "Today" }).textContent).toBe("TodayNo chats yet today");
+  });
+
+  // STORY_033: Rename, in place.
+  const openRename = (index: number): HTMLInputElement => {
+    const row = screen.getAllByTestId("history-row")[index] ?? document.body;
+    fireEvent.click(within(row).getByRole("button", { name: "Chat Menu" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+    const input = within(row).getByRole("textbox", { name: "Chat name" });
+    if (!(input instanceof HTMLInputElement)) throw new Error("not an input");
+    return input;
+  };
+
+  it("offers Rename first, above Delete, and above Stop while a turn runs", () => {
+    setup();
+    const [running, idle] = screen.getAllByTestId("history-row");
+    fireEvent.click(within(running ?? document.body).getByRole("button", { name: "Chat Menu" }));
+    expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Rename", "Stop"]);
+    fireEvent.mouseDown(document.body);
+    fireEvent.click(within(idle ?? document.body).getByRole("button", { name: "Chat Menu" }));
+    expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Rename", "Delete"]);
+  });
+
+  it("turns the title into a focused input with its text selected, and the row stops being a link", () => {
+    setup();
+    const input = openRename(1);
+    expect(input.value).toBe("a prompt for b");
+    expect(document.activeElement).toBe(input);
+    expect([input.selectionStart, input.selectionEnd]).toEqual([0, input.value.length]);
+    expect(input.maxLength).toBe(100);
+    expect(input.closest("a")).toBeNull();
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("saves the trimmed name on Enter, once, and puts the row back", () => {
+    const { onRename } = setup();
+    const input = openRename(1);
+    fireEvent.change(input, { target: { value: "  Beach set, take 2 " } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.blur(input);
+    expect(onRename).toHaveBeenCalledTimes(1);
+    expect(onRename).toHaveBeenCalledWith(expect.objectContaining({ id: "b" }), "Beach set, take 2");
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
+
+  it("saves on leaving the input, and asks to clear the name when it is left blank on a renamed chat", () => {
+    const onRename = vi.fn<(chat: ChatSummary, title: string | null) => void>();
+    const chats = chatsOf([{ ...entry("n", 0), title: "Named" }]);
+    render(<HistoryList chats={chats} activeId={null} iconSet="qwpcicon" onDelete={() => undefined} onStop={() => undefined} onRename={onRename} />);
+    expect(screen.getByTestId("history-row").textContent).toBe("Named");
+    const input = openRename(0);
+    fireEvent.change(input, { target: { value: "   " } });
+    fireEvent.blur(input);
+    expect(onRename).toHaveBeenCalledWith(expect.objectContaining({ id: "n" }), null);
+  });
+
+  it("Escape puts the old title back and saves nothing, nor does an unchanged name", () => {
+    const { onRename } = setup();
+    let input = openRename(2);
+    fireEvent.change(input, { target: { value: "something else" } });
+    fireEvent.keyDown(input, { key: "Escape" });
+    fireEvent.blur(input);
+    expect(screen.getAllByTestId("history-row")[2]?.textContent).toBe("a prompt for c");
+    input = openRename(2);
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onRename).not.toHaveBeenCalled();
   });
 });

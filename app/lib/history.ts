@@ -30,6 +30,8 @@ export interface HistoryEntry {
   readonly progress: number;
   readonly error?: { readonly code: string; readonly message: string };
   readonly result?: { readonly width: number; readonly height: number; readonly mimeType: string };
+  /** The chat's name, when the owner renamed it (STORY_033): written to every turn of the chat, so they agree. */
+  readonly title?: string;
 }
 
 export type NewEntry = Pick<HistoryEntry, "id" | "chatId" | "prompt" | "ratio" | "model" | "referenceImages" | "lora" | "createdAt">;
@@ -108,8 +110,10 @@ export function parseEntries(text: string): HistoryEntry[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((e): e is HistoryEntry => isRecord(e) && typeof e["id"] === "string" && typeof e["prompt"] === "string" && typeof e["createdAt"] === "string" && typeof e["status"] === "string")
-    .map((e) => ({
+    .map(({ title, ...e }) => ({
       ...e,
+      // A name is kept only when it is text (STORY_033); entries saved before have none.
+      ...(typeof title === "string" && title.trim() !== "" ? { title } : {}),
       // Entries saved before STORY_031 are each a chat of one.
       chatId: typeof e.chatId === "string" && e.chatId !== "" ? e.chatId : e.id,
       lora: typeof e.lora === "string" ? e.lora : null,
@@ -131,4 +135,26 @@ export function removeChat(entries: readonly HistoryEntry[], chatId: string): Re
   const turns = entries.filter((e) => e.chatId === chatId);
   if (turns.some(isOpen)) return { entries: [...entries], removed: 0, refused: "running" };
   return { entries: entries.filter((e) => e.chatId !== chatId), removed: turns.length };
+}
+
+/** The longest name a chat can be given (STORY_033). */
+export const TITLE_MAX = 100;
+
+/** A turn with its chat's name taken off (STORY_033). */
+export function withoutTitle(e: HistoryEntry): HistoryEntry {
+  const { title, ...rest } = e;
+  return title === undefined ? e : rest;
+}
+
+export type RenameChatOutcome = { readonly entries: HistoryEntry[]; readonly renamed: number };
+
+/** Names a chat (STORY_033) by writing the title to every turn; null clears it. A running turn does not block it. */
+export function renameChat(entries: readonly HistoryEntry[], chatId: string, title: string | null): RenameChatOutcome {
+  let renamed = 0;
+  const next = entries.map((e) => {
+    if (e.chatId !== chatId) return e;
+    renamed += 1;
+    return title === null ? withoutTitle(e) : { ...e, title };
+  });
+  return { entries: next, renamed };
 }

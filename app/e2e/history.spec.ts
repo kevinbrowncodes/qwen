@@ -4,7 +4,7 @@
  * (CLAUDE.md §6b: never assert an exact count against data the test did not create).
  */
 import type { APIRequestContext, Page } from "@playwright/test";
-import { expect, expectImageLoaded, submitAndWait, test } from "./fixtures";
+import { expect, expectImageLoaded, settledBox, submitAndWait, test } from "./fixtures";
 
 async function clearHistory(request: APIRequestContext): Promise<void> {
   const body: unknown = await (await request.get("/api/history")).json();
@@ -101,4 +101,45 @@ test("with no history, My Library says so and the sidebar says so", async ({ pag
   await expect(page.getByRole("link", { name: "New image" }).last()).toBeVisible();
   await openSidebar(page, info.project.name === "narrow");
   await expect(page.getByText("No images yet", { exact: true })).toBeVisible();
+});
+
+test("a chat renamed from its menu keeps the name after a reload, and Escape changes nothing (STORY_033)", async ({ page }, info) => {
+  const narrow = info.project.name === "narrow";
+  const chatId = await generate(page, "rename me, a beach at dusk");
+  await openSidebar(page, narrow);
+  const row = page.getByTestId("history-row").first();
+  await expect(row).toHaveText("rename me, a beach at dusk");
+
+  const openRename = async (): Promise<void> => {
+    if (!narrow) await row.hover();
+    await row.getByRole("button", { name: "Chat Menu" }).click();
+    await expect(page.getByRole("menuitem")).toHaveText(["Rename", "Delete"]);
+    await page.getByRole("menuitem", { name: "Rename" }).click();
+  };
+
+  await openRename();
+  const input = row.getByRole("textbox", { name: "Chat name" });
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue("rename me, a beach at dusk");
+  if (narrow) expect((await settledBox(row)).height).toBeGreaterThanOrEqual(44);
+  const renamed = page.waitForResponse((r) => r.request().method() === "PATCH" && new URL(r.url()).pathname === `/api/chats/${chatId}`);
+  await input.fill("Beach set, take 2");
+  await input.press("Enter");
+  expect((await renamed).status()).toBe(200);
+  await expect(row).toHaveText("Beach set, take 2");
+
+  await page.reload();
+  await openSidebar(page, narrow);
+  await expect(row).toHaveText("Beach set, take 2");
+
+  // Escape: the old name comes back and nothing is sent.
+  const patches: string[] = [];
+  page.on("request", (r) => {
+    if (r.method() === "PATCH") patches.push(r.url());
+  });
+  await openRename();
+  await input.fill("not this");
+  await input.press("Escape");
+  await expect(row).toHaveText("Beach set, take 2");
+  expect(patches).toEqual([]);
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addEntry, applyStatus, markCancelled, parseEntries, removeChat, removeEntry, type HistoryEntry } from "./history";
+import { addEntry, applyStatus, markCancelled, parseEntries, removeChat, removeEntry, renameChat, type HistoryEntry } from "./history";
 import { chatIdOf, chatsOf, turnsOf } from "./history-view";
 
 const add = (list: readonly HistoryEntry[], id: string, createdAt: string, chatId = id): HistoryEntry[] =>
@@ -147,8 +147,8 @@ describe("chats in history (STORY_031)", () => {
 
   it("summarises one chat per row: titled by its first turn, ordered by its newest, with its count and running turns", () => {
     expect(chatsOf(all())).toEqual([
-      { id: "x", prompt: "p x", newestAt: "t5", count: 3, running: false, runningIds: [], thumbId: null },
-      { id: "y", prompt: "p y", newestAt: "t4", count: 2, running: true, runningIds: ["y2"], thumbId: null },
+      { id: "x", prompt: "p x", newestAt: "t5", count: 3, running: false, runningIds: [], thumbId: null, title: null },
+      { id: "y", prompt: "p y", newestAt: "t4", count: 2, running: true, runningIds: ["y2"], thumbId: null, title: null },
     ]);
   });
 
@@ -163,5 +163,33 @@ describe("chats in history (STORY_031)", () => {
     const left = removeEntry(all(), "x").entries;
     expect(turnsOf(left, "x").map((e) => e.id)).toEqual(["x2", "x3"]);
     expect(chatsOf(left)[0]).toMatchObject({ id: "x", prompt: "p x2", count: 2 });
+  });
+
+  it("renames every turn of a chat, running ones too, and leaves other chats alone (STORY_033)", () => {
+    const out = renameChat(all(), "y", "Harbour");
+    expect(out.renamed).toBe(2);
+    expect(out.entries.filter((e) => e.chatId === "y").map((e) => e.title)).toEqual(["Harbour", "Harbour"]);
+    expect(out.entries.filter((e) => e.chatId === "x").every((e) => !("title" in e))).toBe(true);
+  });
+
+  it("clears a chat's name with null, and renames nothing for an unknown chat (STORY_033)", () => {
+    const named = renameChat(all(), "x", "Mine").entries;
+    const cleared = renameChat(named, "x", null);
+    expect(cleared.renamed).toBe(3);
+    expect(cleared.entries.some((e) => "title" in e)).toBe(false);
+    expect(renameChat(all(), "nope", "n")).toMatchObject({ renamed: 0 });
+  });
+
+  it("keeps a stored name through a reload, and drops one that is not text (STORY_033)", () => {
+    const named = renameChat(all(), "y", "Harbour").entries;
+    expect(parseEntries(JSON.stringify(named)).filter((e) => e.chatId === "y").map((e) => e.title)).toEqual(["Harbour", "Harbour"]);
+    const odd = JSON.stringify([{ ...named[0], title: 42 }, { ...named[1], title: "  " }]);
+    expect(parseEntries(odd).some((e) => "title" in e)).toBe(false);
+  });
+
+  it("a turn sent after a rename keeps the chat's name (STORY_033)", () => {
+    const named = renameChat(all(), "y", "Harbour").entries;
+    const more = addEntry(named, { id: "y3", chatId: "y", prompt: "p y3", ratio: "1:1", model: "m", referenceImages: 0, lora: null, createdAt: "t9" });
+    expect(chatsOf(more).find((c) => c.id === "y")?.title).toBe("Harbour");
   });
 });

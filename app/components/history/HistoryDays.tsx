@@ -7,18 +7,18 @@
  */
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef } from "react";
-import { chatsOf, chatsOn, dayKey, imageCount, longDate, pastDays, resultUrl, shortDate, stepDay, timeOf, titleOf, yesterdayOf } from "@/lib/history-view";
+import { useRef, useState } from "react";
+import { chatTitle, chatsOf, chatsOn, dayKey, imageCount, longDate, pastDays, resultUrl, shortDate, stepDay, timeOf, yesterdayOf } from "@/lib/history-view";
 import { useHistory } from "@/lib/use-history";
 import { useNarrow } from "@/lib/use-narrow";
 import { useNow } from "@/lib/use-now";
 import { Icon } from "../Icon";
-import { RowMenu } from "../shell/HistoryList";
+import { RenameInput, RowMenu } from "../shell/HistoryList";
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export function HistoryDays({ confirm = (m: string) => window.confirm(m) }: { readonly confirm?: (message: string) => boolean }) {
-  const { entries, loaded, removeChat, stopAll } = useHistory();
+  const { entries, loaded, removeChat, renameChat, stopAll } = useHistory();
   const router = useRouter();
   const params = useSearchParams();
   const narrow = useNarrow();
@@ -76,6 +76,7 @@ export function HistoryDays({ confirm = (m: string) => window.confirm(m) }: { re
             confirm={confirm}
             onDelete={(id) => void removeChat(id)}
             onStop={(ids) => void stopAll(ids)}
+            onRename={(id, title) => void renameChat(id, title)}
           />
         </>
       )}
@@ -120,39 +121,71 @@ interface DayRowsProps {
   readonly confirm: (message: string) => boolean;
   readonly onDelete: (chatId: string) => void;
   readonly onStop: (ids: readonly string[]) => void;
+  readonly onRename: (chatId: string, title: string | null) => void;
 }
 
 /** A day's chats, newest first: the newest image, the title, the count and the time of the newest turn. */
-function DayRows({ chats, iconSet, confirm, onDelete, onStop }: DayRowsProps) {
+function DayRows({ chats, iconSet, confirm, onDelete, onStop, onRename }: DayRowsProps) {
+  const [editing, setEditing] = useState<string | null>(null);
   if (chats.length === 0) return <p className="clone-history-empty">No chats on this day.</p>;
   return (
     <ul className="clone-history-rows">
-      {chats.map((c) => (
-        <li key={c.id} className="clone-history-row chat-item-drag" data-testid="history-day-row">
-          <Link href={`/g/${encodeURIComponent(c.id)}`} className="clone-history-link">
+      {chats.map((c) => {
+        const renaming = editing === c.id;
+        const content = (
+          <>
             <span className="clone-history-thumb">
               {/* eslint-disable-next-line @next/next/no-img-element -- a result from our own route */}
               {c.thumbId === null ? null : <img src={resultUrl(c.thumbId)} alt="" />}
             </span>
             <span className="clone-history-text">
-              <span className="clone-history-title">{titleOf(c.prompt)}</span>
+              {renaming ? (
+                <RenameInput
+                  chat={c}
+                  onSave={(title) => {
+                    onRename(c.id, title);
+                  }}
+                  onDone={() => {
+                    setEditing(null);
+                  }}
+                />
+              ) : (
+                <span className="clone-history-title">{chatTitle(c)}</span>
+              )}
               <span className="clone-history-meta">last {timeOf(c.newestAt)}</span>
             </span>
             <span className="clone-history-count">{imageCount(c.count)}</span>
-          </Link>
-          <RowMenu
-            chat={c}
-            iconSet={iconSet}
-            confirm={confirm}
-            onDelete={() => {
-              onDelete(c.id);
-            }}
-            onStop={() => {
-              onStop(c.runningIds);
-            }}
-          />
-        </li>
-      ))}
+          </>
+        );
+        return (
+          <li key={c.id} className="clone-history-row chat-item-drag" data-testid="history-day-row">
+            {/* While renaming (STORY_033), the row is not a link, so a click in the input never opens the chat. */}
+            {renaming ? (
+              <div className="clone-history-link">{content}</div>
+            ) : (
+              <Link href={`/g/${encodeURIComponent(c.id)}`} className="clone-history-link">
+                {content}
+              </Link>
+            )}
+            {renaming ? null : (
+              <RowMenu
+                chat={c}
+                iconSet={iconSet}
+                confirm={confirm}
+                onDelete={() => {
+                  onDelete(c.id);
+                }}
+                onStop={() => {
+                  onStop(c.runningIds);
+                }}
+                onRename={() => {
+                  setEditing(c.id);
+                }}
+              />
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }

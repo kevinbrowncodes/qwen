@@ -11,6 +11,7 @@ let entries: HistoryEntry[] = [];
 const push = vi.fn();
 const removeChat = vi.fn<(id: string) => Promise<boolean>>(() => Promise.resolve(true));
 const stopAll = vi.fn<(ids: readonly string[]) => Promise<void>>(() => Promise.resolve());
+const renameChat = vi.fn<(id: string, title: string | null) => Promise<boolean>>(() => Promise.resolve(true));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }), useSearchParams: () => new URLSearchParams(search) }));
 vi.mock("next/link", () => ({
   default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
@@ -21,7 +22,7 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("@/lib/use-history", () => ({
   HISTORY_CHANGED: "qwen:history-changed",
-  useHistory: () => ({ entries, loaded: true, remove: vi.fn(), stop: vi.fn(), removeChat, stopAll }),
+  useHistory: () => ({ entries, loaded: true, remove: vi.fn(), stop: vi.fn(), removeChat, renameChat, stopAll }),
 }));
 
 const now = new Date();
@@ -73,6 +74,7 @@ afterEach(() => {
   push.mockClear();
   removeChat.mockClear();
   stopAll.mockClear();
+  renameChat.mockClear();
 });
 
 describe("HistoryDays", () => {
@@ -143,5 +145,22 @@ describe("HistoryDays", () => {
     fireEvent.click(runRow.querySelector('[aria-label="Chat Menu"]') ?? document.body);
     fireEvent.click(screen.getByRole("menuitem", { name: "Stop" }));
     expect(stopAll).toHaveBeenCalledWith(["run"]);
+  });
+
+  it("shows a renamed chat's name, and renames from the row's menu in place (STORY_033)", () => {
+    seed();
+    entries = entries.map((e) => (e.chatId === "h" ? { ...e, title: "Harbour at dusk" } : e));
+    page();
+    expect(rows()[0]).toBe("Harbour at dusklast 21:402 images");
+    const row = screen.getAllByTestId("history-day-row")[1] ?? document.body;
+    fireEvent.click(row.querySelector('[aria-label="Chat Menu"]') ?? document.body);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+    const input = screen.getByRole("textbox", { name: "Chat name" });
+    expect(input.closest("a")).toBeNull();
+    expect(row.querySelector('[aria-label="Chat Menu"]')).toBeNull();
+    fireEvent.change(input, { target: { value: "Two lighthouses" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(renameChat).toHaveBeenCalledWith("l", "Two lighthouses");
+    expect(screen.queryByRole("textbox", { name: "Chat name" })).toBeNull();
   });
 });

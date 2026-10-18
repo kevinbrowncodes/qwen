@@ -32,7 +32,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { entries, removeChat, stopAll } = useHistory();
+  const { entries, removeChat, renameChat, stopAll } = useHistory();
   const now = useNow();
   const openId = pathname.startsWith("/g/") ? decodeURIComponent(pathname.slice(3)) : null;
   // The open chat (STORY_031): the URL names the chat, or, from an old link, one of its later turns.
@@ -120,6 +120,7 @@ export function Sidebar({
           iconSet={iconSet}
           onNavigate={onNavigate}
           onStop={(chat) => void stopAll(chat.runningIds)}
+          onRename={(chat, title) => void renameChat(chat.id, title)}
           onDelete={(chat) => {
             void removeChat(chat.id).then((removed) => {
               if (removed && chat.id === activeId) {

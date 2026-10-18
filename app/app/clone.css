@@ -1071,3 +1071,27 @@ html.mobile .clone-text-row .message-input-textarea {
 html.mobile .clone-text-row .clone-dropdown {
   flex: none;
 }
+
+/* ---- Renaming a chat (STORY_033) ---- */
+/* The reference's `.chat-item-drag-input` sets its size and colours but leans on a reset this app does not load, so
+   the browser's border, padding and font are taken off here. The row keeps its link's padding, so the title does not
+   move when it becomes an input; on touch the row is at least 44px tall (CLAUDE.md §6 rule 9). */
+.chat-item-drag-input {
+  box-sizing: border-box;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+}
+.chat-item-drag .clone-renaming {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+html.mobile .chat-item-drag .clone-renaming {
+  min-height: 44px;
+}
+.clone-history-text .chat-item-drag-input {
+  margin-right: 0;
+}

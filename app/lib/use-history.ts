@@ -1,11 +1,11 @@
 "use client";
 /**
  * History as the sidebar and My Library see it (STORY_013): read on mount and again whenever the app says it changed
- * (`qwen:history-changed`, sent after a submit and when a generation ends). Removing and stopping send their request
- * FIRST and only then change the list (CLAUDE.md §4c).
+ * (`qwen:history-changed`, sent after a submit and when a generation ends). Removing, renaming and stopping send their
+ * request FIRST and only then change the list (CLAUDE.md §4c).
  */
 import { useCallback, useEffect, useState } from "react";
-import { parseEntries, type HistoryEntry } from "./history";
+import { parseEntries, withoutTitle, type HistoryEntry } from "./history";
 
 export const HISTORY_CHANGED = "qwen:history-changed";
 
@@ -23,6 +23,8 @@ export interface History {
   readonly stop: (id: string) => Promise<void>;
   /** Every image of a chat (STORY_031); false when the server refused (a turn still running). */
   readonly removeChat: (chatId: string) => Promise<boolean>;
+  /** Names a chat, or clears its name with null (STORY_033); false when the server refused or could not be reached. */
+  readonly renameChat: (chatId: string, title: string | null) => Promise<boolean>;
   /** Stops every turn of a chat still queued or running. */
   readonly stopAll: (ids: readonly string[]) => Promise<void>;
 }
@@ -92,10 +94,23 @@ export function useHistory(): History {
     return true;
   }, []);
 
+  const renameChat = useCallback(async (chatId: string, title: string | null): Promise<boolean> => {
+    let res: Response;
+    try {
+      res = await fetch(`/api/chats/${encodeURIComponent(chatId)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ title }) });
+    } catch {
+      return false;
+    }
+    if (!res.ok) return false;
+    setEntries((list) => list.map((e) => (e.chatId !== chatId ? e : title === null ? withoutTitle(e) : { ...e, title })));
+    announceHistoryChanged();
+    return true;
+  }, []);
+
   const stopAll = useCallback(async (ids: readonly string[]): Promise<void> => {
     await Promise.all(ids.map((id) => fetch(`/api/jobs/${encodeURIComponent(id)}`, { method: "DELETE" })));
     announceHistoryChanged();
   }, []);
 
-  return { entries, loaded, remove, stop, removeChat, stopAll };
+  return { entries, loaded, remove, stop, removeChat, renameChat, stopAll };
 }

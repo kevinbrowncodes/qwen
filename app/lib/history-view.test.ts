@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HistoryEntry } from "./history";
-import { chatsOf, chatsOn, dayKey, dayOf, imageCount, longDate, parseDay, pastDays, shortDate, stepDay, timeOf, todaysChats, yesterdayOf, dayLabel, deleteChatMessage, finished, groupByDay, groupChatsByDay, isRunning, latestFinished, resultUrl, titleOf, turnHref } from "./history-view";
+import { chatTitle, chatsOf, chatsOn, dayKey, dayOf, imageCount, longDate, parseDay, pastDays, shortDate, stepDay, timeOf, todaysChats, yesterdayOf, dayLabel, deleteChatMessage, finished, groupByDay, groupChatsByDay, isRunning, latestFinished, renameTo, resultUrl, titleOf, turnHref } from "./history-view";
 
 // Dates are derived from the clock, never fixed (CLAUDE.md §6b): "now" is whatever day the test runs.
 const now = new Date();
@@ -146,5 +146,32 @@ describe("today and earlier days (STORY_032)", () => {
     expect(timeOf(d.toISOString())).toBe("09:05");
     expect(timeOf("nope")).toBe("");
     expect([imageCount(1), imageCount(3)]).toEqual(["1 image", "3 images"]);
+  });
+});
+
+describe("a chat's name (STORY_033)", () => {
+  const auto = { title: null, prompt: "  a red bicycle\nmore" };
+  const named = { title: "Bikes", prompt: "a red bicycle" };
+
+  it("reads the owner's name, otherwise the first prompt's first line", () => {
+    expect(chatTitle(named)).toBe("Bikes");
+    expect(chatTitle(auto)).toBe("a red bicycle");
+  });
+
+  it("asks for the trimmed name, and for nothing when the row already reads it", () => {
+    expect(renameTo(auto, "  Beach set, take 2 ")).toBe("Beach set, take 2");
+    expect(renameTo(auto, " a red bicycle ")).toBeUndefined();
+    expect(renameTo(named, "Bikes")).toBeUndefined();
+  });
+
+  it("goes back to the automatic title for a blank name, and asks nothing when there was no name", () => {
+    expect(renameTo(named, "   ")).toBeNull();
+    expect(renameTo(auto, "")).toBeUndefined();
+  });
+
+  it("is carried in each chat's summary from its newest named turn", () => {
+    const e = (id: string, createdAt: string, title?: string): HistoryEntry => ({ ...entry(id, createdAt, "done", "c"), ...(title === undefined ? {} : { title }) });
+    expect(chatsOf([e("c3", "2026-01-03T00:00:00Z"), e("c2", "2026-01-02T00:00:00Z", "Later"), e("c", "2026-01-01T00:00:00Z", "Earlier")])[0]?.title).toBe("Later");
+    expect(chatsOf([e("c", "2026-01-01T00:00:00Z")])[0]?.title).toBeNull();
   });
 });

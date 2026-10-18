@@ -132,3 +132,21 @@ test("today's chats are in the sidebar, and History steps through earlier days",
   await page.goto(`/history?day=${dayKey(noonDaysAgo(2))}`);
   await expect(page.getByText("No chats on this day.")).toBeVisible();
 });
+
+test("a chat on an earlier day is renamed from the History page (STORY_033)", async ({ page }) => {
+  const harbour = await makeChat(page, "harbour, to be renamed");
+  backdate(harbour, noonDaysAgo(2));
+  await page.goto("/history");
+  const row = page.getByTestId("history-day-row").first();
+  await expect(row).toContainText("harbour, to be renamed");
+  await row.getByRole("button", { name: "Chat Menu" }).click();
+  await page.getByRole("menuitem", { name: "Rename" }).click();
+  const renamed = page.waitForResponse((r) => r.request().method() === "PATCH" && new URL(r.url()).pathname === `/api/chats/${harbour}`);
+  const input = row.getByRole("textbox", { name: "Chat name" });
+  await input.fill("Harbour at dusk, kept");
+  await input.press("Enter");
+  expect((await renamed).status()).toBe(200);
+  await expect(row).toContainText("Harbour at dusk, kept");
+  await page.reload();
+  await expect(row).toContainText("Harbour at dusk, kept");
+});

@@ -101,6 +101,23 @@ export interface ChatSummary {
   readonly runningIds: readonly string[];
   /** The newest finished image, for a thumbnail (STORY_032); null when no turn has finished. */
   readonly thumbId: string | null;
+  /** The owner's name for the chat (STORY_033), or null for the automatic title. */
+  readonly title: string | null;
+}
+
+/** What a chat's row reads (STORY_033): the owner's name for it, otherwise its first prompt's first line. */
+export function chatTitle(c: Pick<ChatSummary, "title" | "prompt">): string {
+  return c.title ?? titleOf(c.prompt);
+}
+
+/**
+ * What a rename typed in the row asks for (STORY_033): the trimmed name, null to go back to the automatic title (a
+ * blank name), or undefined when that is what the row already reads, so nothing is sent.
+ */
+export function renameTo(c: Pick<ChatSummary, "title" | "prompt">, typed: string): string | null | undefined {
+  const name = typed.trim();
+  if (name === "") return c.title === null ? undefined : null;
+  return name === chatTitle(c) ? undefined : name;
 }
 
 /**
@@ -135,7 +152,9 @@ export function chatsOf(entries: readonly HistoryEntry[]): ChatSummary[] {
     const first = list[list.length - 1];
     const runningIds = list.filter(isRunning).map((e) => e.id);
     const thumbId = list.find((e) => e.status === "done" && e.result !== undefined)?.id ?? null;
-    return { id, prompt: first?.prompt ?? "", newestAt: newest?.createdAt ?? "", count: list.length, running: runningIds.length > 0, runningIds, thumbId };
+    // A rename writes every turn, so the newest turn that has a name holds it; a turn sent since has none and inherits it.
+    const title = list.find((e) => e.title !== undefined)?.title ?? null;
+    return { id, prompt: first?.prompt ?? "", newestAt: newest?.createdAt ?? "", count: list.length, running: runningIds.length > 0, runningIds, thumbId, title };
   });
 }
 

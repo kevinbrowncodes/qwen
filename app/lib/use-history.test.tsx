@@ -1,23 +1,34 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { HistoryEntry } from "./history";
+import { renameChat, type HistoryEntry } from "./history";
 import { announceHistoryChanged, RUNNING_REFRESH_MS, useHistory, type History } from "./use-history";
 
 const entry = (id: string, createdAt = "2026-01-01T00:00:00Z"): HistoryEntry => ({ id, chatId: id, prompt: id, ratio: "1:1", model: "m", referenceImages: 0, lora: null, seed: null, loraScale: null, loraGuidance: null, promptSent: null, createdAt, updatedAt: "t", status: "done", progress: 100 });
 
 let list: HistoryEntry[] = [];
 let deleteStatus = 200;
-const calls: Array<{ url: string; method: string }> = [];
+let patchStatus: number | "offline" = 200;
+const calls: Array<{ url: string; method: string; body?: string }> = [];
 
 beforeEach(() => {
   list = [entry("a"), entry("b")];
   deleteStatus = 200;
+  patchStatus = 200;
   calls.length = 0;
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string, init?: RequestInit) => {
       const method = init?.method ?? "GET";
-      calls.push({ url, method });
+      calls.push({ url, method, ...(typeof init?.body === "string" ? { body: init.body } : {}) });
+      if (method === "PATCH") {
+        if (patchStatus === "offline") return Promise.reject(new TypeError("Failed to fetch"));
+        // Like the real route: a 200 names every turn of the chat (null clears it), anything else leaves them.
+        const asked: unknown = JSON.parse(typeof init?.body === "string" ? init.body : "{}");
+        const title = typeof asked === "object" && asked !== null && "title" in asked && typeof asked.title === "string" ? asked.title : null;
+        const chatId = decodeURIComponent(url.slice("/api/chats/".length));
+        if (patchStatus === 200) list = renameChat(list, chatId, title).entries;
+        return Promise.resolve(new Response("{}", { status: patchStatus }));
+      }
       if (method === "DELETE") {
         // Like the real route: a 200 removes the entry, anything else leaves it.
         if (deleteStatus === 200 && url.startsWith("/api/history/")) list = list.filter((e) => e.id !== decodeURIComponent(url.slice("/api/history/".length)));
@@ -121,6 +132,39 @@ describe("useHistory", () => {
     });
     expect(removed).toBe(false);
     expect(container.textContent).toBe("b");
+  });
+
+  it("renames a chat only after the server agreed, and leaves it on a refusal or no network (STORY_033)", async () => {
+    list = [{ ...entry("a2"), chatId: "a" }, entry("a"), entry("b")];
+    const into: { current: History | null } = { current: null };
+    render(<Probe into={into} />);
+    await settle();
+    const titles = (): Array<string | undefined> => into.current?.entries.map((e) => e.title) ?? [];
+    let ok = false;
+    await act(async () => {
+      ok = (await into.current?.renameChat("a", "Harbour")) ?? false;
+    });
+    expect(ok).toBe(true);
+    expect(calls.find((c) => c.method === "PATCH")).toEqual({ url: "/api/chats/a", method: "PATCH", body: JSON.stringify({ title: "Harbour" }) });
+    expect(titles()).toEqual(["Harbour", "Harbour", undefined]);
+
+    await act(async () => {
+      ok = (await into.current?.renameChat("a", null)) ?? false;
+    });
+    expect(ok).toBe(true);
+    expect(into.current?.entries.some((e) => "title" in e)).toBe(false);
+
+    patchStatus = 404;
+    await act(async () => {
+      ok = (await into.current?.renameChat("b", "Nope")) ?? true;
+    });
+    expect(ok).toBe(false);
+    patchStatus = "offline";
+    await act(async () => {
+      ok = (await into.current?.renameChat("b", "Nope")) ?? true;
+    });
+    expect(ok).toBe(false);
+    expect(titles()).toEqual([undefined, undefined, undefined]);
   });
 
   it("stopAll cancels every running turn of a chat and announces the change (STORY_031)", async () => {
