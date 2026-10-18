@@ -7,9 +7,13 @@
  *
  * CHORE_009: the pill is its icon and × at both widths (the reference adds the words on desktop), named "Create Image"
  * for screen readers and as a tooltip.
+ *
+ * BUG_015: the prompt box is sized to its text on every change, as the reference's own code does, so it grows instead
+ * of scrolling and the lifted stylesheet's grey scroll track shows only past its max-height.
  */
-import { useCallback, useEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { activeRatio, canSend, FALLBACK_CAPABILITIES, initialState, MATCH_REFERENCE, MAX_COUNT, NO_LORA, parseCapabilities, reduce, restore, serialize, shortModelLabel, STORAGE_KEY, type Capabilities, type ComposerState } from "@/lib/composer-state";
+import { fitTextarea, pxOf } from "@/lib/composer-fit";
 import { useFileDrop } from "@/lib/use-file-drop";
 import { IN_USE_LABEL, USE_LABEL } from "@/lib/lora-card";
 import { useNarrow } from "@/lib/use-narrow";
@@ -175,6 +179,25 @@ export function Composer({ onSubmit, externalError = null, busy = false, inject 
       placement={placement}
     />
   );
+  // Measured after layout, before paint, so the box never shows a frame at the wrong height. Height "auto" first, so a
+  // shorter text can shrink it; the limits are the stylesheet's (they differ on the phone). Wrapping changes with
+  // the width, so a resize sizes it again.
+  useLayoutEffect(() => {
+    const fit = (): void => {
+      const el = textarea.current;
+      if (!el) return;
+      el.style.height = "auto";
+      const style = getComputedStyle(el);
+      const next = fitTextarea(el.scrollHeight, pxOf(style.minHeight, 0), pxOf(style.maxHeight, Number.POSITIVE_INFINITY));
+      el.style.height = `${String(next.height)}px`;
+      el.style.overflowY = next.overflowY;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => {
+      window.removeEventListener("resize", fit);
+    };
+  }, [state.text, state.mode, narrow]);
   const input = (
     <textarea
       ref={textarea}

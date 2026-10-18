@@ -231,3 +231,40 @@ test("a LoRA's card opens and closes by keyboard (STORY_030)", async ({ page }, 
   await expect(trigger).toBeFocused();
   await expect(trigger).toHaveText("None");
 });
+
+test("the prompt box grows with its text and scrolls only past its maximum (BUG_015)", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Select Mode" }).click();
+  await page.getByRole("menuitem", { name: "Create Image" }).click();
+  const box = page.getByLabel("Prompt");
+  // The limits are read from the stylesheet, not written here: the phone's are in rem, and its root font is not 16px
+  // (one line there measured 24.96px on 2026-10-17). Desktop is 32 to 208.
+  const read = () =>
+    box.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const oneLine = Math.max(parseFloat(cs.minHeight), parseFloat(cs.lineHeight) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom));
+      return { height: el.getBoundingClientRect().height, scrollHeight: el.scrollHeight, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth, overflowY: cs.overflowY, oneLine, max: parseFloat(cs.maxHeight) };
+    });
+
+  const empty = await read();
+  expect(Math.abs(empty.height - empty.oneLine)).toBeLessThanOrEqual(1);
+  expect(empty.overflowY).toBe("hidden");
+  expect(empty.scrollWidth).toBe(empty.clientWidth);
+
+  await box.fill("a harbour at dusk\ntwo lighthouses\na red bicycle");
+  const three = await read();
+  expect(three.height).toBeGreaterThan(empty.oneLine * 2);
+  expect(three.height).toBeLessThan(three.max);
+  expect(three.scrollHeight).toBeLessThanOrEqual(Math.ceil(three.height));
+  expect(three.overflowY).toBe("hidden");
+
+  await box.fill(Array.from({ length: 30 }, (_, i) => `line ${String(i + 1)}`).join("\n"));
+  const long = await read();
+  expect(Math.abs(long.height - long.max)).toBeLessThanOrEqual(1);
+  expect(long.overflowY).toBe("auto");
+
+  await box.fill("");
+  const cleared = await read();
+  expect(Math.abs(cleared.height - cleared.oneLine)).toBeLessThanOrEqual(1);
+  expect(cleared.overflowY).toBe("hidden");
+});
