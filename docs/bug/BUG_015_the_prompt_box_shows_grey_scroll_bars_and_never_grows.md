@@ -1,6 +1,6 @@
 # BUG_015 — The prompt box shows grey scroll bars and never grows
 
-**Status:** Resolved (2026-10-17), approved by the owner that day ("yes please proceed"). Built and pushed, not yet deployed: the owner had a job running
+**Status:** Resolved (2026-10-17), approved by the owner that day ("yes please proceed"). Deployed on the Spark later that day, after the owner's job finished
 **Found by:** the owner, 2026-10-17, with a screenshot of Safari on the Mac ("help me understand why there they weird grey scroll bars in the prompt box")
 
 ## Summary
@@ -54,3 +54,4 @@ Fixed on 2026-10-17, not yet deployed. `Composer.tsx` sizes the box in a layout 
 - **Gate:** green in a hand-run (unit 259, integration 34, e2e 96 at both widths).
 - **AC 3 was corrected** in this ticket before the fix landed: the phone's empty box is one line (24.96px), not its `min-height` (23.92px). The first e2e run caught the wrong expectation.
 - **Still owed:** the manual check in Safari on the owner's Mac, after the deploy.
+- **Deployed on the Spark, 2026-10-17:** after a check that no job was open, the live app (WebKit, 1437 wide) sizes an empty box to `32px` with `overflow-y: hidden`, and a three-line prompt to `84px`, still `hidden`. The Safari check on the Mac is still the owner's.

@@ -1,6 +1,6 @@
 # CHORE_009 — The Create Image pill shows only its icon
 
-**Status:** Done 2026-10-17, approved by the owner that day ("yes please proceed"); not deployed at the owner's request (a job was running)
+**Status:** Done 2026-10-17, approved by the owner that day ("yes please proceed"); deployed on the Spark later that day, after the owner's job finished (the live pill has no text and the tooltip "Create Image")
 **Created:** 2026-10-17, at the owner's request ("Please remove the words create image I think so a icon is enough and you can keep the blue circle around it")
 
 ## Summary
