@@ -21,6 +21,23 @@ async function generate(page: Page, prompt: string): Promise<string> {
   return decodeURIComponent(new URL(page.url()).pathname.replace(/^\/g\//, ""));
 }
 
+/**
+ * BUG_014: every item of an open Chat Menu is visible and on top without scrolling. Measured from the point at each
+ * item's centre and never by clicking, because a click scrolls its target into view first and hides the bug.
+ */
+async function expectMenuFullyVisible(page: Page): Promise<void> {
+  const items = page.getByRole("menuitem");
+  await expect(items.first()).toBeVisible();
+  for (const item of await items.all()) {
+    const hit = await item.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return top !== null && el.contains(top);
+    });
+    expect(hit, await item.textContent() ?? "").toBe(true);
+  }
+}
+
 async function openSidebar(page: Page, narrow: boolean): Promise<void> {
   if (narrow) await page.getByRole("button", { name: "Open sidebar" }).tap();
 }
@@ -142,4 +159,20 @@ test("a chat renamed from its menu keeps the name after a reload, and Escape cha
   await input.press("Escape");
   await expect(row).toHaveText("Beach set, take 2");
   expect(patches).toEqual([]);
+});
+
+test("a chat's row menu shows every item without scrolling the list (BUG_014)", async ({ page }, info) => {
+  const narrow = info.project.name === "narrow";
+  await generate(page, "one chat today, menu check");
+  await openSidebar(page, narrow);
+  const row = page.getByTestId("history-row").first();
+  const list = page.locator(".session-list");
+  const scrolled = (): Promise<number[]> => page.locator(".session-list-wrapper, .session-list").evaluateAll((els) => els.map((el) => el.scrollTop));
+  const before = await scrolled();
+  if (!narrow) await row.hover();
+  await row.getByRole("button", { name: "Chat Menu" }).click();
+  await expect(page.getByRole("menuitem")).toHaveText(["Rename", "Delete"]);
+  await expectMenuFullyVisible(page);
+  expect(await scrolled()).toEqual(before);
+  await expect(list).toBeVisible();
 });

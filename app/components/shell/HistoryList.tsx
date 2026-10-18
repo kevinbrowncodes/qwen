@@ -7,14 +7,19 @@
  * STORY_033: the menu's Rename turns the row's title into an input in place (the reference's `chat-item-drag-input`);
  * Enter or leaving it saves, Escape puts the old title back.
  *
+ * BUG_014: the menu renders through Popup, on <body>, because the reference's chat list scrolls (`overflow-y: auto`)
+ * and clipped a menu drawn inside the row. It lines up with the "…" by its right edge and opens upward in the lower half.
+ *
  * STORY_032: the sidebar passes today's chats only, so the list is one "Today" group; earlier days are on the History
  * page, which shares this row menu.
  */
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { TITLE_MAX } from "@/lib/history";
 import { chatTitle, deleteChatMessage, renameTo, type ChatSummary } from "@/lib/history-view";
+import { currentZoom } from "@/lib/ui-zoom";
 import { Icon } from "../Icon";
+import { clampLeft, Popup } from "../Popup";
 
 export interface HistoryListProps {
   /** Today's chats (STORY_032), newest first. */
@@ -105,10 +110,27 @@ interface RowMenuProps {
 export function RowMenu({ chat, iconSet, onDelete, onStop, onRename, confirm }: RowMenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const popup = useRef<HTMLDivElement | null>(null);
+  /** How far the popup is pulled left from the "…"'s left edge: its right edge meets the "…"'s, inside the window. */
+  const [shift, setShift] = useState(0);
+  const popupRef = useCallback((el: HTMLDivElement | null) => {
+    popup.current = el;
+    const button = trigger.current;
+    if (!el || !button) return;
+    // Measured pixels are the zoom times the CSS pixels `left` is set in (STORY_020): place in the first, shift in the second.
+    const box = el.getBoundingClientRect();
+    const zoom = currentZoom();
+    const wanted = clampLeft(button.getBoundingClientRect().right - box.width, box.width, window.innerWidth, 8 * zoom);
+    setShift((current) => (box.left + current * zoom - wanted) / zoom);
+  }, []);
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent): void => {
-      if (root.current && e.target instanceof Node && !root.current.contains(e.target)) setOpen(false);
+      if (!(e.target instanceof Node)) return;
+      // The popup is on <body>, outside the row, so a press inside it is not outside the menu.
+      if (root.current?.contains(e.target) || popup.current?.contains(e.target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", onDown);
     return () => {
@@ -122,12 +144,14 @@ export function RowMenu({ chat, iconSet, onDelete, onStop, onRename, confirm }: 
         <div className="qwen-chat-v2-dropdown-menu-trigger">
           <div className="chat-menu-trigger">
             <button
+              ref={trigger}
               type="button"
               aria-label="Chat Menu"
               aria-haspopup="menu"
               aria-expanded={open}
               className="chat-item-drag-web-default-btn"
               onClick={() => {
+                setShift(0);
                 setOpen((o) => !o);
               }}
             >
@@ -136,24 +160,28 @@ export function RowMenu({ chat, iconSet, onDelete, onStop, onRename, confirm }: 
           </div>
         </div>
         {open ? (
-          <div role="menu" aria-label="Chat Menu" className="qwen-chat-v2-dropdown-menu-popup clone-row-menu">
-            <MenuItem
-              label="Rename"
-              onChoose={() => {
-                setOpen(false);
-                onRename();
-              }}
-            />
-            <MenuItem
-              label={running ? "Stop" : "Delete"}
-              danger={!running}
-              onChoose={() => {
-                setOpen(false);
-                if (running) onStop();
-                else if (confirm(deleteChatMessage(chat.count))) onDelete();
-              }}
-            />
-          </div>
+          <Popup anchorRef={trigger} placement="bottom">
+            {(anchor) => (
+              <div ref={popupRef} role="menu" aria-label="Chat Menu" style={{ position: "fixed", left: anchor.left - shift, top: anchor.top }} className={`qwen-chat-v2-dropdown-menu-popup qwen-chat-v2-dropdown-menu-popup-${anchor.placement}-left clone-row-menu`}>
+                <MenuItem
+                  label="Rename"
+                  onChoose={() => {
+                    setOpen(false);
+                    onRename();
+                  }}
+                />
+                <MenuItem
+                  label={running ? "Stop" : "Delete"}
+                  danger={!running}
+                  onChoose={() => {
+                    setOpen(false);
+                    if (running) onStop();
+                    else if (confirm(deleteChatMessage(chat.count))) onDelete();
+                  }}
+                />
+              </div>
+            )}
+          </Popup>
         ) : null}
       </div>
     </div>

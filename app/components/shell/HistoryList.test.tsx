@@ -164,4 +164,21 @@ describe("HistoryList", () => {
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onRename).not.toHaveBeenCalled();
   });
+
+  // BUG_014: the menu is drawn on <body>, so the scrolling chat list cannot clip it.
+  it("draws the open menu on the page's body, not inside the row, and a press inside it keeps it open", () => {
+    const { onRename } = setup();
+    const row = screen.getAllByTestId("history-row")[2] ?? document.body;
+    fireEvent.click(within(row).getByRole("button", { name: "Chat Menu" }));
+    const menu = screen.getByRole("menu", { name: "Chat Menu" });
+    expect(menu.parentElement).toBe(document.body);
+    expect(row.contains(menu)).toBe(false);
+    expect(menu.style.position).toBe("fixed");
+    fireEvent.mouseDown(within(menu).getByRole("menuitem", { name: "Rename" }));
+    expect(screen.getByRole("menu", { name: "Chat Menu" })).toBeTruthy();
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Rename" }));
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(onRename).not.toHaveBeenCalled();
+    expect(within(row).getByRole("textbox", { name: "Chat name" })).toBeTruthy();
+  });
 });

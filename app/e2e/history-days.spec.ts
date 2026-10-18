@@ -44,6 +44,23 @@ async function makeChat(page: Page, prompt: string): Promise<string> {
   return decodeURIComponent(new URL(page.url()).pathname.replace(/^\/g\//, ""));
 }
 
+/**
+ * BUG_014: every item of an open Chat Menu is visible and on top without scrolling. Measured from the point at each
+ * item's centre and never by clicking, because a click scrolls its target into view first and hides the bug.
+ */
+async function expectMenuFullyVisible(page: Page): Promise<void> {
+  const items = page.getByRole("menuitem");
+  await expect(items.first()).toBeVisible();
+  for (const item of await items.all()) {
+    const hit = await item.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return top !== null && el.contains(top);
+    });
+    expect(hit, await item.textContent() ?? "").toBe(true);
+  }
+}
+
 async function openSidebar(page: Page, narrow: boolean): Promise<void> {
   if (narrow) await page.getByRole("button", { name: "Open sidebar" }).tap();
 }
@@ -149,4 +166,16 @@ test("a chat on an earlier day is renamed from the History page (STORY_033)", as
   await expect(row).toContainText("Harbour at dusk, kept");
   await page.reload();
   await expect(row).toContainText("Harbour at dusk, kept");
+});
+
+test("a History row's menu shows every item without scrolling (BUG_014)", async ({ page }) => {
+  const harbour = await makeChat(page, "harbour, menu check");
+  backdate(harbour, noonDaysAgo(2));
+  await page.goto("/history");
+  const row = page.getByTestId("history-day-row").first();
+  await expect(row).toContainText("harbour, menu check");
+  const before = await page.locator(".clone-history").evaluate((el) => el.scrollTop);
+  await row.getByRole("button", { name: "Chat Menu" }).click();
+  await expectMenuFullyVisible(page);
+  expect(await page.locator(".clone-history").evaluate((el) => el.scrollTop)).toBe(before);
 });
