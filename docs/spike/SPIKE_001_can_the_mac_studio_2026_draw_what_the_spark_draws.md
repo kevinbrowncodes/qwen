@@ -35,9 +35,9 @@ N/A (a spike: a controlled comparison, a written answer and a decision; no surfa
 ## Acceptance Criteria
 
 - [x] **The Spark twin is drawn on an idle Spark the day of the comparison**, through the job API with nothing queued (`tools/spike/spark-qwen-twin.sh` refuses otherwise): subject A at seed 1001, 3:4 (896×1184), 40 steps, no add-on; the same with `penis-coachbate` (scale 1.0, guidance 3); and the edit `remove all clothing from the subject` of the first image at seed 42 in its shape. Per job: the wall clock from submit to `done`, the server's `createdAt → updatedAt`, the echoed `request`, and the image saved under `outputs/spike-001/<date>/spark/`.
-- [ ] **The Mac's facts are recorded before anything is downloaded**: macOS version, chip, memory, the GPU wired-memory limit (`sysctl iogpu.wired_limit_mb`), free disk, whether `uv` is present, and the mflux version pinned; a Mac that lacks `uv` stops there, and the owner decides whether to install it (a host install, said so here).
-- [ ] **The same three jobs are drawn on the Mac through mflux** (`tools/spike/mac-qwen-image-bench.sh run`): same prompt, seed, size and steps, bf16; the add-on through `--lora … 1.0 --guidance 3`; the edit from the Spark twin's own first image. Per run: wall clock, seconds per step, peak resident memory from `/usr/bin/time -l`, the mflux metadata sidecar, and the image. A run past the per-run ceiling is killed and recorded as such.
-- [ ] **The sixth add-on's format is settled by a load test**: `uncensored` (`transformer_blocks.` keys) either loads in mflux or does not; the Done note says which, and what the fallback is (Draw Things, a key rename, or dropping it).
+- [x] **The Mac's facts are recorded before anything is downloaded**: macOS version, chip, memory, the GPU wired-memory limit (`sysctl iogpu.wired_limit_mb`), free disk, whether `uv` is present, and the mflux version pinned; a Mac that lacks `uv` stops there, and the owner decides whether to install it (a host install, said so here).
+- [x] **The same three jobs are drawn on the Mac through mflux** (`tools/spike/mac-qwen-image-bench.sh run`): same prompt, seed, size and steps, bf16; the add-on through `--lora … 1.0 --guidance 3`; the edit from the Spark twin's own first image. Per run: wall clock, seconds per step, peak resident memory from `/usr/bin/time -l`, the mflux metadata sidecar, and the image. A run past the per-run ceiling is killed and recorded as such.
+- [x] **The sixth add-on's format is settled by a load test**: `uncensored` (`transformer_blocks.` keys) either loads in mflux or does not; the Done note says which, and what the fallback is (Draw Things, a key rename, or dropping it).
 - [ ] **The measured-vs-asserted table is filled** (below): every Mac number asserted by a source today is replaced by the number measured on the owner's Mac, or marked "not run" with the reason.
 - [ ] **The video half is measured by the owner in Draw Things against the Spark's own settings, one clip each**, and recorded in the same table: MiniMax-H3 at 1344×768, 124 frames, 20 steps (the Spark's 17 min 33 s); LTX-2.3 at 704×1280, 121 frames, 15 steps (the Spark's 23–26 min); the variant Draw Things offers (8-bit S, 4-bit S) is written down, since it is not the Spark's int8/bf16. Cosmos 3 Nano is recorded as "no Mac path" with the source, not attempted.
 - [ ] **The answer, in one paragraph**: seconds per image on the Mac against the Spark's twin, with and without an add-on, and for an edit; which add-ons load; minutes per clip for H3 and LTX-2.3 against the Spark's; what the memory peaks were against 96 GB; and whether the Spark's image generation can retire, whether its video can, and which story comes first.
@@ -48,10 +48,10 @@ N/A (a spike: a controlled comparison, a written answer and a decision; no surfa
 
 | Job | Spark, measured (README, 2026-09-26) | Spark twin, measured today | Mac, asserted by sources today | Mac, measured |
 |---|---|---|---|---|
-| Text-to-image, 896×1184, 40 steps, bf16 | 51–53 s at 1 MP | **53.1 s** server, 55 s wall (job `3777597f`) | ~78 s on an M5 Max at 1024² (mflux docs); the M5 Ultra has 80 GPU cores to the Max's 40 | |
-| Same, with `penis-coachbate` at guidance 3 | about twice the unguided time (README: "about twice the time per image") | **120.2 s** server, 122 s wall (job `39e50b7b`), 2.26× the unguided run | not published | |
-| Edit, one reference, 40 steps | 60 s | **59.7 s** server, 61 s wall (job `8547d7dd`) | not published for 2.1 edits; ControlNet q8 at 992×608 and 20 steps ≈ 49 s on an M5 Max (mflux docs) | |
-| `uncensored` LoRA loads | loads (served today) | n/a | format undocumented in mflux | |
+| Text-to-image, 896×1184, 40 steps, bf16 | 51–53 s at 1 MP | **53.1 s** server, 55 s wall (job `3777597f`) | ~78 s on an M5 Max at 1024² (mflux docs); the M5 Ultra has 80 GPU cores to the Max's 40 | **56 s** wall, 1.20 s/step est., 22.5 GB peak RSS |
+| Same, with `penis-coachbate` at guidance 3 | about twice the unguided time (README: "about twice the time per image") | **120.2 s** server, 122 s wall (job `39e50b7b`), 2.26× the unguided run | not published | **70 s** wall, 1.55 s/step est., 29.1 GB peak RSS |
+| Edit, one reference, 40 steps | 60 s | **59.7 s** server, 61 s wall (job `8547d7dd`) | not published for 2.1 edits; ControlNet q8 at 992×608 and 20 steps ≈ 49 s on an M5 Max (mflux docs) | **51 s** wall, 1.07 s/step est., 30.4 GB peak RSS |
+| `uncensored` LoRA loads | loads (served today) | n/a | format undocumented in mflux | loads |
 | MiniMax-H3, 1344×768, 124 frames, 20 steps | 17 min 33 s, 63–64 GiB (minimax) | not re-drawn | Draw Things supports H3 with LoRAs; one M4 Pro 64 GB report of 111 s for a short clip with the 8-bit S model and a turbo LoRA (not comparable settings) | |
 | LTX-2.3, 704×1280, 121 frames, 15 steps | 23–26 min (spark-ltx2) | not re-drawn | Draw Things supports LTX-2.3 22B since 2026-03-16; no Ultra timing published | |
 | Cosmos 3 Nano | 50–57 min per clip (spark-cosmos3) | not re-drawn | CUDA-only official stack; one unofficial MLX 4-bit port | not attempted |
@@ -107,7 +107,49 @@ What the three rows settle: the README's figures hold on an idle server today (5
 
 ### The Mac (M0–M4)
 
-_Not yet run. The owner runs `tools/spike/mac-qwen-image-bench.sh env`, then `fetch`, then `run` on the Mac Studio 2026, from a clone of this repo at the tag or commit that carries this ticket, and the rows land here._
+2026-10-20, 18:19–18:31 UTC, by the assistant from the Mac Studio 2025 over ssh (`ssh mac-studio-2026`). No clone of the repo exists on the 2026, so `tools/spike/` was copied unedited at `7338dbf` into `~/qwen-spike/tools/spike/`, and `~/qwen-spike` is the script's root there. The images, logs, metadata sidecars and `results.tsv` are under `~/qwen-spike/outputs/spike-001/2026-10-20/mac/` on the 2026, and none are in git.
+
+**M0, the Mac's facts** (`env.txt`, written 18:19:38 UTC, before anything was downloaded; the names come from `scutil --get ComputerName`, `scutil --get LocalHostName` and `hostname`):
+
+| Fact | Measured |
+|---|---|
+| Names | Kevin's Mac Studio 2026 / `mac-studio-2026` / `mac-studio-2026` |
+| Chip | Apple M5 Ultra, **64 GPU cores** (`system_profiler`), against the 80 the sources above assert |
+| Memory | 96 GB |
+| GPU wired limit | 94208 MB (`iogpu.wired_limit_mb`, already raised from the default) |
+| macOS | 27.0.1 (26A434) |
+| Free disk | 808 GiB |
+| uv | 0.13.1 (Homebrew), already installed, so nothing was installed on the host |
+| mflux | 0.21.0, through `uvx`, on Python 3.14.7, MLX 0.32.4, Pillow 12.3.0 |
+| Weights | `Qwen/Qwen-Image-2.1` @ `790c926`, the Spark's pin, 33.1 GB, downloaded from Hugging Face with `hf download --local-dir` in about 4 minutes before the runs, and passed to the script as `WEIGHTS` |
+
+**The four runs** (`tools/spike/mac-qwen-image-bench.sh run` under `caffeinate -i`, 18:27:56–18:30:59 UTC), each against its Spark twin. "Wall" is the script's clock around one cold process, so it includes loading 33 GB of weights and encoding the prompt; "steps" is mflux's own `generation_time_seconds` from the metadata sidecar. All three images came out at 896×1184.
+
+| Run | Status | Wall s | s/step (est.) | Steps s (mflux) | Peak RSS GB | Peak MLX GB | mflux | Spark twin (server s) | Mac wall ÷ Spark |
+|---|---|---|---|---|---|---|---|---|---|
+| M1 t2i | done | **56** | 1.20 | 35.6 | 22.5 | 31.2 | 0.21.0 | 53.1 | 1.05× |
+| M2 t2i + `penis-coachbate` (1.0, guidance 3) | done | **70** | 1.55 | 63.0 | 29.1 | 32.4 | 0.21.0 | 120.2 | 0.58× |
+| M3 edit (the Spark's S1 image, seed 42) | done | **51** | 1.07 | 41.0 | 30.4 | 36.5 | 0.21.0 | 59.7 | 0.85× |
+| M4 `uncensored` load, 4 steps, 512² | done | 10 | 0.50 | — | 29.1 | 31.8 | 0.21.0 | n/a | — |
+
+- **Guidance.** M2 ran **guided**. Its sidecar records `guidance: 3.0, negative_prompt: " "`, and its log shows 1.57 s/it, against M1's 0.89 s/step, so every step makes two passes. mflux turns on true CFG when `guidance > 1.0 and bool(negative_prompt)` (`qwen21/variants/txt2img/qwen_image_21.py:102`), and it does not trim the prompt (`utils/prompt_util.py:36`), so a single space counts as a negative prompt, as on the Spark. M1 and M3 pass no `--guidance`, and both commands default to 1.0 (`qwen21_generate.py:67`, `qwen21_edit_generate.py:151`), so they are unguided like S1 and S3. Guidance costs the Mac 1.77× per step, against the Spark's 2.26× per job.
+- **`uncensored` loads.** Its `transformer_blocks.` keys mapped onto mflux's transformer: "Applied to 128 layers (256/256 keys matched)", and the 4-step image was saved, so no fallback is needed. mflux bakes a LoRA into the weights before sampling ("Baking LoRA weights into the base model"); the Spark's worker keeps them unfused.
+- **The clocks differ.** The Spark's figures come from a warm server with the model already resident. Each Mac figure is a fresh process that loads the model first. The first step of M1 took 6.25 s, and the steady pace after it was about 0.75 s/step. A resident server on the Mac would come in near the "Steps s" column.
+- **Memory.** The highest peak was 36.5 GB, for the edit, out of 96 GB. Peak RSS undercounts it, because Metal buffers are not all resident pages, so both columns are recorded.
+
+**Departures from the runbook**, each needed to get the script to run; the script itself is unedited:
+
+1. **The first `run` failed on all four jobs with exit 127 in 5 s**, at 18:26 UTC. `timed()` passes `mflux_cmd`, a shell function, to `/usr/bin/time -l`, which can only run executables. The tail of `t2i.log`, the same in all four logs:
+   ```
+   time: mflux_cmd: No such file or directory
+           0.00 real         0.00 user         0.00 sys
+   ```
+   That attempt is kept in `mac-attempt-1-exit127/`. The rerun put an executable `mflux_cmd` on `PATH` (`~/qwen-spike/prep/bin/`), holding the function's body unchanged, so `/usr/bin/time` could find it. This fails on any Mac, so the script needs a fix before it is used again.
+2. **mflux 0.21.0 does not start under a plain `uvx`.** It resolves Pillow 13.0.0, whose `PIL/_typing.py` imports `numbers._IntegralLike`, a name that is missing on both CPython 3.14.7 and 3.13.16 (`ImportError` before argument parsing). The runs set `UV_CONSTRAINT` to a file holding `pillow<13`, which installed Pillow 12.3.0.
+3. **`fetch` was relayed through the Mac Studio 2025.** The 2026 refuses `spark-1.local`'s host key ("Host key verification failed"), so the same two rsyncs, with the same filters, ran Spark → 2025 → 2026. All six LoRAs (897 MB) and the twin's outputs arrived, and the 2025's copy was deleted afterwards.
+4. **The weights were downloaded before the timed runs**, so M1's wall clock does not include the download. They were pinned to the Spark's `790c926`, because the Hub's `main` is now `d26bb61`.
+
+Within the budget: one 33 GB download, and about 12 minutes of wall clock on the 2026, far under the 3-hour total and the 30-minute per-run ceiling.
 
 ### Draw Things (V1, V2)
 
