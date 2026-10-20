@@ -52,7 +52,7 @@ Present today: `app/`, `tools/gate/`, `tools/stub-generation-server/`, `tools/la
 
 ```
 app/          the UI
-tools/        the stub generation server, its fixture image, the qwen.local name and proxy, other dev tooling
+tools/        the stub generation server, its fixture image, the qwen.local name and proxy, the SPIKE_001 bench scripts (spike/), other dev tooling
 spark/        scripts and unit files that set up and run the model on the Spark
 recon/        recon scripts (the offline curate/harvest/interactions pipeline; profile and raw output are gitignored)
 docs/
@@ -61,6 +61,7 @@ docs/
   bug/        BUG_NNN_*.md
   backlog/    BACKLOG_NNN_*.md
   chore/      CHORE_NNN_*.md
+  spike/      SPIKE_NNN_*.md (a question answered by a controlled experiment; never product code)
   recon/      dated captures, DOM snapshots, harvested assets (css, icons, fonts, brand),
               measured tokens, component inventory, interaction notes
 ```
