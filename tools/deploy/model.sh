@@ -9,8 +9,8 @@
 # MODEL_HOST (the environment, or MODEL_HOST= in the gitignored .env) is the ssh destination. One ssh session copies
 # exactly the files the service runs (git archive of the commit) into ~/qwen-model/app there, and:
 #   - refuses to restart a server that is busy (/health: a running or queued job), unless --now;
-#   - links the weights from WEIGHTS_FROM (default ~/qwen-spike/models/Qwen-Image-2.1, SPIKE_001's copy at 790c926) the
-#     first time, never moving or copying them (CLAUDE.md §4a), and copies missing LoRAs from LORAS_FROM, then checks
+#   - links the weights from WEIGHTS_FROM, when set and ~/qwen-model/models/Qwen-Image-2.1 is missing, never moving or
+#     copying them (CLAUDE.md §4a), and copies missing LoRAs from LORAS_FROM when set, then checks
 #     every LoRA in spark/loras.json against its sha256 (fetch-loras-cli.ts verify, natively);
 #   - generates MODEL_API_KEY once into ~/qwen-model/.env (mode 600), never printed;
 #   - installs the worker's locked Python (uv sync --frozen) and the launch agent com.qwen.model, restarts it, and
@@ -81,12 +81,12 @@ rm -rf "$base/app.old"; [ -d "$base/app" ] && mv "$base/app" "$base/app.old"; mv
 app="$base/app"
 
 weights="$base/models/Qwen-Image-2.1"
-from="${WEIGHTS_FROM:-$HOME/qwen-spike/models/Qwen-Image-2.1}"
-if [ ! -e "$weights" ] && [ -f "$from/model_index.json" ]; then ln -s "$from" "$weights"; say "weights: linked $weights -> $from (not moved or copied)"; fi
+from="${WEIGHTS_FROM:-}"
+if [ ! -e "$weights" ] && [ -n "$from" ] && [ -f "$from/model_index.json" ]; then ln -s "$from" "$weights"; say "weights: linked $weights -> $from (not moved or copied)"; fi
 [ -f "$weights/model_index.json" ] || { say "ERROR: no weights at $weights. Fix: put Qwen-Image-2.1 @ 790c926 there (uvx --from huggingface_hub hf download Qwen/Qwen-Image-2.1 --revision 790c926... --local-dir $weights)."; exit 66; }
 
-loras_from="${LORAS_FROM:-$HOME/qwen-spike/models/loras}"
-if [ -d "$loras_from" ]; then
+loras_from="${LORAS_FROM:-}"
+if [ -n "$loras_from" ] && [ -d "$loras_from" ]; then
   for d in "$loras_from"/*/; do id="$(basename "$d")"; [ -e "$base/models/loras/$id" ] || { cp -R "$d" "$base/models/loras/$id"; say "lora: copied $id"; }; done
 fi
 node "$app/spark/model-server/src/fetch-loras-cli.ts" "$app/spark/loras.json" "$base/models/loras" verify | sed 's/^/[deploy-model] /' \

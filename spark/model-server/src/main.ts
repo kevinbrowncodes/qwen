@@ -1,8 +1,8 @@
 /**
  * Entry point: `node src/main.ts` (STORY_015). Env: PORT (4120), HOST (0.0.0.0; beyond loopback only with a key,
- * STORY_036), OUTPUT_DIR (/outputs), MODEL_API_KEY (optional on loopback), WORKER (the worker command; default
- * "python3 /srv/model/worker.py"), LORA_MANIFEST and LORA_DIR (the add-ons, STORY_019; default /srv/loras.json and
- * /loras).
+ * STORY_036), OUTPUT_DIR (/outputs), MODEL_API_KEY (optional on loopback), WORKER (the worker command, required:
+ * spark/mac/start.sh sets the mflux worker, CHORE_010), LORA_MANIFEST and LORA_DIR (the add-ons, STORY_019; default
+ * /srv/loras.json and /loras).
  */
 import { bindProblem } from "./bind.ts";
 import { installedLoras } from "./loras.ts";
@@ -17,7 +17,11 @@ if (problem !== null) {
   console.error(problem);
   process.exit(1);
 }
-const workerCommand = (process.env["WORKER"] ?? "python3 /srv/model/worker.py").split(" ").filter((s) => s !== "");
+const workerCommand = (process.env["WORKER"] ?? "").split(" ").filter((s) => s !== "");
+if (workerCommand.length === 0) {
+  console.error("[model] WORKER is not set: it is the worker command, e.g. spark/mac/start.sh's mflux worker (CHORE_010).");
+  process.exit(1);
+}
 
 const loras = installedLoras(process.env["LORA_MANIFEST"] ?? "/srv/loras.json", process.env["LORA_DIR"] ?? "/loras", (line) => {
   console.log(line);

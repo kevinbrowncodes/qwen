@@ -13,11 +13,11 @@
 #   ~/.cache/huggingface/token   Hugging Face (not needed for public repos)
 #   ~/.config/civitai/token      Civitai (needed: its downloads answer 401 without one)
 #   CIVITAI_TOKEN in .env        Civitai, beside compose.yaml (CHORE_005); wins over the token file
-# Exits 1 when any entry is left unfetched, saying which. Afterwards, spark/up.sh rebuilds and recreates the model so
-# the worker loads them (about 3.3 minutes; check that no job is running first).
+# Exits 1 when any entry is left unfetched, saying which. Afterwards, tools/deploy/model.sh (from the Mac Studio 2025) restarts the model
+# server so the worker loads them (about 3.3 minutes; check that no job is running first).
 set -euo pipefail
 
-# The same pinned image as NODE_IMAGE in spark/model/Dockerfile.
+# A pinned Node 26 image (it was the Spark's model image's base, removed in CHORE_010).
 NODE_IMAGE="node:26-bookworm-slim@sha256:cd9f682fa2885cd1056e830424764158570061c59736a1da836bc3d73df095ae"
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

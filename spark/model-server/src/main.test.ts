@@ -42,6 +42,12 @@ describe("main.ts listens beyond loopback only with a key (STORY_036)", () => {
     expect(out).not.toContain("listening");
   });
 
+  it("exits 1 without WORKER, naming it (CHORE_010)", async () => {
+    const { code, err } = await start({ HOST: "127.0.0.1", WORKER: "" });
+    expect(code).toBe(1);
+    expect(err).toContain("WORKER is not set");
+  });
+
   it("listens on loopback without a key", async () => {
     const { out } = await start({ HOST: "127.0.0.1" });
     expect(out).toMatch(/\[model\] listening on http:\/\/127\.0\.0\.1:\d+/);

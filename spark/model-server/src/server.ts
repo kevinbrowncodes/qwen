@@ -1,6 +1,6 @@
 /**
  * The model server (STORY_015): docs/contracts/job-api.md v1.3 in front of Qwen-Image-2.1. This process owns the
- * contract (HTTP, validation, the queue, cancel, results on disk); the Python worker (spark/model/worker.py) owns
+ * contract (HTTP, validation, the queue, cancel, results on disk); the Python worker (spark/model/worker_mlx.py) owns
  * the pipeline. One job runs at a time. Zero runtime dependencies, like the stub.
  *
  * A watchdog (STORY_026, BUG_011) keeps a silent worker from holding the queue: a stop it has not answered within
@@ -27,7 +27,7 @@ const EXTENSIONS: Readonly<Record<string, string>> = { "image/png": "png", "imag
 export interface ModelServerOptions {
   /** Results, uploads and the job index live here. */
   readonly outputDir: string;
-  /** The worker process, e.g. ["python3", "/srv/model/worker.py"]. */
+  /** The worker process, e.g. ["uv", "run", …, "python", "spark/model/worker_mlx.py"] (spark/mac/start.sh). */
   readonly workerCommand: readonly string[];
   readonly apiKey?: string;
   readonly maxQueued?: number;

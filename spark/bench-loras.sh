@@ -12,7 +12,7 @@
 # running first (docker logs qwen-model); the bench runs one at a time and takes one to two hours for seven add-ons.
 set -euo pipefail
 
-# The same pinned image as NODE_IMAGE in spark/model/Dockerfile.
+# A pinned Node 26 image (it was the Spark's model image's base, removed in CHORE_010).
 NODE_IMAGE="node:26-bookworm-slim@sha256:cd9f682fa2885cd1056e830424764158570061c59736a1da836bc3d73df095ae"
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

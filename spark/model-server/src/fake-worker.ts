@@ -1,5 +1,5 @@
 /**
- * A stand-in for spark/model/worker.py in the gate (STORY_015): the same line protocol, no GPU. It copies the stub's
+ * A stand-in for spark/model/worker_mlx.py in the gate (STORY_015): the same line protocol, no GPU. It copies the stub's
  * fixture PNG as its "result", steps every FAKE_STEP_MS, and behaves by keyword in the prompt: "crash" exits,
  * "fail" reports a failure, "slow" takes 200 steps, "deaf" takes 200 steps and never answers a stop, and "hang" sends
  * one progress line and then nothing (the two silences STORY_026's watchdog is for). Every message it receives is appended to FAKE_LOG. It reports

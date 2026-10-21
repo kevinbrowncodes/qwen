@@ -38,6 +38,6 @@ if (command === "status") {
   const parts = [`${String(outcome.fetched.length)} fetched`];
   if (outcome.waiting.length > 0) parts.push(`${String(outcome.waiting.length)} waiting for a Civitai token (${outcome.waiting.join(", ")})`);
   if (outcome.failed.length > 0) parts.push(`${String(outcome.failed.length)} failed (${outcome.failed.map((f) => f.id).join(", ")})`);
-  console.log(`fetch: finished: ${parts.join("; ")}. Run spark/up.sh (once no job is running) so the worker loads them.`);
+  console.log(`fetch: finished: ${parts.join("; ")}. Run tools/deploy/model.sh (once no job is running) so the worker loads them.`);
 }
 process.exit(incomplete ? 1 : 0);

@@ -1,6 +1,6 @@
 """The worker's job loop (STORY_026): stdin, the stopped set, the protocol lines and the loop that takes jobs.
 
-Standard library only, so the gate can test it without torch; worker.py hands it the function that runs one job.
+Standard library only, so the gate can test it without MLX; worker_mlx.py hands it the function that runs one job.
 
 Two locks, never nested: `_out` serialises protocol lines, `_stops` guards the stopped set. Nothing writes a line while
 holding `_stops`. BUG_011 was the main loop calling say() inside the one shared lock, a plain Lock it then took again.

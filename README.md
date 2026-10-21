@@ -52,12 +52,12 @@ Work is planned as two phases:
 
 ## Project Structure
 
-Present today: `app/`, `tools/gate/`, `tools/stub-generation-server/`, `tools/lan-name/`, `recon/`, `spark/` (model image, model server, worker, service), `docs/` (including `docs/contracts/`), `compose.yaml`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds the weights, and the LoRAs in `models/loras/`, on the Spark.
+Present today: `app/`, `tools/gate/`, `tools/deploy/`, `tools/stub-generation-server/`, `recon/`, `spark/` (the model server, the mflux worker, the Mac Studio 2026's launch agent, the LoRA manifest), `docs/` (including `docs/contracts/`), `compose.yaml`, the workspace files. The rest is created by the epics that need it. The gitignored `models/` holds the weights, and the LoRAs in `models/loras/`, on the Spark.
 
 ```
 app/          the UI
-tools/        the gate (gate/: run.sh, and remote.sh to run it on GATE_HOST's Docker), the stub generation server and its fixture image, the qwen.local name and proxy, the SPIKE_001 bench scripts (spike/), other dev tooling
-spark/        scripts and unit files that set up and run the model on the Spark
+tools/        the gate (gate/: run.sh, and remote.sh to run it on GATE_HOST's Docker), the deploys (deploy/: model.sh, app.sh, the one-time migrate-from-spark.sh), the stub generation server and its fixture image, the SPIKE_001 bench scripts (spike/)
+spark/        the model side: the model server, the mflux worker and its lock, the Mac Studio 2026's start script and launch agent (mac/), the LoRA manifest, fetcher and bench
 recon/        recon scripts (the offline curate/harvest/interactions pipeline; profile and raw output are gitignored)
 docs/
   epic/       EPIC_NNN_*.md
@@ -171,26 +171,9 @@ tools/deploy/app.sh                                    # from the 2025: deploy H
 ssh mac-studio-2022 'docker logs -f qwen-app'          # the app's log
 ```
 
-**Until 2026-10-20** everything ran on the Spark as follows.
+On a machine with Docker the gate also runs in place: `tools/gate/build.sh` once, then `tools/gate/run.sh` (same arguments as `remote.sh`).
 
-Everything runs on the Spark in containers from `compose.yaml` (project `qwen`); the host needs only Docker. Port **3100** is ours, and port 3000 belongs to the sibling minimax app. VS Code forwards 3100 to the Mac.
-
-**On the LAN, the app is at http://qwen.local** (CHORE_004). Two small services give it that name:
-
-- **`lan-name`** (`qwen-lan-name`, `tools/lan-name/`) answers mDNS queries for `qwen.local` with the Spark's current LAN address. It runs with host networking beside the host's avahi-daemon. It doesn't publish through avahi, because AppArmor refuses containers the host's D-Bus.
-- **`proxy`** (`qwen-proxy`, Caddy) owns port **80** on the Spark. It sends `qwen.local` to `qwen-app:3100`, and any other name gets a 404. Another project's name can be added as a site in `tools/lan-name/Caddyfile`.
-
-`http://192.168.1.28:3100` and `http://spark-1.local:3100` keep working.
-
-```bash
-tools/gate/build.sh                              # once: the toolchain image qwen/gate:1.63.0-node26
-tools/gate/run.sh                                # the whole gate: install, typecheck, lint, test, integration, build, e2e
-tools/gate/run.sh --from 4                       # resume from a step after a fix; or name steps: run.sh lint build
-docker compose --profile dev up app-dev          # next dev with hot reload on http://localhost:3100
-docker compose up -d --build app                 # the production image on http://localhost:3100 (stop app-dev first)
-```
-
-The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL_API_KEY` (optional) and `HISTORY_FILE` (where history is kept; `/data/history.json` in the `app-data` volume: one entry per image, with its chat's id and, once renamed, the chat's `title`). Set them in a gitignored `.env` beside `compose.yaml`; [.env.example](.env.example) shows its shape. The same file holds `CIVITAI_TOKEN`, the Civitai API key `spark/fetch-loras.sh` needs for the LoRAs only Civitai hosts (CHORE_005): it is mounted read-only into the fetch container and never printed. It also holds `HANDS_API_TOKEN` and `HANDS_URL` for the recon client that drives Hands (STORY_027; see [Running Recon](#running-recon)).
+The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL_API_KEY` (optional) and `HISTORY_FILE` (where history is kept; `/data/history.json` in the `app-data` volume: one entry per image, with its chat's id and, once renamed, the chat's `title`). On the Mac Studio 2022, `tools/deploy/app.sh` writes them to `~/qwen-app/.env`. [.env.example](.env.example) shows the repo's own `.env` on the 2025, which names the machines. The same file holds `CIVITAI_TOKEN`, the Civitai API key `spark/fetch-loras.sh` needs for the LoRAs only Civitai hosts (CHORE_005): it is mounted read-only into the fetch container and never printed. It also holds `HANDS_API_TOKEN` and `HANDS_URL` for the recon client that drives Hands (STORY_027; see [Running Recon](#running-recon)).
 
 ## Running the Model
 
@@ -216,36 +199,9 @@ ssh mac-studio-2026 'tail -f ~/Library/Logs/qwen-model.log'                # the
 
 The launch agent starts at login, so the 2026 must be logged in after a reboot. The Spark's `qwen-model` was removed on 2026-10-20. Its weights, LoRAs and `spark/data/outputs` (521 MB) are still on the Spark's disk; STORY_037 moves the outputs.
 
-**How it ran on the Spark until 2026-10-20** follows.
+How it ran on the DGX Spark until 2026-10-20 (a diffusers worker in a Docker image, 51–60 s per image) is in EPIC_004 and STORIES 014–016. That code was removed in CHORE_010. **The Spark's qwen data** (the `qwen_app-data` volume, `spark/data/outputs` at 521 MB, the weights at 33.1 GB) stays on its disk until **2026-10-28**, as a backup of what EPIC_007 moved. It is then removed with the owner's say-so at that time (owner, 2026-10-21; CLAUDE.md §4a).
 
-**Status until 2026-10-20 (measured on the Spark on 2026-09-26):** Qwen-Image-2.1 serves from the `qwen-model` container. The app at http://localhost:3100 generates with it end to end.
-
-| Item | Value |
-| --- | --- |
-| Serving stack | The model server (`spark/model-server`, TypeScript, speaks [the job API contract](docs/contracts/job-api.md)) in front of a Python worker (`spark/model/worker.py`) running diffusers' `QwenImage21Pipeline`, both in the `qwen/model:dev` image (`spark/model/Dockerfile`) |
-| Model / checkpoint | `Qwen/Qwen-Image-2.1` @ `790c926`, bf16, 40 steps, no guidance (the card's default), in `models/Qwen-Image-2.1` (33.1 GB) |
-| Licence | Qwen Research License: **non-commercial only**. Decided 2026-09-26, see below |
-| Sizes served | About 1 megapixel per ratio: 1:1 1024², 16:9 1376×768, 9:16 768×1376, 4:3 1184×896, 3:4 896×1184, 3:2 1248×832, 2:3 832×1248. An edit takes its reference's shape at about 1 MP, or the ratio chosen for it (STORY_017). |
-| Time per image | About **51–53 s** (text to image) and 60 s (edit) at 1 MP. The card's 2K sizes take 248–266 s, so they are not offered |
-| Memory | Peak **36.9 GiB** on the GPU at 1 MP (56.7 GiB at 2K); the host's used memory rose from 14 to about 54 GiB. A cold start loads for about 3.3 minutes |
-| Port / env vars | `qwen-model:4120` on the docker network `qwen` (host: `127.0.0.1:4120` only). The app reads `MODEL_BASE_URL` (default `http://qwen-model:4120`) and optionally `MODEL_API_KEY` |
-| Moderation | None: the model ships no safety checker, so a job never ends `moderated` |
-| LoRAs | Listed in `spark/loras.json` and fetched by `spark/fetch-loras.sh` into `models/loras/`, each from a pinned source (a Hugging Face revision or a Civitai model version) and checked against its creator's sha256 (STORY_021). The worker loads them unfused at start (needs `peft` 0.21.1, in the image), and each job picks one or none from the composer's LoRA dropdown (STORY_019); a LoRA's `guidance` in the manifest is the `true_cfg_scale` its jobs run with (about twice the time per image). Installed: **Uncensored** (34 MB, Qwen Research License), **Penis (CoachBate)** (159 MB, guidance 3), **Uncut penis (CoachBate)** (159 MB, guidance 3) and **NSFW v2 (TheseAlpacas)** (80 MB, guidance 4, strength 0.9); its v1.0, installed as `nsfw-f23gg`, was removed on 2026-10-17 (CHORE_008). From Civitai, with `CIVITAI_TOKEN` in `.env` (2026-10-07, CHORE_005): **Erect penis (FriendOfMale)** (319 MB) and **Flaccid uncut (LonelyCoyote)** (159 MB, trigger `d3np3n1s`), which exist only there. Terms per LoRA are in the manifest; all are used for personal, non-commercial purposes only. Each entry also holds what its info card shows, written by hand (STORY_030): `creator`, `madeFor` (one line, at most 200 characters, from the creator's page, read on `madeForReadOn`), `abilities` (up to six `{ subject, claimed, bench }`, subjects free text) and `benchSource`; the model server reads them at start, so a change shows after `spark/up.sh`. The entries, and so the dropdown, are in order of `downloads`, most first, as read on `downloadsReadOn` (CHORE_006). That is a snapshot, not live: refreshing it is a manual re-read and reorder. [EPIC_005](docs/epic/EPIC_005_more_add_ons_are_installed_and_tested_for_correct_anatomy.md) compares them |
-
-```bash
-spark/up.sh                            # start the model server (reads what runs first; refuses below 60 GiB free)
-spark/fetch-loras.sh                   # fetch the LoRAs in spark/loras.json; then spark/up.sh to load them
-spark/fetch-loras.sh status            # which LoRAs are on disk
-spark/fetch-loras.sh verify            # hash every LoRA on disk against the manifest
-spark/bench-loras.sh                   # run (or resume) the LoRA bench into outputs/bench/<date>/ (STORY_022; 1-2 hours)
-curl -s 127.0.0.1:4120/health          # {"ok":true,...,"ready":true} once loaded; job, queued, lastRestart show a stall (STORY_026)
-docker logs -f qwen-model              # the server's and the worker's log
-docker compose -f spark/compose.yaml down   # stop it (frees about 37-54 GiB)
-```
-
-Results, uploads and the job index are in `spark/data/outputs/` (gitignored). The Spark facts and the measurements are in [spark/README.md](spark/README.md).
-
-**The LoRA bench** (`spark/bench-loras.sh`, STORY_022) runs every LoRA, and none, over the same four generated subjects through the job API: an edit of each subject with the same prompt and seed, plus one text-to-image per setting. It writes the images, a `contact-sheet.html` and a `scorecard.md` into the gitignored `outputs/bench/<date>/`, and resumes if re-run. Its only inputs are the prompts in `spark/model-server/src/bench.ts` and the ids of jobs this server made from them; it never reads an image from disk. The owner's filled-in scorecards are committed, as text only, under [docs/bench/](docs/bench/).
+**The LoRA bench** (`spark/bench-loras.sh`, STORY_022) runs every LoRA, and none, over the same four generated subjects through the job API: an edit of each subject with the same prompt and seed, plus one text-to-image per setting. It writes the images, a `contact-sheet.html` and a `scorecard.md` into the gitignored `outputs/bench/<date>/`, and resumes if re-run. From the Mac Studio 2025 it runs natively against `MODEL_BASE_URL` with `MODEL_API_KEY` from `.env` (STORY_036). Its only inputs are the prompts in `spark/model-server/src/bench.ts` and the ids of jobs this server made from them; it never reads an image from disk. The owner's filled-in scorecards are committed, as text only, under [docs/bench/](docs/bench/).
 
 **The target model is Qwen-Image-2.1** (owner's request, 2026-09-26). Facts read from its Hugging Face model card and LICENSE file on 2026-09-26:
 
@@ -264,10 +220,6 @@ Sources: [Qwen/Qwen-Image-2.1 model card](https://huggingface.co/Qwen/Qwen-Image
 1. `tools/deploy/model.sh`: the model server to the Mac Studio 2026 (STORY_036).
 2. `tools/deploy/app.sh`: the app to the Mac Studio 2022 (STORY_037). It reads the model's key from the 2026, so the model deploys first.
 
-Each takes a commit that is on `origin/develop`, so one that passed the gate, and refuses a working tree with uncommitted changes. `.env` on the 2025 names the machines: `GATE_HOST`, `MODEL_HOST`, `APP_HOST`, and `SPARK_HOST` for the one-time migration. Until 2026-10-20 it was local only, on the Spark, in this order:
+Each takes a commit that is on `origin/develop`, so one that passed the gate, and refuses a working tree with uncommitted changes. `.env` on the 2025 names the machines: `GATE_HOST`, `MODEL_HOST`, `APP_HOST`, and `SPARK_HOST` for the one-time migration. Until 2026-10-20 everything ran on the DGX Spark (EPIC_004, CHORE_004); that path was removed in CHORE_010.
 
-1. `spark/up.sh`: the model server (`qwen-model`), which creates the docker network `qwen`.
-2. `docker compose up -d --build app`: the UI (`qwen-app` on port 3100), joined to that network.
-3. `docker compose up -d --build proxy lan-name`: the name `qwen.local` and port 80 (CHORE_004). Both restart with Docker.
-
-There is no CI; the gate runs locally (`tools/gate/run.sh`) and on every push to `develop` (the pre-push hook).
+There is no CI. The gate runs on the Mac Studio 2022 (`tools/gate/remote.sh`) and on every push to `develop` (the pre-push hook).

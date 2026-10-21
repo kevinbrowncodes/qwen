@@ -1,5 +1,6 @@
 """The Qwen-Image-2.1 worker on Apple silicon (STORY_035): mflux on MLX (Metal), behind the same line protocol as
-worker.py (spark/model-server/src/protocol.ts), so the model server and the job API do not change.
+the Spark's diffusers worker that came before it (removed in CHORE_010; spark/model-server/src/protocol.ts), so the model
+server and the job API did not change.
 
 Run by the model server as its WORKER, on the Mac Studio 2026:
     uv run --project spark/model/mlx python spark/model/worker_mlx.py      (WEIGHTS = the Qwen-Image-2.1 folder)
@@ -12,7 +13,7 @@ everywhere else, so switching costs no reload and an add-on not in use costs not
 place at scale 0 cost 17-37% per step on the Mac Studio 2026, STORY_035).
 A cancel is honoured at the next step: the in-loop callback raises, the generate call unwinds, and the worker takes
 the next job. What a job means without MLX (arguments, scales, PNG text, failure messages) is mlxjob.py, tested in
-the gate; reading stdin, the stops and the job loop are jobloop.py, shared with worker.py.
+the gate; reading stdin, the stops and the job loop are jobloop.py.
 """
 
 import json
@@ -57,7 +58,7 @@ class _Steps:
 
 
 def read_init(timeout: float = 2.0) -> list:
-    """The add-ons the server asked for; it writes `init` as soon as the worker starts (worker.py does the same)."""
+    """The add-ons the server asked for; it writes `init` as soon as the worker starts."""
     ready, _, _ = select.select([sys.stdin], [], [], timeout)
     if not ready:
         return []
