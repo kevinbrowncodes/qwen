@@ -1,6 +1,6 @@
 # BUG_016 — The gate's typecheck fails on every jest-dom matcher
 
-**Status:** Fixed 2026-10-20, committed; the push waits for STORY_034's hook (see Resolution)
+**Status:** Resolved (2026-10-20). Pushed through the hook with STORY_034 (`6773460..93f8e1c`).
 **Found:** 2026-10-20, by the assistant, running the gate by hand on the Spark for SPIKE_001 after the push was refused by the session's permission layer. **Not caused by SPIKE_001's commit** (`7338dbf`): that commit touches nothing under `app/` (`git diff --stat 6773460 HEAD -- app/` is empty), and the failing test files are byte-identical to the last pushed commit `6773460` (checked in a detached worktree).
 
 ## Summary
@@ -64,7 +64,7 @@ Two facts frame the fix:
 - [x] `tools/gate/run.sh typecheck` is green ~~on the Spark~~ on the Mac Studio 2022 (corrected, see Corrections), and the three test files compile with their matchers typed (no `as` casts, no `// @ts-expect-error`, per CLAUDE.md §6 rule 6).
 - [x] ~~The fix is one of: (a) a local declaration in `app/` that augments vitest 5's `Assertion<R, T>` with `TestingLibraryMatchers<any, R>` and `AsymmetricMatchersContaining`, with a comment naming this ticket and the two versions it bridges, so it can be deleted when jest-dom ships a two-parameter augmentation; or (b) a jest-dom release that ships that augmentation, if one exists by then (check its `types/vitest.d.ts` before pinning).~~ Corrected: neither. The cause was a second vitest in the lockfile, not the augmentation's parameter list (see Corrections).
 - [x] The jest-dom pin leaves the deprecated 6.10.0 for 6.9.1 or a 7.x whose peer range `@testing-library/dom` (`>=10 <11`) the lockfile already satisfies (10.4.2), with the lockfile regenerated and committed.
-- [ ] The whole gate (`tools/gate/run.sh`) passes once, by hand, and the push of this fix goes through the hook with no `--no-verify`.
+- [x] The whole gate (`tools/gate/run.sh`) passes once, by hand, and the push of this fix goes through the hook with no `--no-verify`.
 - [x] The Resolution note below says which of (a) or (b) was done, and answers the open question about the 2026-10-17 pushes.
 
 ## Corrections (2026-10-20, evening, by the assistant on the Mac Studio 2025)
@@ -87,4 +87,4 @@ Two facts frame the fix:
   - The likely answer: the Spark's hoisted vitest was 5.0.0 when those pushes ran, and a later `pnpm install` on the long-lived tree switched it to 5.0.2.
 
   No second ticket is needed. A fresh install cannot pick the wrong vitest any more, because only one remains.
-- **Not yet pushed.** Pushes now leave from the Mac Studio 2025, where the hook needs STORY_034's remote gate, so this fix is pushed through the hook with that story. The push criterion is ticked then.
+- **Pushed** on 2026-10-20 through the hook, with no `--no-verify`: the hook gated `93f8e1c` on the Mac Studio 2022 (`remote.sh --commit`), and the push went through (`6773460..93f8e1c`).
