@@ -114,7 +114,7 @@ REMOTE
 
 cmd="bash -c $(printf '%q' "$remote") deploy $(printf '%q' "$sha") $now"
 log "deploying ${sha:0:12} to $host"
-git -C "$ROOT" archive --format=tar "$sha" -- "${PATHS[@]}" | ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" "$cmd" && rc=0 || rc=$?
+git -C "$ROOT" archive --format=tar "$sha" -- "${PATHS[@]}" | ssh -T -o BatchMode=yes -o ConnectTimeout=10 "$host" "$cmd" && rc=0 || rc=$?
 [ "$rc" -eq 0 ] || exit "$rc"
 
 # From here: the LAN must refuse a request without the key.

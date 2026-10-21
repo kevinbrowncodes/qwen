@@ -32,10 +32,10 @@ The machines (EPIC_007, from 2026-10-20):
 | --- | --- | --- |
 | **Mac Studio 2025** | The repo, development, the dev server; every deploy starts here | local |
 | **Mac Studio 2022** | Runs the gate in its Docker (STORY_034); the app runs here from STORY_037, at `qwen.local` through PATHS' proxy | ssh, `GATE_HOST` |
-| **Mac Studio 2026** | Runs the image model natively (mflux, Metal) behind the async job API, from STORY_036 | LAN |
+| **Mac Studio 2026** | Runs the image model natively (mflux, Metal) behind the async job API, since 2026-10-20 (STORY_036) | LAN, port 4120, with `MODEL_API_KEY`; ssh `MODEL_HOST` for deploys |
 | **DGX Spark** | Nothing of qwen's since 2026-10-20: its containers were removed to free its memory; its clone and data wait to be moved (STORY_037) | — |
 
-**Until STORY_036 and STORY_037 land, qwen is not served anywhere**; the sections below that describe the Spark describe how it ran until 2026-10-20.
+**Until STORY_037 lands the app is not served anywhere**, though the model is, from the Mac Studio 2026. The sections below that describe the Spark describe how it ran until 2026-10-20.
 
 The UI talks to the generation server through configuration only (base URL, optional key). The protocol is an async job: create a generation, poll its status, fetch the result file. Locally the same variables point at a **stub generation server** that returns scripted outcomes and a tiny fixture image, so nothing in the test gate depends on the Spark being reachable.
 
@@ -179,7 +179,29 @@ The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL
 
 ## Running the Model
 
-**Not served as of 2026-10-20.** `qwen-model` was removed from the Spark that evening to free its memory (EPIC_007). STORY_036 serves the model from the Mac Studio 2026. Its weights at `790c926`, the LoRAs and `spark/data/outputs` (521 MB) are still on the Spark's disk.
+**Served from the Mac Studio 2026 since 2026-10-20 (STORY_035, STORY_036).** The same model server (`spark/model-server`) runs natively there with the mflux worker (`spark/model/worker_mlx.py`, MLX on Metal). It runs as the launch agent `com.qwen.model` and listens on the LAN at port 4120, **behind `MODEL_API_KEY`**: the server refuses to listen beyond loopback without it.
+
+| Item | Value (measured on the Mac Studio 2026, 2026-10-20) |
+| --- | --- |
+| Machine | Mac Studio 2026: M5 Ultra, 64 GPU cores, 96 GB, macOS 27.0.1 |
+| Stack | Node 26 running `spark/model-server`; worker `spark/model/worker_mlx.py` on mflux 0.21.0, MLX 0.32.4, Python 3.14, Pillow 12.3.0 (`spark/model/mlx/uv.lock`; `pillow<13` is required, see `test_mlx_lock.py`) |
+| Model / checkpoint | `Qwen/Qwen-Image-2.1` @ `790c926`, bf16, one `QwenImage21Edit` model for text-to-image and edits |
+| Time per image | Text-to-image at 896×1184, 40 steps: **35 s** in the worker, 36 s through the job API. With a guided LoRA: 75 s. Edit: 50 s. The Spark took 53, 120 and 60 s |
+| Start | Ready in about 5 s with six LoRAs once the files are cached (the Spark: 3.3 minutes) |
+| Memory | Peak resident about 33 GB. `spark/mac/start.sh` refuses to start below 48 GiB available and never stops anything to make room |
+| LoRAs | All six in `spark/loras.json`, loaded unbaked. Each job swaps in only its own LoRA's layers, so switching costs no reload and an unused LoRA costs nothing per step |
+| Layout on the 2026 | `~/qwen-model/`: `app/` (what the deploy copies), `models/Qwen-Image-2.1` (a link to the spike's copy), `models/loras/`, `data/outputs/`, `.env` (`MODEL_API_KEY`, mode 600). Log: `~/Library/Logs/qwen-model.log` |
+
+```bash
+tools/deploy/model.sh                    # from the Mac Studio 2025: deploy HEAD (clean and on origin/develop) to MODEL_HOST
+tools/deploy/model.sh --now              # restart even when a job is running or queued
+ssh mac-studio-2026 'launchctl kickstart -k gui/$(id -u)/com.qwen.model'   # restart in place
+ssh mac-studio-2026 'tail -f ~/Library/Logs/qwen-model.log'                # the server's and the worker's log
+```
+
+The launch agent starts at login, so the 2026 must be logged in after a reboot. The Spark's `qwen-model` was removed on 2026-10-20. Its weights, LoRAs and `spark/data/outputs` (521 MB) are still on the Spark's disk; STORY_037 moves the outputs.
+
+**How it ran on the Spark until 2026-10-20** follows.
 
 **Status until 2026-10-20 (measured on the Spark on 2026-09-26):** Qwen-Image-2.1 serves from the `qwen-model` container. The app at http://localhost:3100 generates with it end to end.
 
@@ -222,7 +244,7 @@ Sources: [Qwen/Qwen-Image-2.1 model card](https://huggingface.co/Qwen/Qwen-Image
 
 ## Deployment
 
-**Nothing is deployed as of 2026-10-20.** EPIC_007 deploys from the Mac Studio 2025: the model to the Mac Studio 2026 (STORY_036), and the app to the Mac Studio 2022 (STORY_037). Until 2026-10-20 it was local only, on the Spark, in this order:
+**From the Mac Studio 2025 (EPIC_007).** The model goes to the Mac Studio 2026 with `tools/deploy/model.sh` (STORY_036, deployed 2026-10-20), and the app to the Mac Studio 2022 (STORY_037). Every deploy takes a commit that is on `origin/develop`, so one that passed the gate. Until 2026-10-20 it was local only, on the Spark, in this order:
 
 1. `spark/up.sh`: the model server (`qwen-model`), which creates the docker network `qwen`.
 2. `docker compose up -d --build app`: the UI (`qwen-app` on port 3100), joined to that network.

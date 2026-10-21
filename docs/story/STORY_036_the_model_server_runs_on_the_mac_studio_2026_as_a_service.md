@@ -1,7 +1,7 @@
 # STORY_036 — The model server runs on the Mac Studio 2026 as a service, deployed from the Mac Studio 2025
 
 **Epic:** [EPIC_007](../epic/EPIC_007_the_app_runs_on_the_mac_studio_2022_and_draws_on_the_mac_studio_2026.md)
-**Status:** Self-approved on 2026-10-20 under the owner's overnight authorisation (EPIC_007 › decision 6). The owner reviews it in the morning.
+**Status:** Done (2026-10-20). Self-approved that night under the owner's overnight authorisation (EPIC_007 › decision 6); the owner reviews it in the morning.
 **Created:** 2026-10-20. Numbered 036, after STORY_035.
 
 As the owner, I want the model server and its mflux worker running on my Mac Studio 2026 as a service:
@@ -39,35 +39,35 @@ UI Mockup: N/A (no UI change). The service sits behind the job API, and the app 
 
 **One command deploys it**
 
-- [ ] `tools/deploy/model.sh` on the 2025 deploys the model side to `MODEL_HOST`, an ssh destination read from the environment or `.env`.
+- [x] `tools/deploy/model.sh` on the 2025 deploys the model side to `MODEL_HOST`, an ssh destination read from the environment or `.env`.
   - It copies exactly the files the service runs, from **a commit that is on `origin/develop`**, so a gated one, into `~/qwen-model/app/` on the 2026. The files are `spark/model-server/src`, the worker's Python files, `spark/model/mlx`, `spark/loras.json` and `spark/mac/`.
   - It installs the worker's locked environment (`uv sync --frozen`), installs or refreshes the launch agent, and waits until `/health` says `ready`.
   - It refuses a working tree with uncommitted changes, or a commit not on `origin/develop`. Each refusal states the rule and the fix.
-- [ ] **It reads before it writes.** Before restarting a running server it reads `/health`. When a job is running or queued it refuses, saying which job, unless given `--now`.
+- [x] **It reads before it writes.** Before restarting a running server it reads `/health`. When a job is running or queued it refuses, saying which job, unless given `--now`.
 
 **The service**
 
-- [ ] A launch agent `com.qwen.model` for the owner's user runs the model server natively, with the mflux worker as `WORKER`:
+- [x] A launch agent `com.qwen.model` for the owner's user runs the model server natively, with the mflux worker as `WORKER`:
   - `HOST=0.0.0.0` and `PORT=4120`;
   - `OUTPUT_DIR`, `LORA_MANIFEST`, `LORA_DIR` and `WEIGHTS` under `~/qwen-model/`;
   - `MODEL_API_KEY` from `~/qwen-model/.env`.
 
   It starts at login and restarts when it exits, at most every 30 s. It logs to `~/Library/Logs/qwen-model.log`. Nothing it reads is under `~/Documents`.
-- [ ] **The memory check** (BUG_013, restated for macOS). Its start script refuses to start the server when less than 48 GiB is available, reading free, inactive, speculative and purgeable pages from `vm_stat`. It logs the figure and says not to stop the owner's other services to make room (CLAUDE.md §4a).
+- [x] **The memory check** (BUG_013, restated for macOS). Its start script refuses to start the server when less than 48 GiB is available, reading free, inactive, speculative and purgeable pages from `vm_stat`. It logs the figure and says not to stop the owner's other services to make room (CLAUDE.md §4a).
 
 **The key**
 
-- [ ] **The server refuses to listen beyond loopback without a key.** With a `HOST` other than `127.0.0.1`, `::1` or `localhost` and no `MODEL_API_KEY`, `node src/main.ts` exits with a message naming `MODEL_API_KEY` and the fix. A test proves it.
-- [ ] The first deploy generates the key on the 2026, 32 random bytes as hex, into `~/qwen-model/.env` (mode 600), and it is never printed. Later deploys keep it. The deploy reads it over ssh for its own health check without echoing it.
+- [x] **The server refuses to listen beyond loopback without a key.** With a `HOST` other than `127.0.0.1`, `::1` or `localhost` and no `MODEL_API_KEY`, `node src/main.ts` exits with a message naming `MODEL_API_KEY` and the fix. A test proves it.
+- [x] The first deploy generates the key on the 2026, 32 random bytes as hex, into `~/qwen-model/.env` (mode 600), and it is never printed. Later deploys keep it. The deploy reads it over ssh for its own health check without echoing it.
 
 **The weights and the LoRAs**
 
-- [ ] `~/qwen-model/models/Qwen-Image-2.1` is the spike's copy at `790c926`, **linked, not moved or copied**, because weights are only moved with the owner's say-so (CLAUDE.md §4a). The deploy refuses to start when `model_index.json` is missing there.
-- [ ] The LoRAs in `spark/loras.json` (six as of 2026-10-20; EPIC_005 decides which stay) are in `~/qwen-model/models/loras/<id>/`, copied from the spike's folder. They are checked against the manifest's sha256 by `fetch-loras-cli.ts verify`, run natively with Node 26 on the 2026.
+- [x] `~/qwen-model/models/Qwen-Image-2.1` is the spike's copy at `790c926`, **linked, not moved or copied**, because weights are only moved with the owner's say-so (CLAUDE.md §4a). The deploy refuses to start when `model_index.json` is missing there.
+- [x] The LoRAs in `spark/loras.json` (six as of 2026-10-20; EPIC_005 decides which stay) are in `~/qwen-model/models/loras/<id>/`, copied from the spike's folder. They are checked against the manifest's sha256 by `fetch-loras-cli.ts verify`, run natively with Node 26 on the 2026.
 
 **The bench from the 2025**
 
-- [ ] `spark/bench-loras.sh` runs on a Mac without Docker against `MODEL_BASE_URL`, with `MODEL_API_KEY`, using the Mac's own Node 26 (owner, 2026-10-20: keep the bench, run from the 2025). Where Docker exists it runs exactly as before.
+- [x] `spark/bench-loras.sh` runs on a Mac without Docker against `MODEL_BASE_URL`, with `MODEL_API_KEY`, using the Mac's own Node 26 (owner, 2026-10-20: keep the bench, run from the 2025). Where Docker exists it runs exactly as before.
 
 ## Departures from the reference
 
@@ -115,3 +115,28 @@ Medium:
 - a wrapper change.
 
 The risk is launchd's environment on the 2026 (`PATH`, Metal from a launch agent). Manual step 1 shows it.
+
+## Corrections made during implementation (2026-10-20)
+
+- **"The rendered plist names `~/qwen-model/.env` and holds no key" (Testing Plan).** The plist runs `~/qwen-model/app/spark/mac/start.sh`, which reads `.env` itself, so the plist names neither the key nor an `EnvironmentVariables` block. The test asserts exactly that. `.env` appears only in the template's comment.
+- **Manual step 6.** `spark/bench-loras.sh` takes no `--help`. Run from the 2025 without Docker and without `MODEL_BASE_URL`, it now stops with "no Docker here, and no MODEL_BASE_URL: set it (and MODEL_API_KEY) in .env" (exit 64). The bench itself was not run, as the plan said.
+- **The deploy's ssh session uses `-T`.** Without it ssh printed "Pseudo-terminal will not be allocated" on every deploy.
+
+## Done note (2026-10-20)
+
+Deployed `5a24a97` to the Mac Studio 2026 with `tools/deploy/model.sh` from the Mac Studio 2025 at about 21:20 EDT. Qwen-Image-2.1 at `790c926`, bf16, mflux 0.21.0. Before the deploy: nothing listened on port 4120, memory was 95% free, and there was no qwen launch agent.
+
+1. **The deploy took 15 s.**
+   - The weights were linked to the spike's copy.
+   - All six LoRAs were copied, and all six were checked against their sha256 (`verify … ok`).
+   - The key was generated, mode 600, not printed.
+   - The worker's locked environment was installed.
+   - `com.qwen.model` was bootstrapped and answered `ready`.
+2. `/health` answered **200 with the key and 401 without**, on the 2026 and from the 2025 over the LAN (`http://mac-studio-2026.local:4120`).
+3. **A 3:4 text-to-image job through the job API** (`POST /jobs` with `curl` on the 2026, seed 1001, SPIKE_001's subject A) reached `done` in **36 s**. The result was 896×1184. The Spark's twin took 53.1 s on the server and 55 s by wall clock. `/capabilities` lists all six LoRAs.
+4. A job stopped with `DELETE` while running answered 202, then `cancelled`.
+5. `launchctl kickstart -k gui/<uid>/com.qwen.model` was **ready again in 5 s**.
+6. See the corrections: the bench refuses cleanly without a URL. It was not run, because the run takes hours and its scoring is the owner's.
+
+- **Gate:** the whole gate is green through `tools/gate/remote.sh` in 182 s. It includes `model.test.sh` (6 cases), `start.test.sh` (4), `bind.test.ts` (3) and `main.test.ts` (3). A lint error in the first run (an arrow function returning `+=`) was fixed. The push gated `5a24a97` on the Mac Studio 2022 (164 s).
+- **The key** is only in `~/qwen-model/.env` on the 2026. STORY_037 copies it into the app's `.env` on the 2022 without printing it.
