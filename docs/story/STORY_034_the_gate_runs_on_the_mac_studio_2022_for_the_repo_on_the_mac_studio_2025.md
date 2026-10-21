@@ -1,7 +1,7 @@
 # STORY_034 — The gate runs on the Mac Studio 2022 for the repo on the Mac Studio 2025
 
 **Epic:** [EPIC_007](../epic/EPIC_007_the_app_runs_on_the_mac_studio_2022_and_draws_on_the_mac_studio_2026.md)
-**Status:** Approved by the owner on 2026-10-20 (through the picker: "Approved, fix BUG_016 next"). Not started; BUG_016 is fixed first.
+**Status:** Done (2026-10-20). Approved by the owner on 2026-10-20 (through the picker: "Approved, fix BUG_016 next"), built that night under the owner's overnight authorisation, after BUG_016.
 **Created:** 2026-10-20. Numbered 034 because it is EPIC_007's first story. It ships after [BUG_016](../bug/BUG_016_the_gates_typecheck_fails_on_every_jest_dom_matcher.md): the gate fails at step 1 today, and this story is not Done until a full gate run is green.
 
 As the owner, I want the repo on my Mac Studio 2025 checked by the same six gate steps before every push, run on the Mac Studio 2022's Docker, so that I can keep the repo where I work without installing Docker here, and nothing reaches `develop` without passing the gate.
@@ -25,23 +25,23 @@ N/A (no UI change): this story moves where the gate runs and adds a source check
 
 **Running the gate from the 2025**
 
-- [ ] `tools/gate/remote.sh` on the 2025 runs the **unchanged** `tools/gate/run.sh` on the gate host. It passes its arguments through (`--from 4`, step names), streams the output as it comes, and exits with `run.sh`'s exit code.
-- [ ] **By default it checks the working tree** as it stands: tracked files, plus untracked files git does not ignore. That is what CLAUDE.md §4 runs before a commit. **With `--commit <sha>` it checks exactly that commit**, and the hook uses this mode.
-- [ ] **Nothing git ignores is ever copied** to the gate host: `.env`, `outputs/`, `models/`, `node_modules/`, `recon/out/`, coverage and build output. Nor is `.git`.
-- [ ] **The gate host is configuration.** It is read from `GATE_HOST` in the environment or in the gitignored `.env`. When it is unset, the script stops before doing anything, with a message naming `GATE_HOST` and `.env.example`. `.env.example` gains `GATE_HOST=`, left empty, with a comment.
-- [ ] **One gate at a time on the gate host.** A second run while one is going is refused, with a message giving when the running one started. A lock whose run has ended is cleared by the next run.
-- [ ] **A missing gate image is built once.** If `qwen/gate:1.63.0-node26` is not on the gate host, the script runs `tools/gate/build.sh` there, says so, and then runs the gate.
-- [ ] **The gate host's own services are untouched.** The gate creates nothing on the 2022 except its own `qwen` project resources (the gate container, the `qwen/gate` and `qwen/app` images, the `pnpm-store` volume, a working copy under `~/qwen-gate/`).
+- [x] `tools/gate/remote.sh` on the 2025 runs the **unchanged** `tools/gate/run.sh` on the gate host. It passes its arguments through (`--from 4`, step names), streams the output as it comes, and exits with `run.sh`'s exit code.
+- [x] **By default it checks the working tree** as it stands: tracked files, plus untracked files git does not ignore. That is what CLAUDE.md §4 runs before a commit. **With `--commit <sha>` it checks exactly that commit**, and the hook uses this mode.
+- [x] **Nothing git ignores is ever copied** to the gate host: `.env`, `outputs/`, `models/`, `node_modules/`, `recon/out/`, coverage and build output. Nor is `.git`.
+- [x] **The gate host is configuration.** It is read from `GATE_HOST` in the environment or in the gitignored `.env`. When it is unset, the script stops before doing anything, with a message naming `GATE_HOST` and `.env.example`. `.env.example` gains `GATE_HOST=`, left empty, with a comment.
+- [x] **One gate at a time on the gate host.** A second run while one is going is refused, with a message giving when the running one started. A lock whose run has ended is cleared by the next run.
+- [x] **A missing gate image is built once.** If `qwen/gate:1.63.0-node26` is not on the gate host, the script runs `tools/gate/build.sh` there, says so, and then runs the gate.
+- [x] **The gate host's own services are untouched.** The gate creates nothing on the 2022 except its own `qwen` project resources (the gate container, the `qwen/gate` and `qwen/app` images, the `pnpm-store` volume, a working copy under `~/qwen-gate/`).
 
 **The hook**
 
-- [ ] On a machine without Docker and with `GATE_HOST` set, a push to `develop` runs `remote.sh --commit <the pushed sha>`. On a machine with Docker it runs `run.sh` as before, so the Spark's clone keeps working until STORY_037. A failing gate refuses the push, as today. Pushes to other branches run nothing, as today.
-- [ ] **A push to `develop` with no way to run the gate is refused,** never let through: no Docker and no `GATE_HOST`, or a gate host that does not answer. The message states the rule and the fix, written for a session that has never seen this story.
-- [ ] **The hook is installed on the 2025's clone** (`core.hooksPath` is `.husky/_`), and README › Running the UI says how to install it on a new clone.
+- [x] On a machine without Docker and with `GATE_HOST` set, a push to `develop` runs `remote.sh --commit <the pushed sha>`. On a machine with Docker it runs `run.sh` as before, so the Spark's clone keeps working until STORY_037. A failing gate refuses the push, as today. Pushes to other branches run nothing, as today.
+- [x] **A push to `develop` with no way to run the gate is refused,** never let through: no Docker and no `GATE_HOST`, or a gate host that does not answer. The message states the rule and the fix, written for a session that has never seen this story.
+- [x] **The hook is installed on the 2025's clone** (`core.hooksPath` is `.husky/_`), and README › Running the UI says how to install it on a new clone.
 
 **Machine names stay out of the code**
 
-- [ ] A gate check fails when a machine name or LAN address appears in **application code, tests or fixtures**: `app/`, `spark/model-server/`, `spark/model/` and `tools/stub-generation-server/`. It catches:
+- [x] A gate check fails when a machine name or LAN address appears in **application code, tests or fixtures**: `app/`, `spark/model-server/`, `spark/model/` and `tools/stub-generation-server/`. It catches:
   - `mac-studio-` followed by a year;
   - `spark-1` and `dgx-spark`;
   - any `<name>.local` host;
@@ -51,13 +51,13 @@ N/A (no UI change): this story moves where the gate runs and adds a source check
 
 **The docs say where things run**
 
-- [ ] **CLAUDE.md** says:
+- [x] **CLAUDE.md** says:
   - in §1, that the repo and the assistant are on the Mac Studio 2025;
   - in §4, that the gate runs on the Mac Studio 2022's Docker through `tools/gate/remote.sh`, how to run it, and that the dev server is `pnpm dev` on port 3100 on the 2025;
   - in §4a, that the Spark still serves the app and the model until STORY_037.
 
   Each new rule points at its gate. The Spark's serving rules stay as written until STORY_037 retires them.
-- [ ] **README** › Architecture, Running the UI and Project Structure name the three Macs, `remote.sh` and `GATE_HOST`.
+- [x] **README** › Architecture, Running the UI and Project Structure name the three Macs, `remote.sh` and `GATE_HOST`.
 
 ## Departures from the reference
 
@@ -114,3 +114,28 @@ Small to medium:
 - the CLAUDE.md and README rewrites.
 
 The risk is in Docker Desktop over ssh (`PATH`, the credential helper, Compose's external network). Manual step 1 shows that up on the first run.
+
+## Corrections made during implementation (2026-10-20)
+
+- **Copying the tree (Technical Notes).** It does not use rsync with `--filter=':- .gitignore'`. A test showed that filter differs from git: it dropped `.env.example` (rsync reads the `!` line differently) and sent `.husky/_`. Instead, `remote.sh` streams exactly git's list as one tar over one ssh session:
+  - in working-tree mode, `git ls-files -co --exclude-standard`;
+  - in commit mode, `git archive <sha>`.
+
+  On the gate host that one session takes the lock, unpacks into a fresh folder, moves the old tree's `node_modules` folders into it, and swaps it in.
+- **The scan (Technical Notes).** It is a test case in `tools/gate/src/hostnames.test.ts` that walks the four folders, not a CLI over `git ls-files`. The gate host's copy has no `.git`.
+- **The `qwen` network.** Compose did not need it. `run --no-deps gate` ran on the 2022 without it, so nothing was created.
+- **Manual check 2 compares names and states only.** Uptime text changes by itself ("59 minutes", then "About an hour").
+
+## Done note (2026-10-20)
+
+- **Gate:** the whole gate is green on the Mac Studio 2022 through `tools/gate/remote.sh`. All six steps took 183 s (224 s including the transfer); step 6 took 109 s. Step 3 now runs `remote.test.sh` (15 cases), `pre-push.test.sh` (6 cases), `run.test.sh` (9 cases, with its hook cases now given `GATE_DOCKER=sh`), and `hostnames.test.ts` (4 cases).
+- **Manual checks on the three Macs:**
+  1. The full run is green as above. The gate image was built on the 2022 on first use (3.97 GB), and the `qwen` network was not needed.
+  2. `docker ps -a` on the 2022 before and after the run listed the same names and states. Earlier that evening PATHS' proxy went down there. That was PATHS BUG_051 (Tailscale holds port 443 after a reboot), unrelated to the gate, as the topaz session confirmed.
+  3. The hook works through a local bare repository:
+     - pushing `a9c0229` to its `develop` gated that commit on the 2022 (green in 170 s) and let it through;
+     - a commit with a deliberate type error, made with `git commit-tree` so the working tree never changed, was refused at step 1 with the compiler's message.
+  4. With `GATE_HOST=no-such-host` the same push was refused: "did not answer over ssh (exit 255) … nothing is gated".
+- **Found while checking:** a push from a **git worktree** skips the hook entirely, because `core.hooksPath` is relative and `.husky/_` exists only where `pnpm install` ran. Filed as [BUG_017](../bug/BUG_017_a_push_from_a_git_worktree_skips_the_gate.md). Until it is fixed, push only from the main clone.
+- **The hostname check found one real case on its first run:** a comment in `app/lib/clipboard.ts` named the app's `.local` address. It is reworded in words, with no change in behaviour.
+- **The hook is installed on the 2025's clone** (`core.hooksPath=.husky/_`) by a native `pnpm install`, and `GATE_HOST` is in its gitignored `.env`.
