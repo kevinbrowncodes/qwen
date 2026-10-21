@@ -1,0 +1,15 @@
+# spark/model/mlx (STORY_035): the Python stack of the mflux worker (spark/model/worker_mlx.py) on the Mac Studio 2026.
+# Run with: uv run --project spark/model/mlx python spark/model/worker_mlx.py (uv fetches the pinned Python).
+# pillow<13: Pillow 13.0.0's PIL/_typing.py imports numbers._IntegralLike, which CPython 3.13 and 3.14 lack, so mflux
+# 0.21.0 fails to import (SPIKE_001). spark/model/test_mlx_lock.py keeps the pin until an mflux release works with 13.
+[project]
+name = "qwen-worker-mlx"
+version = "0.1.0"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+  "mflux==0.21.0",
+  "pillow<13",
+]
+
+[tool.uv]
+package = false
