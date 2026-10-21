@@ -122,6 +122,7 @@ See **[README.md → Project Structure](README.md#project-structure)**. The `doc
   - On a Mac with Docker it runs them in place.
   - On the Mac Studio 2025, which has none, it runs them on `GATE_HOST`'s Docker (the Mac Studio 2022) for exactly the commit being pushed, through `tools/gate/remote.sh --commit` (STORY_034).
   - A push to `develop` that cannot be gated is refused. `tools/gate/pre-push.test.sh` proves it.
+  - **Worktrees are gated too.** `core.hooksPath` is the main checkout's absolute `.husky/_`, set by `tools/gate/install-hooks.sh` on every `pnpm install`. `tools/gate/hooks.test.sh` proves it (BUG_017).
 
   Deploying is a local act too, started from the 2025 by the scripts the README documents.
 - **Run the gate by hand from the 2025 with `tools/gate/remote.sh`.** It takes `run.sh`'s arguments, such as `--from 4` or step names, and gates the working tree as it stands: tracked files plus untracked files git keeps, never anything git ignores. `GATE_HOST` comes from the gitignored `.env`. One gate runs at a time per host. **The gate host is shared** (PATHS' proxy and about ten of the owner's services run there), so the gate creates only qwen's own containers, images and volume, plus `~/qwen-gate/`, and never stops or recreates anything else.

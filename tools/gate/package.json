@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bash run.test.sh && bash remote.test.sh && bash pre-push.test.sh && bash ../deploy/model.test.sh && bash ../deploy/app.test.sh && bash ../../spark/mac/start.test.sh && node --test src/coverage-rank.test.ts src/one-vitest.test.ts src/hostnames.test.ts"
+    "test": "bash run.test.sh && bash remote.test.sh && bash pre-push.test.sh && bash hooks.test.sh && bash ../deploy/model.test.sh && bash ../deploy/app.test.sh && bash ../../spark/mac/start.test.sh && node --test src/coverage-rank.test.ts src/one-vitest.test.ts src/hostnames.test.ts"
   }
 }

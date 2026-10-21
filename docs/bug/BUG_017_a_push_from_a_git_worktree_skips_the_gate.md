@@ -1,6 +1,6 @@
 # BUG_017 — A push from a git worktree skips the gate
 
-**Status:** Open
+**Status:** Resolved (2026-10-21)
 **Found:** 2026-10-20, by the assistant, while running STORY_034's manual check 3. A deliberately broken commit pushed from a `git worktree` to a scratch bare repository went through with no `[pre-push]` line. Only the scratch repository received it; `origin` was never involved.
 
 ## Summary
@@ -29,9 +29,23 @@ husky 9 sets `core.hooksPath=.husky/_` (relative) on every `pnpm install`, and `
 
 ## Acceptance Criteria
 
-- [ ] A push to `develop` from a worktree of a clone with the hook installed is gated, or refused with a message saying how to gate it. It is never let through silently.
-- [ ] The fix survives `pnpm install`, which rewrites `core.hooksPath`.
-- [ ] A gate test proves it, like `tools/gate/pre-push.test.sh` for the main clone.
-- [ ] CLAUDE.md §4 says how worktrees are gated.
+- [x] A push to `develop` from a worktree of a clone with the hook installed is gated, or refused with a message saying how to gate it. It is never let through silently.
+- [x] The fix survives `pnpm install`, which rewrites `core.hooksPath`.
+- [x] A gate test proves it, like `tools/gate/pre-push.test.sh` for the main clone.
+- [x] CLAUDE.md §4 says how worktrees are gated.
 
-Not fixed in STORY_034, whose criteria cover a clone with the hook installed. Until this is fixed, **push only from the main clone.**
+Not fixed in STORY_034, whose criteria cover a clone with the hook installed.
+
+## Resolution (2026-10-21)
+
+- **Fix:**
+  - `tools/gate/install-hooks.sh` now sets `core.hooksPath` to the **absolute** path of the main checkout's `.husky/_`, found with `git rev-parse --path-format=absolute --git-common-dir`. The repository's config is shared by its worktrees, so every worktree runs that one shim. husky's shim finds `.husky/pre-push` relative to itself and runs it, and the hook gates the pushing worktree's own commit, because it finds its root with `git rev-parse --show-toplevel`.
+  - The root `prepare` script now runs `tools/gate/install-hooks.sh` after `husky`, when the script is present, so every `pnpm install` keeps the absolute path after husky writes the relative one. The production image's install copies only `package.json` files, so there the script is absent and skipped. A first version without that check failed the gate's step 5. Outside a git checkout (the gate host's copy of the tree) the script does nothing, and husky itself exits 0 there.
+  - `tools/gate/remote.sh` reads `GATE_HOST` from the main checkout's `.env` when the worktree has none.
+- **The gate:** `tools/gate/hooks.test.sh` (4 cases, in step 3) covers:
+  - outside git: nothing done, exit 0;
+  - the absolute path is set;
+  - **a push from a worktree runs the hook, and a refusing hook stops it**;
+  - `remote.sh` in a worktree finds `GATE_HOST`.
+- **Checked for real** on the Mac Studio 2025: a worktree of this repo committed a deliberate type error and pushed it to a scratch bare repository. The hook gated that commit on the Mac Studio 2022 and refused it at step 1 (`TS2322`), and the bare repository never got a `develop`. `origin` was not involved.
+- CLAUDE.md §4 says worktrees are gated.

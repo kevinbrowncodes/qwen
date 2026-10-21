@@ -28,10 +28,14 @@ while [ $# -gt 0 ]; do
 done
 
 # GATE_HOST from the environment, else its own line in .env; no other .env value is read or printed.
+# In a git worktree, which has no .env of its own, the main checkout's .env is read (BUG_017).
 host="${GATE_HOST:-}"
-if [ -z "$host" ] && [ -f "$ROOT/.env" ]; then
-  host="$(sed -n 's/^GATE_HOST=//p' "$ROOT/.env" | tail -n 1 | tr -d "\"'\r")"
-fi
+main=""
+if common="$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; then main="$(cd "$common/.." && pwd)"; fi
+for envf in "$ROOT/.env" "${main:+$main/.env}"; do
+  [ -z "$host" ] && [ -n "$envf" ] && [ -f "$envf" ] || continue
+  host="$(sed -n 's/^GATE_HOST=//p' "$envf" | tail -n 1 | tr -d "\"'\r")"
+done
 if [ -z "$host" ]; then
   log "ERROR: no gate host. This Mac has no Docker, so the gate runs on another Mac's Docker over ssh (STORY_034)."
   log "Fix: set GATE_HOST to that Mac's ssh destination, in the environment or as GATE_HOST= in .env (see .env.example)."
