@@ -1,6 +1,6 @@
 # BUG_016 — The gate's typecheck fails on every jest-dom matcher
 
-**Status:** Open
+**Status:** Fixed 2026-10-20, committed; the push waits for STORY_034's hook (see Resolution)
 **Found:** 2026-10-20, by the assistant, running the gate by hand on the Spark for SPIKE_001 after the push was refused by the session's permission layer. **Not caused by SPIKE_001's commit** (`7338dbf`): that commit touches nothing under `app/` (`git diff --stat 6773460 HEAD -- app/` is empty), and the failing test files are byte-identical to the last pushed commit `6773460` (checked in a detached worktree).
 
 ## Summary
@@ -61,8 +61,30 @@ Two facts frame the fix:
 
 ## Acceptance Criteria
 
-- [ ] `tools/gate/run.sh typecheck` is green on the Spark, and the three test files compile with their matchers typed (no `as` casts, no `// @ts-expect-error`, per CLAUDE.md §6 rule 6).
-- [ ] The fix is one of: (a) a local declaration in `app/` that augments vitest 5's `Assertion<R, T>` with `TestingLibraryMatchers<any, R>` and `AsymmetricMatchersContaining`, with a comment naming this ticket and the two versions it bridges, so it can be deleted when jest-dom ships a two-parameter augmentation; or (b) a jest-dom release that ships that augmentation, if one exists by then (check its `types/vitest.d.ts` before pinning).
-- [ ] The jest-dom pin leaves the deprecated 6.10.0 for 6.9.1 or a 7.x whose peer range `@testing-library/dom` (`>=10 <11`) the lockfile already satisfies (10.4.2), with the lockfile regenerated and committed.
+- [x] `tools/gate/run.sh typecheck` is green ~~on the Spark~~ on the Mac Studio 2022 (corrected, see Corrections), and the three test files compile with their matchers typed (no `as` casts, no `// @ts-expect-error`, per CLAUDE.md §6 rule 6).
+- [x] ~~The fix is one of: (a) a local declaration in `app/` that augments vitest 5's `Assertion<R, T>` with `TestingLibraryMatchers<any, R>` and `AsymmetricMatchersContaining`, with a comment naming this ticket and the two versions it bridges, so it can be deleted when jest-dom ships a two-parameter augmentation; or (b) a jest-dom release that ships that augmentation, if one exists by then (check its `types/vitest.d.ts` before pinning).~~ Corrected: neither. The cause was a second vitest in the lockfile, not the augmentation's parameter list (see Corrections).
+- [x] The jest-dom pin leaves the deprecated 6.10.0 for 6.9.1 or a 7.x whose peer range `@testing-library/dom` (`>=10 <11`) the lockfile already satisfies (10.4.2), with the lockfile regenerated and committed.
 - [ ] The whole gate (`tools/gate/run.sh`) passes once, by hand, and the push of this fix goes through the hook with no `--no-verify`.
-- [ ] The Resolution note below says which of (a) or (b) was done, and answers the open question about the 2026-10-17 pushes.
+- [x] The Resolution note below says which of (a) or (b) was done, and answers the open question about the 2026-10-17 pushes.
+
+## Corrections (2026-10-20, evening, by the assistant on the Mac Studio 2025)
+
+- **The root cause above is wrong.** The same lockfile typechecks with **zero errors** on a fresh install, both natively on the Mac Studio 2025 (no `tsconfig.tsbuildinfo`) and in the gate container on the Mac Studio 2022. It also passes at `274a33d` (2026-10-16), the commit that added `LoraCard.test.tsx`. So the one-parameter augmentation does merge, and something else was different on the Spark.
+- **The real cause: the lockfile held two vitests.**
+  - `recon/package.json` asked for `"vitest": "^5.0.0"`, which resolved to **5.0.2**. The app, the stub and the model server pin exactly `5.0.0`.
+  - jest-dom does not depend on vitest, so its `declare module 'vitest'` resolves through pnpm's hoisted `node_modules/.pnpm/node_modules/vitest`, and that link points at whichever of the two pnpm hoisted.
+  - The Spark's clone hoists **5.0.2** (`readlink`, read 2026-10-20), so the matchers attached to a vitest the app does not use. Both fresh installs hoist 5.0.0.
+- **The first criterion said "on the Spark".** The owner moved the repo and the gate off the Spark on 2026-10-20 (EPIC_007), so the gate was run on the Mac Studio 2022's Docker, where it runs from now on.
+
+## Resolution (2026-10-20)
+
+- **Fix:** vitest is pinned exactly in every package (`recon/package.json`: `"5.0.0"`), and the lockfile now resolves one vitest, 5.0.0. jest-dom leaves the withdrawn 6.10.0 for an exact `6.9.1`; its peer `@testing-library/dom` 10.4.2 was already in the lockfile.
+- **The gate that keeps it fixed:** `tools/gate/src/one-vitest.test.ts`, run in step 3. It fails when `pnpm-lock.yaml` resolves more than one vitest, and its message states the rule, why it matters and the fix. On the old lockfile it fails with `resolves 2 versions of vitest (5.0.0, 5.0.2)`.
+- **The whole gate passed by hand on the Mac Studio 2022** with the fix, all six steps green in 188 s (step 6 took 104 s). A baseline run of step 1 on the unfixed tree also passed there, which is how the root cause was found.
+- **The 2026-10-17 pushes:**
+  - No commit message mentions `--no-verify`.
+  - The incremental cache cannot explain it, because `LoraCard.test.tsx` was new on 2026-10-16 and typechecks cleanly on a fresh install.
+  - The likely answer: the Spark's hoisted vitest was 5.0.0 when those pushes ran, and a later `pnpm install` on the long-lived tree switched it to 5.0.2.
+
+  No second ticket is needed. A fresh install cannot pick the wrong vitest any more, because only one remains.
+- **Not yet pushed.** Pushes now leave from the Mac Studio 2025, where the hook needs STORY_034's remote gate, so this fix is pushed through the hook with that story. The push criterion is ticked then.

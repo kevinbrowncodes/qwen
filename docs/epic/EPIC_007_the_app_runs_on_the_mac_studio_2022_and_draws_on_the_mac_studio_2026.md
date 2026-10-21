@@ -28,7 +28,14 @@ The repo, the gate and every deploy start on the Mac Studio 2025. The app serves
 3. **The app's deploy is whatever suits the PATHS refactor best** (the owner: "the end goal is to refactor this app to be a paths derived app"). Chosen here, see Technical approach: Docker over ssh from the gate's own copy, with the name `qwen.local` coming from PATHS' proxy. PATHS' deploy agent only deploys apps generated from the PATHS template (`deployer/deployer.py:123-132` matches `.copier-answers.yml` against `kevinbrowncodes/paths`), so qwen cannot use it until the refactor.
 4. **`qwen.local` stays,** announced over Bonjour.
 5. **The history moves:** `history.json` to the 2022, and the images and the job index to the 2026.
-6. **The Spark's model server stops at cutover,** with no soak week. The Spark's app, proxy and name services stop in the same step, since the 2022 replaces them.
+6. **The Spark's model server stops at cutover,** with no soak week. The Spark's app, proxy and name services stop in the same step, since the 2022 replaces them. **Brought forward on 2026-10-20:** the owner asked to take the app off the Spark at once ("the spark really needs memory right now").
+   - The model server was idle (`job: null, queued: 0`).
+   - `history.json` was copied first to the 2025's gitignored `outputs/spark-retire/2026-10-20/`: 325 entries.
+   - Then `docker compose down` removed `qwen-app`, `qwen-proxy`, `qwen-lan-name` and `qwen-model`, without `-v`. The `qwen_app-data` volume, `spark/data/outputs` (521 MB), the images and the weights stay on the Spark for STORY_037's move.
+   - The Spark's available memory went from 19 to 53 GiB.
+   - Image generation and `qwen.local` are down until STORY_037.
+
+   **The overnight authorisation (2026-10-20):** the owner approved working through BUG_016 and STORIES 034–037 without them. Each story is self-approved, landed and verified before the next starts, and pushed to `develop` after its gate. Installing the epic's pieces on the 2022 and the 2026 is approved.
 
 ## What crosses over, and what does not (every feature on trial)
 
