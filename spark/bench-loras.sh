@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the add-on bench against the model server on the Spark (STORY_022): every add-on, and none, over the same
+# Runs the add-on bench against the model server (STORY_022; from a Mac without Docker against MODEL_BASE_URL, STORY_036): every add-on, and none, over the same
 # generated subjects, into outputs/bench/<date>/ (gitignored) with a contact sheet and a scorecard template.
 #
 #   spark/bench-loras.sh              run (or resume) today's bench
@@ -21,8 +21,17 @@ date="${1:-$(date +%F)}"
 out="$repo/outputs/bench/$date"
 mkdir -p "$out"
 
-docker run --rm --user "$(id -u):$(id -g)" --network host \
-  -e MODEL_API_KEY="${MODEL_API_KEY:-}" \
-  -v "$here/model-server/src:/src:ro" -v "$here/loras.json:/manifest.json:ro" -v "$out:/bench" \
-  "$NODE_IMAGE" \
-  node /src/bench-cli.ts "http://127.0.0.1:4120" /bench /manifest.json
+if command -v docker > /dev/null 2>&1; then
+  docker run --rm --user "$(id -u):$(id -g)" --network host \
+    -e MODEL_API_KEY="${MODEL_API_KEY:-}" \
+    -v "$here/model-server/src:/src:ro" -v "$here/loras.json:/manifest.json:ro" -v "$out:/bench" \
+    "$NODE_IMAGE" \
+    node /src/bench-cli.ts "http://127.0.0.1:4120" /bench /manifest.json
+else
+  # STORY_036: a Mac without Docker (the Mac Studio 2025) runs the same CLI with its own Node 26 against the model
+  # server on the LAN: MODEL_BASE_URL and MODEL_API_KEY from the environment or the gitignored .env, never printed.
+  env_get() { if [ -n "${!1:-}" ]; then printf '%s' "${!1}"; elif [ -f "$repo/.env" ]; then sed -n "s/^$1=//p" "$repo/.env" | tail -n 1 | tr -d "\"'\r"; fi; }
+  url="$(env_get MODEL_BASE_URL)"
+  [ -n "$url" ] || { echo "[bench] no Docker here, and no MODEL_BASE_URL: set it (and MODEL_API_KEY) in .env, see .env.example" >&2; exit 64; }
+  MODEL_API_KEY="$(env_get MODEL_API_KEY)" node "$here/model-server/src/bench-cli.ts" "$url" "$out" "$here/loras.json"
+fi

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- spark/mac/com.qwen.model.plist.in (STORY_036): the launch agent that runs the model server on the Mac Studio 2026.
+     tools/deploy/model.sh fills in HOME_DIR and installs it as ~/Library/LaunchAgents/com.qwen.model.plist.
+     It names files, never the key: start.sh reads MODEL_API_KEY from ~/qwen-model/.env. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.qwen.model</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/bash</string><string>@HOME_DIR@/qwen-model/app/spark/mac/start.sh</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>StandardOutPath</key><string>@HOME_DIR@/Library/Logs/qwen-model.log</string>
+  <key>StandardErrorPath</key><string>@HOME_DIR@/Library/Logs/qwen-model.log</string>
+</dict>
+</plist>
