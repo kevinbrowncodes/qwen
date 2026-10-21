@@ -1,7 +1,7 @@
 /**
  * Copying text (STORY_024). The Clipboard API exists only in a secure context, and the app is also opened over the
- * LAN by plain http (http://qwen.local, CHORE_004), so a refusal falls back to a selected, off-screen textarea and the
- * copy command, which is deprecated but is the only copy a plain-http page has.
+ * LAN by plain http (at its name on the home network, CHORE_004), so a refusal falls back to a selected, off-screen
+ * textarea and the copy command, which is deprecated but is the only copy a plain-http page has.
  */
 export async function copyText(text: string): Promise<boolean> {
   try {

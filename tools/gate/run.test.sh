@@ -42,7 +42,7 @@ FAKE
 hook_check() {  # hook_check <description> <expected-exit> <expected-runs> <remote-ref>
   local desc="$1" want_exit="$2" want_runs="$3" ref="$4" rc=0
   : > "$ran"
-  printf 'refs/heads/x 1111 %s 2222\n' "$ref" | RAN_LOG="$ran" GATE_RUN="$fake" sh "$hook" > /dev/null 2>&1 || rc=$?
+  printf 'refs/heads/x 1111 %s 2222\n' "$ref" | RAN_LOG="$ran" GATE_RUN="$fake" GATE_DOCKER=sh sh "$hook" > /dev/null 2>&1 || rc=$?
   local runs; runs="$(wc -l < "$ran" | tr -d ' ')"
   if [ "$rc" = "$want_exit" ] && [ "$runs" = "$want_runs" ]; then pass=$((pass + 1)); echo "ok   $desc"; else fail=$((fail + 1)); echo "FAIL $desc (exit $rc, gate runs $runs)"; fi
 }

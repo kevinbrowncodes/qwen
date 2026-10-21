@@ -4,7 +4,7 @@
 
 > This README is the source of truth for **what the project is**. How we work (tickets, testing bar, gates, guardrails) lives in [CLAUDE.md](CLAUDE.md).
 
-**Status (2026-09-26):** greenfield. Nothing below the MVP Scope and Architecture sections is decided yet; each `TBD` is filled in by the story that settles it.
+**Status (2026-10-20):** moving off the DGX Spark to three Mac Studios ([EPIC_007](docs/epic/EPIC_007_the_app_runs_on_the_mac_studio_2022_and_draws_on_the_mac_studio_2026.md)); not served until its STORIES 036–037 land.
 
 ---
 
@@ -26,12 +26,16 @@ Generate images locally on a DGX Spark, through an interface that matches the Qw
 
 ## Architecture
 
-Two machines:
+The machines (EPIC_007, from 2026-10-20):
 
 | Machine | Role | Reached via |
 | --- | --- | --- |
-| **Mac** | Development, the UI, the whole test gate | local |
-| **DGX Spark** | Runs the image model behind an async job API | LAN; the owner opens this repo on the Spark for the model epic's work |
+| **Mac Studio 2025** | The repo, development, the dev server; every deploy starts here | local |
+| **Mac Studio 2022** | Runs the gate in its Docker (STORY_034); the app runs here from STORY_037, at `qwen.local` through PATHS' proxy | ssh, `GATE_HOST` |
+| **Mac Studio 2026** | Runs the image model natively (mflux, Metal) behind the async job API, from STORY_036 | LAN |
+| **DGX Spark** | Nothing of qwen's since 2026-10-20: its containers were removed to free its memory; its clone and data wait to be moved (STORY_037) | — |
+
+**Until STORY_036 and STORY_037 land, qwen is not served anywhere**; the sections below that describe the Spark describe how it ran until 2026-10-20.
 
 The UI talks to the generation server through configuration only (base URL, optional key). The protocol is an async job: create a generation, poll its status, fetch the result file. Locally the same variables point at a **stub generation server** that returns scripted outcomes and a tiny fixture image, so nothing in the test gate depends on the Spark being reachable.
 
@@ -52,7 +56,7 @@ Present today: `app/`, `tools/gate/`, `tools/stub-generation-server/`, `tools/la
 
 ```
 app/          the UI
-tools/        the stub generation server, its fixture image, the qwen.local name and proxy, the SPIKE_001 bench scripts (spike/), other dev tooling
+tools/        the gate (gate/: run.sh, and remote.sh to run it on GATE_HOST's Docker), the stub generation server and its fixture image, the qwen.local name and proxy, the SPIKE_001 bench scripts (spike/), other dev tooling
 spark/        scripts and unit files that set up and run the model on the Spark
 recon/        recon scripts (the offline curate/harvest/interactions pipeline; profile and raw output are gitignored)
 docs/
@@ -99,7 +103,8 @@ The bar (the 70/20/10 pyramid, and no test may depend on the real model) is in [
 - **The stub generation server** (`tools/stub-generation-server/`, [README](tools/stub-generation-server/README.md)) implements [the job API contract](docs/contracts/job-api.md) with outcomes chosen by name (`X-Stub-Script`), advancing one step per status poll, never by wall clock.
 - **E2E fixtures** (`app/e2e/fixtures.ts`) reset the stub before every test, fail any test that ends with a stub job still running, and provide `submitAndWait` (the terminal-status wait registered before the submit) and `expectImageLoaded`. ESLint forbids `waitForTimeout` and `setViewportSize` in specs.
 - **Coverage floors** (the app's unit and integration lanes, and the stub) were set at the measured baseline minus 2 on 2026-09-26, and only ever go up. When a lane fails, the gate lists the files with the most uncovered branches.
-- **The pre-push hook** (`.husky/pre-push`) runs the whole gate on every push to `develop` and refuses the push if it fails. `pnpm install` inside the gate installs it (it sets `core.hooksPath`); `tools/gate/install-hooks.sh` does the same for a fresh clone.
+- **The pre-push hook** (`.husky/pre-push`) runs the whole gate on every push to `develop` and refuses the push if it fails, or if no gate can run. On a Mac without Docker (the Mac Studio 2025) it gates exactly the pushed commit on `GATE_HOST` through `tools/gate/remote.sh --commit` (STORY_034). `pnpm install` installs it (it sets `core.hooksPath`), natively on the 2025 or inside the gate; `tools/gate/install-hooks.sh` does the same for a fresh clone.
+- **Gate checks that guard rules:** `tools/gate/src/one-vitest.test.ts` fails when the lockfile resolves more than one vitest (BUG_016). `tools/gate/src/hostnames.test.ts` fails when a machine name or LAN address appears in application code, tests or fixtures (STORY_034).
 
 ## Running Recon
 
@@ -142,6 +147,17 @@ The reads under `recon/hands/reads/` (`title.js`, `dom.js`, `styles.js`, `page.j
 
 ## Running the UI
 
+**From the Mac Studio 2025 (STORY_034):** the dev server runs natively, `cd app && pnpm dev --port 3100` (Node 26 and pnpm 10.32.1, the gate's versions). The gate runs on the Mac Studio 2022's Docker:
+
+```bash
+echo 'GATE_HOST=mac-studio-2022' >> .env   # once: the gate host's ssh destination (.env is gitignored)
+tools/gate/remote.sh                        # the whole gate, on the working tree as it stands
+tools/gate/remote.sh --from 4               # resume from a step; or name steps: remote.sh lint build
+tools/gate/remote.sh --commit HEAD          # exactly a commit (what the pre-push hook does)
+```
+
+The gate host builds the gate image itself on first use and keeps its copy of the tree in `~/qwen-gate/`. **Until 2026-10-20** everything ran on the Spark as follows. Its containers were removed that day, and STORY_037 moves the app to the Mac Studio 2022.
+
 Everything runs on the Spark in containers from `compose.yaml` (project `qwen`); the host needs only Docker. Port **3100** is ours, and port 3000 belongs to the sibling minimax app. VS Code forwards 3100 to the Mac.
 
 **On the LAN, the app is at http://qwen.local** (CHORE_004). Two small services give it that name:
@@ -163,7 +179,9 @@ The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL
 
 ## Running the Model
 
-**Status (measured on the Spark on 2026-09-26; verify before relying on it):** Qwen-Image-2.1 serves from the `qwen-model` container. The app at http://localhost:3100 generates with it end to end.
+**Not served as of 2026-10-20.** `qwen-model` was removed from the Spark that evening to free its memory (EPIC_007). STORY_036 serves the model from the Mac Studio 2026. Its weights at `790c926`, the LoRAs and `spark/data/outputs` (521 MB) are still on the Spark's disk.
+
+**Status until 2026-10-20 (measured on the Spark on 2026-09-26):** Qwen-Image-2.1 serves from the `qwen-model` container. The app at http://localhost:3100 generates with it end to end.
 
 | Item | Value |
 | --- | --- |
@@ -204,7 +222,7 @@ Sources: [Qwen/Qwen-Image-2.1 model card](https://huggingface.co/Qwen/Qwen-Image
 
 ## Deployment
 
-Local only, on the Spark, in this order:
+**Nothing is deployed as of 2026-10-20.** EPIC_007 deploys from the Mac Studio 2025: the model to the Mac Studio 2026 (STORY_036), and the app to the Mac Studio 2022 (STORY_037). Until 2026-10-20 it was local only, on the Spark, in this order:
 
 1. `spark/up.sh`: the model server (`qwen-model`), which creates the docker network `qwen`.
 2. `docker compose up -d --build app`: the UI (`qwen-app` on port 3100), joined to that network.

@@ -1,14 +1,23 @@
-# .husky/pre-push (STORY_008): runs on the host at `git push`; needs only docker. Executed by husky's shim with sh.
+# .husky/pre-push (STORY_008, STORY_034): runs on the host at `git push`. Executed by husky's shim with sh.
 # The gate runs only when a ref is being pushed to develop (CLAUDE.md §4: push to develop only after all six steps).
-# --no-verify skips it: emergencies only, with the justification in the commit message.
+# On a Mac with Docker it runs tools/gate/run.sh here. Without Docker (the Mac Studio 2025) it runs the same gate on
+# GATE_HOST's Docker for exactly the commit being pushed (tools/gate/remote.sh --commit). A gate that fails, or cannot
+# run at all, refuses the push. --no-verify skips it: emergencies only, with the justification in the commit message.
+# GATE_RUN / GATE_REMOTE / GATE_DOCKER replace the runner, the remote runner and the docker probe (run.test.sh, pre-push.test.sh).
 root="$(git rev-parse --show-toplevel)"
 gate_needed=0
+pushed=""
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$remote_ref" in
-    refs/heads/develop) gate_needed=1 ;;
+    refs/heads/develop) gate_needed=1; pushed="$local_sha" ;;
   esac
 done
 if [ "$gate_needed" -eq 1 ]; then
-  echo "[pre-push] push to develop: running the gate"
-  "${GATE_RUN:-$root/tools/gate/run.sh}" || { echo "[pre-push] gate failed; push refused (fix, then push again; --no-verify only in an emergency)"; exit 1; }
+  if command -v "${GATE_DOCKER:-docker}" > /dev/null 2>&1; then
+    echo "[pre-push] push to develop: running the gate"
+    "${GATE_RUN:-$root/tools/gate/run.sh}" || { echo "[pre-push] gate failed; push refused (fix, then push again; --no-verify only in an emergency)"; exit 1; }
+  else
+    echo "[pre-push] push to develop: no Docker here, running the gate on GATE_HOST for $pushed"
+    "${GATE_REMOTE:-$root/tools/gate/remote.sh}" --commit "$pushed" || { echo "[pre-push] gate failed or could not run; push refused. Every push to develop is gated: fix what the gate said (or set GATE_HOST, see .env.example), then push again; --no-verify only in an emergency"; exit 1; }
+  fi
 fi
