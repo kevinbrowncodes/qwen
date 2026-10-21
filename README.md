@@ -4,7 +4,7 @@
 
 > This README is the source of truth for **what the project is**. How we work (tickets, testing bar, gates, guardrails) lives in [CLAUDE.md](CLAUDE.md).
 
-**Status (2026-10-20):** moving off the DGX Spark to three Mac Studios ([EPIC_007](docs/epic/EPIC_007_the_app_runs_on_the_mac_studio_2022_and_draws_on_the_mac_studio_2026.md)); not served until its STORIES 036–037 land.
+**Status (2026-10-20):** off the DGX Spark and on three Mac Studios ([EPIC_007](docs/epic/EPIC_007_the_app_runs_on_the_mac_studio_2022_and_draws_on_the_mac_studio_2026.md)). The repo is on the 2025, the app on the 2022 and the model on the 2026.
 
 ---
 
@@ -31,11 +31,11 @@ The machines (EPIC_007, from 2026-10-20):
 | Machine | Role | Reached via |
 | --- | --- | --- |
 | **Mac Studio 2025** | The repo, development, the dev server; every deploy starts here | local |
-| **Mac Studio 2022** | Runs the gate in its Docker (STORY_034); the app runs here from STORY_037, at `qwen.local` through PATHS' proxy | ssh, `GATE_HOST` |
+| **Mac Studio 2022** | Runs the gate in its Docker (STORY_034), and the app since 2026-10-20 (STORY_037): `http://mac-studio-2022.local:3100`, and `http://qwen.local` through PATHS' proxy | ssh, `GATE_HOST` and `APP_HOST` |
 | **Mac Studio 2026** | Runs the image model natively (mflux, Metal) behind the async job API, since 2026-10-20 (STORY_036) | LAN, port 4120, with `MODEL_API_KEY`; ssh `MODEL_HOST` for deploys |
-| **DGX Spark** | Nothing of qwen's since 2026-10-20: its containers were removed to free its memory; its clone and data wait to be moved (STORY_037) | — |
+| **DGX Spark** | Nothing of qwen's since 2026-10-20. Its containers were removed to free its memory, and its history and images were moved to the 2022 and the 2026 (STORY_037). Its clone, volume, outputs and weights stay on its disk until the owner says otherwise | `SPARK_HOST` (the migration only) |
 
-**Until STORY_037 lands the app is not served anywhere**, though the model is, from the Mac Studio 2026. The sections below that describe the Spark describe how it ran until 2026-10-20.
+The sections below that describe the Spark describe how it ran until 2026-10-20.
 
 The UI talks to the generation server through configuration only (base URL, optional key). The protocol is an async job: create a generation, poll its status, fetch the result file. Locally the same variables point at a **stub generation server** that returns scripted outcomes and a tiny fixture image, so nothing in the test gate depends on the Spark being reachable.
 
@@ -156,7 +156,22 @@ tools/gate/remote.sh --from 4               # resume from a step; or name steps:
 tools/gate/remote.sh --commit HEAD          # exactly a commit (what the pre-push hook does)
 ```
 
-The gate host builds the gate image itself on first use and keeps its copy of the tree in `~/qwen-gate/`. **Until 2026-10-20** everything ran on the Spark as follows. Its containers were removed that day, and STORY_037 moves the app to the Mac Studio 2022.
+The gate host builds the gate image itself on first use and keeps its copy of the tree in `~/qwen-gate/`.
+
+**The app runs on the Mac Studio 2022** (STORY_037). It is deployed from the 2025 with `tools/deploy/app.sh`, which takes a commit on `origin/develop`. It builds the image on the 2022, tagged with the commit, as `qwen-app` in compose project `qwen`, and starts it with `restart: always`.
+- It publishes port 3100: `http://mac-studio-2022.local:3100`.
+- It joins PATHS' `paths` network with the labels `caddy: http://qwen.local` and `caddy.reverse_proxy: "{{upstreams 3100}}"`, so PATHS' proxy and Bonjour agent serve it as `http://qwen.local`. qwen's own `proxy` and `lan-name` services are gone.
+- Its environment is in `~/qwen-app/.env` on the 2022, written by every deploy: `MODEL_BASE_URL` points at the 2026, and `MODEL_API_KEY` is piped from the 2026 and never printed.
+- History is in the `qwen_app-data` volume.
+
+`tools/deploy/migrate-from-spark.sh` moved the Spark's 325 history entries and 320 images across on 2026-10-20, and every finished image loaded through the app afterwards.
+
+```bash
+tools/deploy/app.sh                                    # from the 2025: deploy HEAD (clean, on origin/develop) to APP_HOST
+ssh mac-studio-2022 'docker logs -f qwen-app'          # the app's log
+```
+
+**Until 2026-10-20** everything ran on the Spark as follows.
 
 Everything runs on the Spark in containers from `compose.yaml` (project `qwen`); the host needs only Docker. Port **3100** is ours, and port 3000 belongs to the sibling minimax app. VS Code forwards 3100 to the Mac.
 
@@ -244,7 +259,12 @@ Sources: [Qwen/Qwen-Image-2.1 model card](https://huggingface.co/Qwen/Qwen-Image
 
 ## Deployment
 
-**From the Mac Studio 2025 (EPIC_007).** The model goes to the Mac Studio 2026 with `tools/deploy/model.sh` (STORY_036, deployed 2026-10-20), and the app to the Mac Studio 2022 (STORY_037). Every deploy takes a commit that is on `origin/develop`, so one that passed the gate. Until 2026-10-20 it was local only, on the Spark, in this order:
+**From the Mac Studio 2025 (EPIC_007), in this order:**
+
+1. `tools/deploy/model.sh`: the model server to the Mac Studio 2026 (STORY_036).
+2. `tools/deploy/app.sh`: the app to the Mac Studio 2022 (STORY_037). It reads the model's key from the 2026, so the model deploys first.
+
+Each takes a commit that is on `origin/develop`, so one that passed the gate, and refuses a working tree with uncommitted changes. `.env` on the 2025 names the machines: `GATE_HOST`, `MODEL_HOST`, `APP_HOST`, and `SPARK_HOST` for the one-time migration. Until 2026-10-20 it was local only, on the Spark, in this order:
 
 1. `spark/up.sh`: the model server (`qwen-model`), which creates the docker network `qwen`.
 2. `docker compose up -d --build app`: the UI (`qwen-app` on port 3100), joined to that network.

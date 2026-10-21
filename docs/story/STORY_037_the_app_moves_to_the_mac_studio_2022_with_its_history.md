@@ -1,7 +1,7 @@
 # STORY_037 — The app moves to the Mac Studio 2022 with its history, and draws on the Mac Studio 2026
 
 **Epic:** [EPIC_007](../epic/EPIC_007_the_app_runs_on_the_mac_studio_2022_and_draws_on_the_mac_studio_2026.md)
-**Status:** Self-approved on 2026-10-20 under the owner's overnight authorisation (EPIC_007 › decision 6). The owner reviews it in the morning.
+**Status:** Done (2026-10-20) except one criterion: `http://qwen.local` through PATHS' proxy waits for PATHS BUG_051's fix (the owner's `make proxy` on the Mac Studio 2022). Self-approved that night under the owner's overnight authorisation (EPIC_007 › decision 6); the owner reviews it in the morning.
 **Created:** 2026-10-20. Numbered 037, the last of EPIC_007.
 
 As the owner, I want the app running on my Mac Studio 2022 at `http://qwen.local`, drawing on the Mac Studio 2026, with every chat and image I made on the Spark still there. Then I am back to generating, on the new machines, as if nothing moved.
@@ -33,34 +33,34 @@ UI Mockup: N/A (no UI change). The same app, at the same name, on another machin
 
 **One command deploys the app**
 
-- [ ] `tools/deploy/app.sh` on the 2025 deploys the app to `APP_HOST`, an ssh destination from the environment or `.env`.
+- [x] `tools/deploy/app.sh` on the 2025 deploys the app to `APP_HOST`, an ssh destination from the environment or `.env`.
   - It takes **a commit on `origin/develop`, with a clean tree**; otherwise it refuses with the rule and the fix, as `model.sh` does.
   - It unpacks `git archive <sha>` into `~/qwen-app/src` on the 2022 and runs `docker compose -p qwen up -d --build app` there. The image is tagged with the commit (`APP_TAG=<sha12>`), so the gate's own builds on that machine never become what serves.
   - It waits until the app's `/api/health` answers.
-- [ ] **The app's environment** lives in `~/qwen-app/.env` on the 2022 (mode 600):
+- [x] **The app's environment** lives in `~/qwen-app/.env` on the 2022 (mode 600):
   - `MODEL_BASE_URL` is `http://<the model Mac's hostname>:4120`, taken from `MODEL_HOST`'s ssh config;
   - `MODEL_API_KEY` is piped from the 2026's `~/qwen-model/.env` on every deploy, so a new key carries over. It is never printed and never written on the 2025.
-- [ ] **The app joins PATHS.** In `compose.yaml` the `app` service joins the external `paths` network with `caddy: http://qwen.local` and `caddy.reverse_proxy: "{{upstreams 3100}}"`. It still publishes port 3100, and it is `restart: always`. The `qwen` network is gone from `compose.yaml`.
-- [ ] **Dropped** (EPIC_007 › What crosses over): the `proxy` and `lan-name` services and `tools/lan-name/` (PATHS' proxy and Bonjour agent replace them), and `app-dev` (the dev server runs natively on the 2025). The workspace, the root `test` script and the lockfile no longer name `lan-name`.
+- [x] **The app joins PATHS.** In `compose.yaml` the `app` service joins the external `paths` network with `caddy: http://qwen.local` and `caddy.reverse_proxy: "{{upstreams 3100}}"`. It still publishes port 3100, and it is `restart: always`. The `qwen` network is gone from `compose.yaml`.
+- [x] **Dropped** (EPIC_007 › What crosses over): the `proxy` and `lan-name` services and `tools/lan-name/` (PATHS' proxy and Bonjour agent replace them), and `app-dev` (the dev server runs natively on the 2025). The workspace, the root `test` script and the lockfile no longer name `lan-name`.
 
 **The history comes across whole**
 
-- [ ] `tools/deploy/migrate-from-spark.sh`, run once from the 2025, does four things.
+- [x] `tools/deploy/migrate-from-spark.sh`, run once from the 2025, does four things.
   - **History.** It copies the Spark's `history.json` (read from its `qwen_app-data` volume) into the 2022 app's `/data/history.json`. It refuses if the 2022's history already holds entries, so nothing new is overwritten.
   - **Images.** It copies the Spark's `spark/data/outputs` PNGs into the 2026's `~/qwen-model/data/outputs`, and merges the Spark's `jobs.json` into the 2026's: entries are joined by id, and the 2026's own entries win on a clash.
   - **Restarts.** It restarts the model server, after its busy check, and the app, so both read their files again.
   - **Report.** It reports the counts.
-- [ ] After the move, **every finished image in the history loads through the app** on the 2022 (`/api/jobs/:id/result` → 200 with an image), and the history lists 325 entries.
-- [ ] The Spark is left as it is: its volume, `spark/data/outputs` and weights stay on its disk until the owner says otherwise. Its four qwen containers are already gone (EPIC_007 › decision 6).
+- [x] After the move, **every finished image in the history loads through the app** on the 2022 (`/api/jobs/:id/result` → 200 with an image), and the history lists 325 entries.
+- [x] The Spark is left as it is: its volume, `spark/data/outputs` and weights stay on its disk until the owner says otherwise. Its four qwen containers are already gone (EPIC_007 › decision 6).
 
 **It works end to end**
 
-- [ ] Through the app on the 2022, `/api/capabilities` lists the six LoRAs, which proves the app reaches the 2026 with the key. A text-to-image job created through the app reaches `done`, and its image loads.
+- [x] Through the app on the 2022, `/api/capabilities` lists the six LoRAs, which proves the app reaches the 2026 with the key. A text-to-image job created through the app reaches `done`, and its image loads.
 - [ ] **`http://qwen.local` serves the app through PATHS' proxy.** This depends on PATHS BUG_051's fix, which the owner deploys in the morning. Until then, the app answers at `http://mac-studio-2022.local:3100`.
 
 **The docs say where things run**
 
-- [ ] README (Architecture, Running the UI, Deployment) and CLAUDE.md §1 and §4a describe the app on the 2022, the model on the 2026 and the two deploy scripts. They say the Spark serves nothing of qwen's. CHORE_004's `qwen.local` now comes from PATHS.
+- [x] README (Architecture, Running the UI, Deployment) and CLAUDE.md §1 and §4a describe the app on the 2022, the model on the 2026 and the two deploy scripts. They say the Spark serves nothing of qwen's. CHORE_004's `qwen.local` now comes from PATHS.
 
 ## Departures from the reference
 
@@ -105,3 +105,23 @@ Medium:
 - the docs.
 
 The risk is the one-time move of the owner's data, which is why it refuses to overwrite, and checks every image afterwards.
+
+## Done note (2026-10-20)
+
+Deployed and moved from the Mac Studio 2025 at about 21:45 EDT, with commit `148c29f` on both sides. Qwen-Image-2.1 at `790c926` on the Mac Studio 2026.
+
+1. **`tools/deploy/model.sh`** redeployed `148c29f` to the 2026, so `merge-index-cli.ts` was there: ready, and 401 from the LAN without the key. **`tools/deploy/app.sh`** then built and started the app on the 2022 in 57 s. It wrote `~/qwen-app/.env` with `MODEL_BASE_URL=http://mac-studio-2026.local:4120` and the key piped from the 2026, not printed. `/api/health` answered `{"status":"ok"}` at `http://mac-studio-2022.local:3100`.
+2. `/api/capabilities` through the app listed all six LoRAs and seven ratios, so the app reaches the 2026 with its key. Its history was empty before the move.
+3. **`tools/deploy/migrate-from-spark.sh` took 55 s:**
+   - history: 325 entries moved from the Spark's `qwen_app-data` to the 2022's;
+   - images: 320 copied into the 2026's `~/qwen-model/data/outputs`;
+   - index: kept 2 (STORY_036's checks), added 395, now 397;
+   - **267 of 267 finished images load through the app.**
+
+   Nothing on the Spark was changed.
+4. **A 3:4 text-to-image job through the app on the 2022** (`POST /api/jobs`, seed 1001, SPIKE_001's subject A) reached `done` in **36 s**. Its PNG loads (1,152,320 bytes). It is the history's 326th entry, a check image the owner can delete.
+5. **`qwen.local`** already resolves to the 2022 (192.168.1.30): PATHS' Bonjour agent read the app's labels. Port 80 does not answer, because PATHS' proxy has been down since 20:16 (PATHS BUG_051, per the topaz session). **Open:** check `http://qwen.local` after the owner's `git pull && make proxy` in PATHS on the 2022, then tick the criterion.
+
+- **Gate:** the whole gate is green through `tools/gate/remote.sh` in 209 s, with `app.test.sh` (6 cases) and `merge-index.test.ts` (4) new. `tools/lan-name`'s tests are gone with it. The push gated `148c29f` on the 2022 (190 s).
+- **What stays on the Spark:** its qwen clone, the `qwen_app-data` volume, `spark/data/outputs` (521 MB) and the weights (33.1 GB). The backup copy of `history.json` is on the 2025 in the gitignored `outputs/spark-retire/2026-10-20/`. Removing any of them is the owner's call (CLAUDE.md §4a).
+- **Not done here:** the Spark-only serving files (`spark/model/worker.py`, `spark/model/Dockerfile`, `spark/compose.yaml`, `spark/up.sh`, `spark/fetch-weights.sh`, `spark/model/try.py`) are still in the repo, though nothing runs them. Whether to delete them is the owner's choice.
