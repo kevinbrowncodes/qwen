@@ -1,7 +1,7 @@
 # STORY_039 — An image can be starred and found again in Favorites
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md) (a follow-up the owner asked for on 2026-10-21)
-**Status:** Approved by the owner 2026-10-22 (picker); being built
+**Status:** Done 2026-10-22 (approved by the owner 2026-10-22 through a picker); deployed to qwen.local the same day
 **Created:** 2026-10-21
 **Relates to:** [STORY_038](STORY_038_a_clicked_image_opens_in_a_viewer_over_the_page.md) (the viewer's header carries the star; that story ships first), [STORY_007](STORY_007_past_generations_are_kept_and_can_be_reopened.md) (history on disk)
 
@@ -63,25 +63,25 @@ segments are full width.
 
 ## Acceptance Criteria
 
-- [ ] A finished result shows a Star button in its action row, after Delete, in both icon sets.
+- [x] A finished result shows a Star button in its action row, after Delete, in both icon sets.
       Pressing it stars the image: the icon fills in the accent colour and the button's name
       becomes Unstar. Pressing again unstars it. A running, failed, moderated or cancelled turn
       shows no star.
-- [ ] A star is saved in history: `PATCH /api/history/{id}` with `{"favorite": true}` or
+- [x] A star is saved in history: `PATCH /api/history/{id}` with `{"favorite": true}` or
       `false` sets it, writes the file atomically as every change does, and answers the entry;
       404 for an unknown id, 409 for an entry that is not finished. A reload, a reopen of the
       chat and a restart of the app all show it starred. Entries saved before this story read
       as unstarred.
-- [ ] My Library has two segments, All and Favorites, All selected first, the choice kept in the
+- [x] My Library has two segments, All and Favorites, All selected first, the choice kept in the
       URL (`/library?view=favorites`). Favorites lists only starred images, newest star first;
       with none it says "No favorites yet. Star an image to keep it here." A starred card shows a
       filled star in its corner at all times; any card shows Star or Unstar on hover beside
       Download, and pressing it does not open the turn.
-- [ ] The viewer (STORY_038) shows the same star in its header, and starring there updates the
+- [x] The viewer (STORY_038) shows the same star in its header, and starring there updates the
       action row and My Library without a reload.
-- [ ] Deleting an image, or its chat, removes its star with it; Favorites never lists a deleted
+- [x] Deleting an image, or its chat, removes its star with it; Favorites never lists a deleted
       image.
-- [ ] Narrow (iPhone 13 descriptor, touch): the star is in the footer row with a 44 px touch
+- [x] Narrow (iPhone 13 descriptor, touch): the star is in the footer row with a 44 px touch
       area, and the library's segments fill the width.
 
 ## Technical Notes
@@ -129,3 +129,13 @@ Regression cover that must stay green: `history.spec.ts` (reopen, delete), `chat
 
 Medium: one history field and rule, one route verb, the action row, the library segments and
 the viewer's header.
+
+## Done note (2026-10-22)
+
+- **A correction to the Testing Plan.** It names `app/app/api/history/[id]/route.test.ts` for the integration test. This repo's integration lane runs only `app/test/integration/*.test.ts` (`vitest.integration.config.mts`), beside `chats.test.ts`. The test is **`app/test/integration/favorites.test.ts`**, with the cases the plan lists. It also checks that a delete of the image, or of its chat, takes the star.
+- **Built:** `setFavorite` in `lib/history.ts` (set, unknown, not finished; a second star keeps the first star's time) and `parseEntries` keeping `favoritedAt` only when it is text. `HistoryStore.setFavorite` writes atomically. `PATCH` is in `app/api/history/[id]/route.ts`, and `useHistory().setFavorite` sends the request first and takes the entry the server answers. `favorites`, `libraryImages`, `libraryViewOf` and `LIBRARY_EMPTY` are in `lib/history-view.ts`. The star is in `GenerationView`'s action row, the viewer's header (results only: a reference has no history entry) and `Library`'s segments and cards. The library page renders inside Suspense because it reads `?view=`.
+- **Layout:** the segments sit in the space above the grid where the reference's type tabs are. Desktop padding went from 94 px to 40 px, and with the 44 px segments and 10 px under them the grid starts where it did.
+- **Restart:** the star lives only in the history file, which the app reads on every request. The integration test proves the file holds it, and the e2e proves a reload and a reopen of the chat show it. A restart of the app reads the same file.
+- **Tests:** unit: `lib/history.test.ts` (+4), `lib/history-view.test.ts` (+3), `lib/use-history.test.tsx` (+1), `lib/image-viewer.test.ts` (the job id) and `components/ImageViewer.test.tsx` (+1, the header star). Integration: `test/integration/favorites.test.ts` (5). E2E: `e2e/favorites.spec.ts` (3 cases; the narrow one runs on the phone only). It covers steps 1 to 6 as planned, plus a failed turn showing no star. Step 5 deletes the second image with its card's Delete. That image is its chat's only turn, so its chat goes with it.
+- **Gate:** green through the pre-push hook on the Mac Studio 2022 for `0471e34` (206 s): unit 284 in the app, 129 model server, 152 recon, 72 stub; integration 39; e2e 116 passed, 16 skipped. The push also gated STORY_038's added size check.
+- **Deployed:** `tools/deploy/app.sh` put `0471e34` on the Mac Studio 2022. Through `http://qwen.local`, `/api/health` answered ok and `/library?view=favorites` answered 200. `PATCH /api/history/<unknown>` answered 400 for `{}` and 404 for `{"favorite": true}`; no real entry was touched.
