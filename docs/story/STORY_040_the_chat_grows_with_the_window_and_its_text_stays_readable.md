@@ -1,7 +1,7 @@
 # STORY_040 — The chat grows with the window, and its text stays readable
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md) (a follow-up the owner asked for on 2026-10-21)
-**Status:** Approved by the owner 2026-10-22 (picker); being built
+**Status:** Done 2026-10-22 (approved by the owner 2026-10-22 through a picker); deployed to qwen.local the same day
 **Created:** 2026-10-21
 **Relates to:** PATHS STORY_098 (the same rule for every PATHS app), [STORY_038](STORY_038_a_clicked_image_opens_in_a_viewer_over_the_page.md) (the viewer, for the full size)
 
@@ -58,17 +58,17 @@ Narrow (iPhone 13): unchanged.
 
 ## Acceptance Criteria
 
-- [ ] At or below the captured width (1437 px), the chat column, the images and the composer
+- [x] At or below the captured width (1437 px), the chat column, the images and the composer
       measure as today; the existing fidelity specs stay green.
-- [ ] Wider, the chat column grows with the content area to a cap of about 1400 pt (settled by
+- [x] Wider, the chat column grows with the content area to a cap of about 1400 pt (settled by
       the measurement above), centred in the content area, with at least 40 pt either side.
-- [ ] A result image is as wide as the column allows at its own aspect, never cropped and never
+- [x] A result image is as wide as the column allows at its own aspect, never cropped and never
       shown larger than its natural size; a tall image is held to the window's height less the
       composer, so a whole image fits on screen.
-- [ ] Text keeps a readable width: a prompt bubble, a notice, the info panel and any reply text
+- [x] Text keeps a readable width: a prompt bubble, a notice, the info panel and any reply text
       are never wider than about 72 characters of their type, however wide the column.
-- [ ] The composer grows with the column up to its own cap, so it stays under the conversation.
-- [ ] My Library's grid gains columns on a wider window rather than larger cards.
+- [x] The composer grows with the column up to its own cap, so it stays under the conversation.
+- [x] My Library's grid gains columns on a wider window rather than larger cards.
 
 ## Technical Notes
 
@@ -123,3 +123,13 @@ Small: a media query and two custom properties, once the measurement settles the
   So at 2670 the column took 800 of 2424 px, and about two thirds of the content area was empty, as the story inferred.
 - **The cap, settled from that:** 1400 px of content (1464 with the padding). The column's outer width is `max(800px, min(1464px, 100vw - 637px))`, above 1437 px only, so it is 800 at exactly 1437 and grows a pixel per pixel of window, with no jump. It reaches the cap at a 2101 px window. At the owner's 2670 the column is 1400 of content with 480 px either side. Beside the open sidebar the gutter is never under 195 px. The readable width is `72ch` (726 px for the bubble's 16 px type). The composer grows to `min(1000px, the column less 40)`: 760 at 1437 and 1000 at 2670.
 - **After building, at 2670 x 1500:** the column is 1464 at x 720, centred. A 1376 x 768 image shows at 1376 x 768 (its natural size, under the column's 1400). A 768 x 1376 portrait shows at 714 x 1280, held to the window less 220 px. The stub's 64 x 36 shows at 64 x 36. The long bubble is 726 wide and the composer 1000. At 1800 x 1100 the column is 1163 and the image 1099, the column's content. At 1437 x 900 the column is 800, the image 400, the composer 760 and the bubble 515, as before.
+
+## Done note (2026-10-22)
+
+- **Built:** one block at the end of `app/app/clone.css`: `--chat-cap` (1400px), `--read-width` (72ch), `--composer-cap` (1000px) and `--chat-outer` on `:root`, applied under `@media (min-width: 1438px)` and `html:not(.mobile)`. No component changed. The reference's own rules were enough to override by width, so `reference.css` is untouched.
+- **What the readable width covers:** the prompt bubble (`min(70%, 72ch)`), the failed or stopped notice, and the Info panel (`min(100%, 72ch)`). The notice and the panel were 400 wide and now grow to 72ch on a wide window. There is no reply text in this app. The e2e measures the bubble; the notice and the panel follow the same rule and are not measured separately.
+- **The size limit for the result is literal:** a result is never drawn past its natural size on a wide window. Every image the model makes is at least 768 px on its short side, so none shows smaller than the 400 of a narrow window. Only the stub's 64 x 36 fixture does: 64 x 36 at 2560, where it is upscaled to 400 at 1437 as before.
+- **How the e2e gets a large image:** the stub's result is always 64 x 36. `e2e/wide.spec.ts` routes the result request to a PNG drawn in the page with a canvas, 2000 x 1125 or 1125 x 2000. That is our own picture of a known size, not a model output (CLAUDE.md §6 rule 10). The story's plan allowed that, or the natural-size limit; the spec asserts both.
+- **Tests:** `e2e/wide.spec.ts` has 6 cases. At 1437 x 900: column 800, result 400, composer 760, bubble within 70% of 736. At 2560 x 1440: the column wider than 800, at most the cap, centred with at least 40 px each side; a 2000 px image as wide as the column's content at its aspect; the bubble within 72ch; the composer wider than 760 and inside the column; the fixture at its natural width; a portrait image no taller than the window less the composer and the visible chat; five My Library cards in more than three columns, none wider than 276. On iPhone 13: the result 300 and the bubble within 70%. Unit and integration do not apply (CSS only), as the plan says. The fidelity specs at 1437 (`home.spec.ts`, `image-mode.spec.ts`) and `generate.spec.ts` and `chat.spec.ts` stayed green.
+- **Gate:** green through the pre-push hook on the Mac Studio 2022 for `6edf03a` (235 s): unit 284 in the app, 129 model server, 152 recon, 72 stub; integration 39; e2e 122 passed, 22 skipped. The push also carried STORY_039's Done note.
+- **Deployed:** `tools/deploy/app.sh` put `6edf03a` on the Mac Studio 2022. `http://qwen.local/api/health` answered ok, and its stylesheet carries `--chat-cap:1400px`. The owner has not yet looked at it on his own Studio Display; that look is a review, not a criterion.
