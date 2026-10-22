@@ -1,7 +1,7 @@
 # STORY_038 — A clicked image opens in a viewer over the page
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md) (a follow-up the owner asked for on 2026-10-21)
-**Status:** Drafted 2026-10-21 for the owner's approval; not to be built until he approves
+**Status:** Approved by the owner 2026-10-22 (picker); being built
 **Created:** 2026-10-21
 **Relates to:** [STORY_011](STORY_011_reference_images_can_be_attached_for_an_edit.md) (reference images), [STORY_018](STORY_018_an_image_dropped_anywhere_on_the_page_is_attached_for_an_edit.md)
 

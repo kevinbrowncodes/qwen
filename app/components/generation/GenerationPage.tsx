@@ -13,6 +13,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ComposerHost, useSubmit, type OnCreated } from "@/components/composer/ComposerHost";
+import { useImageViewer } from "@/components/ImageViewer";
 import type { Injected } from "@/components/composer/Composer";
 import type { Labels } from "@/lib/generation-settings";
 import { resultFileName } from "@/lib/content-disposition";
@@ -134,6 +135,8 @@ export function GenerationPage({ id }: { readonly id: string }) {
   const [inject, setInject] = useState<Injected | null>(null);
   const capabilities = useCapabilities();
   const scroller = useRef<HTMLDivElement>(null);
+  // STORY_038: a click on any finished image of the chat opens the viewer over the chat's images.
+  const viewer = useImageViewer();
 
   const ids = useMemo(() => {
     const recorded = loaded ? turnsOf(entries, chatId).map((e) => e.id) : [];
@@ -228,7 +231,7 @@ export function GenerationPage({ id }: { readonly id: string }) {
 
   return (
     <div className="clone-chat-page">
-      <div className="chat-container clone-chat-scroll" ref={scroller}>
+      <div className="chat-container clone-chat-scroll" ref={scroller} onClick={viewer.onClick} onKeyDown={viewer.onKeyDown}>
         {ids.map((jobId) => (
           <GenerationCard key={jobId} id={jobId} chat={chatId} labels={capabilities} onCreated={append} onEdit={onEdit} onDelete={onDelete} highlighted={highlight === jobId} />
         ))}
@@ -236,6 +239,7 @@ export function GenerationPage({ id }: { readonly id: string }) {
       </div>
       <ComposerHost onCreated={append} inject={inject} chat={chatId} />
       <div className="clone-statement">AI-generated content may not be accurate.</div>
+      {viewer.viewer}
     </div>
   );
 }

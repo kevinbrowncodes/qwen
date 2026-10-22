@@ -6,6 +6,7 @@
  * job-generating@1437.json, job-done@1437.json, edit-done@1437.json, job-done@393.json.
  */
 import { useEffect, useId, useState } from "react";
+import { resultFileName } from "@/lib/content-disposition";
 import { settingsRows, type Labels } from "@/lib/generation-settings";
 import { noticeFor, skeletonSize, statusLine } from "@/lib/generation-view";
 import type { JobStatusResponse } from "@/lib/job-api";
@@ -51,8 +52,9 @@ function ReferenceTile({ file }: { readonly file: File }) {
   }, [file]);
   return (
     <div className="user-image-item clone-user-image">
+      {/* STORY_038: a click or Return opens it in the viewer, which downloads the attached file itself. */}
       {/* eslint-disable-next-line @next/next/no-img-element -- a local object URL */}
-      {url ? <img src={url} alt={file.name} /> : null}
+      {url ? <img src={url} alt={file.name} tabIndex={0} data-viewer="" data-viewer-name={file.name} /> : null}
     </div>
   );
 }
@@ -160,7 +162,17 @@ export function GenerationView({ id, job, prompt, ratio, referenceFiles, referen
               >
                 <div className="qwen-image clone-result">
                   {/* eslint-disable-next-line @next/next/no-img-element -- the result streams from our own route; it is never resized */}
-                  <img className="ant-image-img qwen-image" src={result.url} alt={prompt} data-testid="result-image" />
+                  <img
+                    className="ant-image-img qwen-image"
+                    src={result.url}
+                    alt={prompt}
+                    data-testid="result-image"
+                    // STORY_038: a click or Return opens the viewer; the hover Download and Edit keep their own clicks.
+                    tabIndex={0}
+                    data-viewer=""
+                    data-viewer-name={resultFileName(id)}
+                    data-viewer-download={`${result.url}?download=1`}
+                  />
                 </div>
                 {narrow ? null : (
                   <>

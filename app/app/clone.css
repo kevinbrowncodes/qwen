@@ -1094,3 +1094,162 @@ html.mobile .chat-item-drag .clone-renaming {
 .clone-history-text .chat-item-drag-input {
   margin-right: 0;
 }
+
+/* STORY_038: the image viewer, after Google AI Studio's image popup (the owner's screenshot, 2026-10-21; inferred, not
+   measured): a dark sheet about 1340 wide on a 1680 window, centred, r12; the name at 15 regular with Download and
+   Close at the right; the image at its own aspect, never larger than its own size; the page behind blurred and
+   dimmed. The dialog itself is the dimmed page, so a click on it (outside the sheet) closes. */
+.clone-viewer-open,
+.clone-viewer-open body {
+  overflow: hidden;
+}
+.clone-viewer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  color: #fafbff;
+  background: rgba(0, 0, 0, 0.6);
+  /* Unprefixed only: with both, the build kept just the -webkit- form, which Chrome does not apply. */
+  backdrop-filter: blur(12px);
+}
+.clone-viewer[open] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.clone-viewer::backdrop {
+  background: transparent;
+}
+.clone-viewer-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1340px, calc(100% - 160px));
+  max-height: calc(100vh / var(--ui-zoom, 1) - 64px);
+  border-radius: 12px;
+  background: #1e1e20;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+.clone-viewer-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 56px;
+  flex: none;
+  padding: 0 12px 0 20px;
+}
+.clone-viewer-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 400;
+}
+.clone-viewer-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 20px;
+  color: inherit;
+}
+.clone-viewer-action:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.clone-viewer-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 0 20px;
+}
+/* width and height auto: the image is never drawn past its natural size; the max values fit it to the sheet. */
+.clone-viewer-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100vh / var(--ui-zoom, 1) - 64px - 56px - 44px);
+  object-fit: contain;
+}
+.clone-viewer-counter {
+  flex: none;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(250, 251, 255, 0.6);
+}
+.clone-viewer-step {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  font-size: 20px;
+  color: #fafbff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.clone-viewer-step:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.clone-viewer-prev {
+  left: -60px;
+}
+.clone-viewer-next {
+  right: -60px;
+}
+/* Narrow: full screen, Close at the left, 44px touch areas; the edge buttons sit inside the screen. */
+html.mobile .clone-viewer-sheet {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  background: #101012;
+}
+html.mobile .clone-viewer-header {
+  padding: 0 4px;
+}
+html.mobile .clone-viewer-name {
+  text-align: center;
+}
+html.mobile .clone-viewer-close {
+  order: -1;
+}
+html.mobile .clone-viewer-action {
+  width: 44px;
+  height: 44px;
+}
+html.mobile .clone-viewer-stage {
+  flex: 1;
+  padding: 0;
+}
+html.mobile .clone-viewer-image {
+  max-height: calc(100dvh - 56px - 44px);
+}
+html.mobile .clone-viewer-prev {
+  left: 4px;
+}
+html.mobile .clone-viewer-next {
+  right: 4px;
+}
+/* An image that opens the viewer says so to the pointer. */
+img[data-viewer] {
+  cursor: zoom-in;
+}
