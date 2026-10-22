@@ -1,7 +1,7 @@
 # STORY_040 — The chat grows with the window, and its text stays readable
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md) (a follow-up the owner asked for on 2026-10-21)
-**Status:** Drafted 2026-10-21 for the owner's approval; not to be built until he approves
+**Status:** Approved by the owner 2026-10-22 (picker); being built
 **Created:** 2026-10-21
 **Relates to:** PATHS STORY_098 (the same rule for every PATHS app), [STORY_038](STORY_038_a_clicked_image_opens_in_a_viewer_over_the_page.md) (the viewer, for the full size)
 
@@ -109,3 +109,17 @@ Small: a media query and two custom properties, once the measurement settles the
 - PATHS STORY_098 puts the same rule into every PATHS app (more content and larger media on a
   wide window, text at a readable width). When Qwen becomes a PATHS app (BACKLOG_004) that story
   covers it.
+- **Measured 2026-10-22, before building** (the "Current state" figures above were inferred from the owner's screenshot). This is a Playwright run of the production build against the stub, at the owner's window of 2670 x 1500 and at 1437 x 900, with the sidebar open. The values are CSS px, which are the owner's pt.
+
+  | | 2670 x 1500 | 1437 x 900 |
+  |---|---|---|
+  | Content area beside the sidebar | 2424 (x 240) | 1191 (x 240) |
+  | Chat column | 800 with 32 px padding each side, so 736 of content, centred | the same |
+  | Its rule | the reference's `.qwen-chat-message { max-width: 800px; padding: 0 32px }` (`reference.css`) | the same |
+  | Result, 16:9 | 400 x 225 (`.clone-result { width: 400px }`; the stub's 64 x 36 image upscaled) | the same |
+  | Prompt bubble, long prompt | 515 (its `max-width: 70%` of 736) | the same |
+  | Composer | 760 (`.message-input-wrapper { max-width: 760px }`) | the same |
+
+  So at 2670 the column took 800 of 2424 px, and about two thirds of the content area was empty, as the story inferred.
+- **The cap, settled from that:** 1400 px of content (1464 with the padding). The column's outer width is `max(800px, min(1464px, 100vw - 637px))`, above 1437 px only, so it is 800 at exactly 1437 and grows a pixel per pixel of window, with no jump. It reaches the cap at a 2101 px window. At the owner's 2670 the column is 1400 of content with 480 px either side. Beside the open sidebar the gutter is never under 195 px. The readable width is `72ch` (726 px for the bubble's 16 px type). The composer grows to `min(1000px, the column less 40)`: 760 at 1437 and 1000 at 2670.
+- **After building, at 2670 x 1500:** the column is 1464 at x 720, centred. A 1376 x 768 image shows at 1376 x 768 (its natural size, under the column's 1400). A 768 x 1376 portrait shows at 714 x 1280, held to the window less 220 px. The stub's 64 x 36 shows at 64 x 36. The long bubble is 726 wide and the composer 1000. At 1800 x 1100 the column is 1163 and the image 1099, the column's content. At 1437 x 900 the column is 800, the image 400, the composer 760 and the bubble 515, as before.

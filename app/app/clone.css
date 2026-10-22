@@ -1304,3 +1304,54 @@ html.mobile .library-item-operation {
   background: rgba(0, 0, 0, 0.4);
   pointer-events: none;
 }
+
+/* STORY_040: a wide window. At or below the captured 1437 px nothing changes: the reference's column is 800 px with
+   32 px padding (736 of content), the composer 760, the result 400 (measured 2026-10-22, the story's Notes). Wider,
+   the column grows one pixel per pixel of window from 800 at 1437, centred, to a cap of 1400 of content (reached at a
+   2101 px window), so it never jumps; the window less 637 leaves at least 195 px of gutter beside the open sidebar.
+   Text stays at a readable width, about 72 characters, however wide the column. */
+:root {
+  --chat-cap: 1400px;
+  --read-width: 72ch;
+  --composer-cap: 1000px;
+  /* The column's outer width (content + 64 px padding): 800 at 1437, growing, held at the cap. */
+  --chat-outer: max(800px, min(calc(var(--chat-cap) + 64px), calc(100vw / var(--ui-zoom, 1) - 637px)));
+}
+@media (min-width: 1438px) {
+  html:not(.mobile) .clone-messages .qwen-chat-message {
+    max-width: var(--chat-outer);
+  }
+  /* The result: as wide as the column, at its own aspect, never past its natural size, and never taller than the
+     window less the top bar, the composer and the statement, so a whole image is on screen. Width and height stay
+     auto, so the two limits keep the ratio. */
+  html:not(.mobile) .clone-messages .clone-result {
+    width: auto;
+  }
+  html:not(.mobile) .clone-messages .image-tool-container {
+    max-width: 100%;
+  }
+  html:not(.mobile) .clone-messages .clone-result img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: calc(100vh / var(--ui-zoom, 1) - 220px);
+  }
+  html:not(.mobile) .clone-messages .chat-user-message {
+    max-width: min(70%, var(--read-width));
+  }
+  html:not(.mobile) .clone-messages .clone-generation-notice,
+  html:not(.mobile) .clone-messages .clone-settings {
+    max-width: min(100%, var(--read-width));
+  }
+  html:not(.mobile) .clone-chat-page .message-input-wrapper {
+    max-width: min(var(--composer-cap), calc(var(--chat-outer) - 40px));
+  }
+  /* My Library gains columns, not larger cards: the grid widens with the column and fits as many 276 px cards. */
+  html:not(.mobile) .clone-masonry {
+    columns: auto 276px;
+    max-width: max(860px, var(--chat-outer));
+  }
+  html:not(.mobile) .clone-library-segments {
+    max-width: max(860px, var(--chat-outer));
+  }
+}
