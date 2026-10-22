@@ -1,7 +1,7 @@
 # STORY_038 — A clicked image opens in a viewer over the page
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md) (a follow-up the owner asked for on 2026-10-21)
-**Status:** Approved by the owner 2026-10-22 (picker); being built
+**Status:** Done 2026-10-22 (approved by the owner 2026-10-22 through a picker); deployed to qwen.local the same day
 **Created:** 2026-10-21
 **Relates to:** [STORY_011](STORY_011_reference_images_can_be_attached_for_an_edit.md) (reference images), [STORY_018](STORY_018_an_image_dropped_anywhere_on_the_page_is_attached_for_an_edit.md)
 
@@ -80,24 +80,24 @@ Narrow (iPhone 13), full screen:
 
 ## Acceptance Criteria
 
-- [ ] A click (or Return on a focused image) on a result image in a turn, or on a reference
+- [x] A click (or Return on a focused image) on a result image in a turn, or on a reference
       image shown in a turn, opens the viewer over the page with that image. The composer's
       thumbnails open it too, without removing the attachment. My Library's cards keep opening
       the image's turn.
-- [ ] The viewer shows the image's name, a Download that saves the original (a result through
+- [x] The viewer shows the image's name, a Download that saves the original (a result through
       `?download=1`, as the hover Download does; a reference, the attached file), and a Close;
       the page behind is blurred and dimmed and does not scroll.
-- [ ] The image fits the sheet at its own aspect, never cropped and never upscaled past its own
+- [x] The image fits the sheet at its own aspect, never cropped and never upscaled past its own
       size.
-- [ ] Left and Right, or the buttons at the sheet's edges, step through the chat's images in
+- [x] Left and Right, or the buttons at the sheet's edges, step through the chat's images in
       the order they appear, results and references together; a button with nothing that way
       is not drawn. The sheet says "2 of 3". On narrow screens a swipe steps.
-- [ ] Esc, Close, or a click on the dimmed page closes it, and focus returns to the image that
+- [x] Esc, Close, or a click on the dimmed page closes it, and focus returns to the image that
       opened it. While it is open, Tab stays inside it. A screen reader hears a dialog named
       after the image.
-- [ ] Narrow (iPhone 13 descriptor, touch): the viewer is full screen, Close and Download have
+- [x] Narrow (iPhone 13 descriptor, touch): the viewer is full screen, Close and Download have
       44 px touch areas, and opening the viewer does not trigger the hover actions.
-- [ ] A running job's skeleton and a failed or moderated turn open nothing: only a finished
+- [x] A running job's skeleton and a failed or moderated turn open nothing: only a finished
       image does.
 
 ## Technical Notes
@@ -140,3 +140,14 @@ Regression cover that must stay green: `generate.spec.ts` (result rendered, down
 ## Estimated Complexity
 
 Small to medium: one component, two call sites, no server change.
+
+## Done note (2026-10-22)
+
+- **The design values are inferred.** No session could open Google AI Studio signed in, so the popup's DOM and computed styles were not read. The viewer is built from the values this story read off the owner's screenshot (a sheet about 1340 px wide, r12, the name at 15 px regular, Download and Close at the right, the page blurred and dimmed). The dated copy of the screenshot and the real reading are the owner's to make: [CHORE_011](../chore/CHORE_011_google_ai_studios_image_popup_is_read_in_the_owners_browser.md).
+- **Built:** `app/components/ImageViewer.tsx` (the viewer, a native modal dialog, and `useImageViewer`, which wires a container), `app/lib/image-viewer.ts` (the list read from the images the page drew, the stepping and the swipe), the `data-viewer` marks in `GenerationView.tsx` and `ReferenceThumbs.tsx`, the handlers in `GenerationPage.tsx`, and the styles at the end of `app/app/clone.css`. No route and no request.
+- **Where the list comes from:** a result or a turn's reference opens over all the chat's finished images, in page order. A composer thumbnail opens over the composer's attachments, since they belong to no turn yet.
+- **On the phone, a composer thumbnail opens from its lower left.** The Remove button's 44 px touch area (STORY_011) covers the thumbnail's upper right, so a tap there still removes the attachment. That is unchanged from before.
+- **Found while building:** with both `backdrop-filter` and `-webkit-backdrop-filter` in `clone.css`, the build kept only the prefixed form, and Chrome drew no blur. The rule is unprefixed only. The e2e reads the computed `backdrop-filter`.
+- **Tests:** `lib/image-viewer.test.ts` (6) and `components/ImageViewer.test.tsx` (10) in the unit lane. `e2e/viewer.spec.ts` has 8 cases at both widths: a result opens named after it over the blur, never larger than its own size, steps Left to the reference, keeps Tab inside, and Esc returns focus; Return on a turn's reference opens it and a click on the dimmed page closes it; the composer thumbnail opens and the attachment stays; Download opens no viewer; the phone's viewer fills the screen with 44 px controls; a My Library card opens its turn; a moderated turn and a running skeleton open nothing. The regression specs named above stayed green.
+- **Gate:** green through the pre-push hook on the Mac Studio 2022 for `e6f304a` (198 s): unit 275 in the app, 129 model server, 152 recon, 72 stub; integration 34; e2e 111 passed, 15 skipped. Pushing first failed twice on a race in the model server's tests, outside this story. An A/B showed `1375be2` 3 of 3 green and this commit 1 of 3, under the extra load. It is fixed by [BUG_018](../bug/BUG_018_the_model_servers_health_test_fails_when_the_gate_is_busy.md). The size check in the first e2e case was added after that push, and is gated with STORY_039's.
+- **Deployed:** `tools/deploy/app.sh` put `e6f304a` on the Mac Studio 2022. `/api/health` answered ok, and `http://qwen.local/` served the stylesheet with the viewer's rules.

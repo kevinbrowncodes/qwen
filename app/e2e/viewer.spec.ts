@@ -49,6 +49,13 @@ test("a click on the result opens the viewer named after it over a blurred page;
   await expect(dialog).toBeVisible();
   await expect(counter(page)).toHaveText("2 of 2");
   await expectImageLoaded(viewer(page).getByTestId("viewer-image"), `/api/jobs/${id}/result`);
+  // At its own aspect and never past its own size: the stub's 64x36 result stays 64x36 in a sheet far wider.
+  const drawn = await viewer(page).getByTestId("viewer-image").evaluate((el) => (el instanceof HTMLImageElement ? { w: el.getBoundingClientRect().width, h: el.getBoundingClientRect().height, nw: el.naturalWidth, nh: el.naturalHeight } : null));
+  expect(drawn).not.toBeNull();
+  if (drawn) {
+    expect(drawn.w).toBeLessThanOrEqual(drawn.nw);
+    expect(drawn.w / drawn.h).toBeCloseTo(drawn.nw / drawn.nh, 1);
+  }
   expect(await viewer(page).evaluate((el) => getComputedStyle(el).backdropFilter)).toContain("blur");
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe("hidden");
   await expect(dialog.getByRole("link", { name: "Download" })).toHaveAttribute("href", `/api/jobs/${id}/result?download=1`);
