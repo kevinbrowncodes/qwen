@@ -32,6 +32,8 @@ export interface HistoryEntry {
   readonly result?: { readonly width: number; readonly height: number; readonly mimeType: string };
   /** The chat's name, when the owner renamed it (STORY_033): written to every turn of the chat, so they agree. */
   readonly title?: string;
+  /** When the owner starred this image (STORY_039), as an ISO time; absent when it is not starred. */
+  readonly favoritedAt?: string;
 }
 
 export type NewEntry = Pick<HistoryEntry, "id" | "chatId" | "prompt" | "ratio" | "model" | "referenceImages" | "lora" | "createdAt">;
@@ -110,10 +112,12 @@ export function parseEntries(text: string): HistoryEntry[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((e): e is HistoryEntry => isRecord(e) && typeof e["id"] === "string" && typeof e["prompt"] === "string" && typeof e["createdAt"] === "string" && typeof e["status"] === "string")
-    .map(({ title, ...e }) => ({
+    .map(({ title, favoritedAt, ...e }) => ({
       ...e,
       // A name is kept only when it is text (STORY_033); entries saved before have none.
       ...(typeof title === "string" && title.trim() !== "" ? { title } : {}),
+      // A star is kept only when it is a time (STORY_039); entries saved before read as unstarred.
+      ...(typeof favoritedAt === "string" && favoritedAt !== "" ? { favoritedAt } : {}),
       // Entries saved before STORY_031 are each a chat of one.
       chatId: typeof e.chatId === "string" && e.chatId !== "" ? e.chatId : e.id,
       lora: typeof e.lora === "string" ? e.lora : null,
@@ -157,4 +161,26 @@ export function renameChat(entries: readonly HistoryEntry[], chatId: string, tit
     return title === null ? withoutTitle(e) : { ...e, title };
   });
   return { entries: next, renamed };
+}
+
+export type FavoriteOutcome =
+  | { readonly outcome: "set"; readonly entries: HistoryEntry[]; readonly entry: HistoryEntry }
+  | { readonly outcome: "unknown" | "not-finished"; readonly entries: HistoryEntry[] };
+
+/**
+ * Stars or unstars a finished image (STORY_039). Starring stamps `favoritedAt` with `at`, unless it is already starred,
+ * so Favorites keeps the first star's order; unstarring removes it. An unknown id, or an image that is not finished
+ * (still running, failed, moderated or stopped), changes nothing.
+ */
+export function setFavorite(entries: readonly HistoryEntry[], id: string, on: boolean, at: string): FavoriteOutcome {
+  const found = entries.find((e) => e.id === id);
+  if (!found) return { outcome: "unknown", entries: [...entries] };
+  if (found.status !== "done") return { outcome: "not-finished", entries: [...entries] };
+  let entry: HistoryEntry;
+  if (on) entry = found.favoritedAt === undefined ? { ...found, favoritedAt: at } : found;
+  else {
+    const { favoritedAt, ...rest } = found;
+    entry = favoritedAt === undefined ? found : rest;
+  }
+  return { outcome: "set", entry, entries: entries.map((e) => (e.id === id ? entry : e)) };
 }

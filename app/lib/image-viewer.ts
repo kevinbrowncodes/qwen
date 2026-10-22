@@ -11,6 +11,8 @@ export interface ViewerImage {
   readonly name: string;
   /** What Download saves: a result through `?download=1`, a reference its own object URL. */
   readonly download: string;
+  /** A result's job id, so the viewer can star it (STORY_039); a reference has none. */
+  readonly job?: string;
 }
 
 /** The attribute that marks an image the viewer opens. */
@@ -37,7 +39,8 @@ export function swipeStep(dx: number, threshold = 40): -1 | 0 | 1 {
 export function viewerImageOf(el: Element): ViewerImage | null {
   const src = el.getAttribute("src") ?? "";
   if (src === "") return null;
-  return { src, name: el.getAttribute("data-viewer-name") ?? el.getAttribute("alt") ?? "", download: el.getAttribute("data-viewer-download") ?? src };
+  const job = el.getAttribute("data-viewer-job");
+  return { src, name: el.getAttribute("data-viewer-name") ?? el.getAttribute("alt") ?? "", download: el.getAttribute("data-viewer-download") ?? src, ...(job ? { job } : {}) };
 }
 
 /**

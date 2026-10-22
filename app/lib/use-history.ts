@@ -27,6 +27,8 @@ export interface History {
   readonly renameChat: (chatId: string, title: string | null) => Promise<boolean>;
   /** Stops every turn of a chat still queued or running. */
   readonly stopAll: (ids: readonly string[]) => Promise<void>;
+  /** Stars or unstars a finished image (STORY_039); false when the server refused or could not be reached. */
+  readonly setFavorite: (id: string, on: boolean) => Promise<boolean>;
 }
 
 async function read(): Promise<HistoryEntry[]> {
@@ -112,5 +114,21 @@ export function useHistory(): History {
     announceHistoryChanged();
   }, []);
 
-  return { entries, loaded, remove, stop, removeChat, renameChat, stopAll };
+  // STORY_039: the request first; the entry the server answers replaces ours, and every other view reads it again.
+  const setFavorite = useCallback(async (id: string, on: boolean): Promise<boolean> => {
+    let res: Response;
+    try {
+      res = await fetch(`/api/history/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ favorite: on }) });
+    } catch {
+      return false;
+    }
+    if (!res.ok) return false;
+    const body: unknown = await res.json().catch(() => null);
+    const [answered] = parseEntries(JSON.stringify([body]));
+    if (answered) setEntries((list) => list.map((e) => (e.id === id ? answered : e)));
+    announceHistoryChanged();
+    return true;
+  }, []);
+
+  return { entries, loaded, remove, stop, removeChat, renameChat, stopAll, setFavorite };
 }

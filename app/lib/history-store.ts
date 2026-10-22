@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { historyFile } from "./config";
-import { addEntry, applyStatus, markCancelled, parseEntries, removeChat, removeEntry, renameChat, type HistoryEntry, type NewEntry, type RemoveChatOutcome, type RemoveOutcome } from "./history";
+import { addEntry, applyStatus, markCancelled, parseEntries, removeChat, removeEntry, renameChat, setFavorite, type FavoriteOutcome, type HistoryEntry, type NewEntry, type RemoveChatOutcome, type RemoveOutcome } from "./history";
 import type { JobStatusResponse } from "./job-api";
 
 export interface HistoryStore {
@@ -18,6 +18,8 @@ export interface HistoryStore {
   removeChat(chatId: string): RemoveChatOutcome;
   /** Names a chat, or clears its name with null (STORY_033); the number of turns renamed, 0 for an unknown chat. */
   renameChat(chatId: string, title: string | null): number;
+  /** Stars or unstars a finished image (STORY_039). */
+  setFavorite(id: string, on: boolean): FavoriteOutcome;
 }
 
 export function createHistoryStore(file: string, now: () => string = () => new Date().toISOString()): HistoryStore {
@@ -61,6 +63,11 @@ export function createHistoryStore(file: string, now: () => string = () => new D
       const outcome = renameChat(read(), chatId, title);
       if (outcome.renamed > 0) write(outcome.entries);
       return outcome.renamed;
+    },
+    setFavorite: (id, on) => {
+      const outcome = setFavorite(read(), id, on, now());
+      if (outcome.outcome === "set") write(outcome.entries);
+      return outcome;
     },
   };
 }

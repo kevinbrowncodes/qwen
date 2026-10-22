@@ -103,6 +103,21 @@ describe("ImageViewer (STORY_038)", () => {
     opener.remove();
   });
 
+  it("stars a result from its header, with the state it is given, and draws no star for a reference (STORY_039)", () => {
+    const toggle = vi.fn();
+    const withJob: readonly ViewerImage[] = [
+      { src: "blob:ref", name: "reference.png", download: "blob:ref" },
+      { src: "/api/jobs/a/result", name: "qwen-a.png", download: "/api/jobs/a/result?download=1", job: "a" },
+    ];
+    const { rerender } = render(<ImageViewer images={withJob} index={1} onClose={vi.fn()} star={{ isStarred: () => false, toggle }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Star" }));
+    expect(toggle).toHaveBeenCalledWith("a");
+    rerender(<ImageViewer images={withJob} index={1} onClose={vi.fn()} star={{ isStarred: () => true, toggle }} />);
+    expect(screen.getByRole("button", { name: "Unstar" })).toHaveClass("clone-star-on");
+    fireEvent.keyDown(screen.getByTestId("image-viewer"), { key: "ArrowLeft" });
+    expect(screen.queryByRole("button", { name: /star/i })).toBeNull();
+  });
+
   it("draws nothing for an index with no image", () => {
     render(<ImageViewer images={[]} index={0} onClose={vi.fn()} />);
     expect(screen.queryByRole("dialog")).toBeNull();

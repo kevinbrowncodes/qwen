@@ -1,6 +1,6 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { renameChat, type HistoryEntry } from "./history";
+import { renameChat, setFavorite, type HistoryEntry } from "./history";
 import { announceHistoryChanged, RUNNING_REFRESH_MS, useHistory, type History } from "./use-history";
 
 const entry = (id: string, createdAt = "2026-01-01T00:00:00Z"): HistoryEntry => ({ id, chatId: id, prompt: id, ratio: "1:1", model: "m", referenceImages: 0, lora: null, seed: null, loraScale: null, loraGuidance: null, promptSent: null, createdAt, updatedAt: "t", status: "done", progress: 100 });
@@ -8,12 +8,14 @@ const entry = (id: string, createdAt = "2026-01-01T00:00:00Z"): HistoryEntry => 
 let list: HistoryEntry[] = [];
 let deleteStatus = 200;
 let patchStatus: number | "offline" = 200;
+let favoriteBody: "entry" | "garbled" = "entry";
 const calls: Array<{ url: string; method: string; body?: string }> = [];
 
 beforeEach(() => {
   list = [entry("a"), entry("b")];
   deleteStatus = 200;
   patchStatus = 200;
+  favoriteBody = "entry";
   calls.length = 0;
   vi.stubGlobal(
     "fetch",
@@ -22,6 +24,15 @@ beforeEach(() => {
       calls.push({ url, method, ...(typeof init?.body === "string" ? { body: init.body } : {}) });
       if (method === "PATCH") {
         if (patchStatus === "offline") return Promise.reject(new TypeError("Failed to fetch"));
+        if (url.startsWith("/api/history/")) {
+          // Like the real route (STORY_039): a 200 answers the entry; "garbled" answers a body that is not one.
+          const asked: unknown = JSON.parse(typeof init?.body === "string" ? init.body : "{}");
+          const on = typeof asked === "object" && asked !== null && "favorite" in asked && asked.favorite === true;
+          const outcome = setFavorite(list, decodeURIComponent(url.slice("/api/history/".length)), on, "2026-01-02T00:00:00Z");
+          if (patchStatus !== 200 || outcome.outcome !== "set") return Promise.resolve(new Response("{}", { status: patchStatus === 200 ? 404 : patchStatus }));
+          list = outcome.entries;
+          return Promise.resolve(new Response(favoriteBody === "garbled" ? "not json" : JSON.stringify(outcome.entry), { status: 200 }));
+        }
         // Like the real route: a 200 names every turn of the chat (null clears it), anything else leaves them.
         const asked: unknown = JSON.parse(typeof init?.body === "string" ? init.body : "{}");
         const title = typeof asked === "object" && asked !== null && "title" in asked && typeof asked.title === "string" ? asked.title : null;
@@ -165,6 +176,52 @@ describe("useHistory", () => {
     });
     expect(ok).toBe(false);
     expect(titles()).toEqual([undefined, undefined, undefined]);
+  });
+
+  it("stars and unstars an image only after the server agreed, and leaves it on a refusal or no network (STORY_039)", async () => {
+    const into: { current: History | null } = { current: null };
+    render(<Probe into={into} />);
+    await settle();
+    const stars = (): Array<string | undefined> => into.current?.entries.map((e) => e.favoritedAt) ?? [];
+    const announced = vi.fn();
+    window.addEventListener("qwen:history-changed", announced);
+    let ok = false;
+    await act(async () => {
+      ok = (await into.current?.setFavorite("a", true)) ?? false;
+    });
+    expect(ok).toBe(true);
+    expect(calls.find((c) => c.method === "PATCH")).toEqual({ url: "/api/history/a", method: "PATCH", body: JSON.stringify({ favorite: true }) });
+    expect(stars()).toEqual(["2026-01-02T00:00:00Z", undefined]);
+    expect(announced).toHaveBeenCalled();
+
+    // An answer the hook cannot read still counts as agreed: the announced re-read brings the star.
+    favoriteBody = "garbled";
+    await act(async () => {
+      ok = (await into.current?.setFavorite("b", true)) ?? false;
+    });
+    expect(ok).toBe(true);
+    await waitFor(() => {
+      expect(stars()).toEqual(["2026-01-02T00:00:00Z", "2026-01-02T00:00:00Z"]);
+    });
+
+    favoriteBody = "entry";
+    await act(async () => {
+      ok = (await into.current?.setFavorite("a", false)) ?? false;
+    });
+    expect(stars()[0]).toBeUndefined();
+
+    patchStatus = 409;
+    await act(async () => {
+      ok = (await into.current?.setFavorite("a", true)) ?? true;
+    });
+    expect(ok).toBe(false);
+    patchStatus = "offline";
+    await act(async () => {
+      ok = (await into.current?.setFavorite("a", true)) ?? true;
+    });
+    expect(ok).toBe(false);
+    expect(stars()[0]).toBeUndefined();
+    window.removeEventListener("qwen:history-changed", announced);
   });
 
   it("stopAll cancels every running turn of a chat and announces the change (STORY_031)", async () => {

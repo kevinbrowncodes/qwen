@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addEntry, applyStatus, markCancelled, parseEntries, removeChat, removeEntry, renameChat, type HistoryEntry } from "./history";
+import { addEntry, applyStatus, markCancelled, parseEntries, removeChat, removeEntry, renameChat, setFavorite, type HistoryEntry } from "./history";
 import { chatIdOf, chatsOf, turnsOf } from "./history-view";
 
 const add = (list: readonly HistoryEntry[], id: string, createdAt: string, chatId = id): HistoryEntry[] =>
@@ -191,5 +191,50 @@ describe("chats in history (STORY_031)", () => {
     const named = renameChat(all(), "y", "Harbour").entries;
     const more = addEntry(named, { id: "y3", chatId: "y", prompt: "p y3", ratio: "1:1", model: "m", referenceImages: 0, lora: null, createdAt: "t9" });
     expect(chatsOf(more).find((c) => c.id === "y")?.title).toBe("Harbour");
+  });
+});
+
+describe("stars in history (STORY_039)", () => {
+  // a: done; r: still running; f: failed.
+  const list = (): HistoryEntry[] => {
+    let l: HistoryEntry[] = [];
+    l = add(l, "a", "t1");
+    l = add(l, "r", "t2");
+    l = add(l, "f", "t3");
+    return l.map((e) => (e.id === "a" ? { ...e, status: "done" } : e.id === "f" ? { ...e, status: "failed" } : { ...e, status: "running" }));
+  };
+
+  it("stars a finished image with the time, keeps the first star's time on a second star, and unstars it", () => {
+    const starred = setFavorite(list(), "a", true, "s1");
+    expect(starred.outcome).toBe("set");
+    expect(starred.entries.find((e) => e.id === "a")?.favoritedAt).toBe("s1");
+    const again = setFavorite(starred.entries, "a", true, "s2");
+    expect(again.outcome === "set" ? again.entry.favoritedAt : null).toBe("s1");
+    const unstarred = setFavorite(again.entries, "a", false, "s3");
+    expect(unstarred.outcome === "set" ? unstarred.entry : null).not.toHaveProperty("favoritedAt");
+    expect(unstarred.entries.find((e) => e.id === "a")).not.toHaveProperty("favoritedAt");
+    const twice = setFavorite(unstarred.entries, "a", false, "s4");
+    expect(twice.outcome === "set" ? twice.entry : null).not.toHaveProperty("favoritedAt");
+  });
+
+  it("refuses an unknown id and an image that is not finished, and changes nothing", () => {
+    expect(setFavorite(list(), "nope", true, "s1")).toEqual({ outcome: "unknown", entries: list() });
+    expect(setFavorite(list(), "r", true, "s1")).toEqual({ outcome: "not-finished", entries: list() });
+    expect(setFavorite(list(), "f", true, "s1").outcome).toBe("not-finished");
+  });
+
+  it("reads an entry saved before stars as unstarred, keeps a star through a save and a load, and drops one that is not a time", () => {
+    const old = [{ id: "o", prompt: "p", ratio: "1:1", model: "m", referenceImages: 0, createdAt: "t0", updatedAt: "t0", status: "done", progress: 100 }];
+    expect(parseEntries(JSON.stringify(old))[0]).not.toHaveProperty("favoritedAt");
+    const starred = setFavorite(list(), "a", true, "s1").entries;
+    expect(parseEntries(JSON.stringify(starred)).find((e) => e.id === "a")?.favoritedAt).toBe("s1");
+    expect(parseEntries(JSON.stringify([{ ...old[0], favoritedAt: 7 }]))[0]).not.toHaveProperty("favoritedAt");
+    expect(parseEntries(JSON.stringify([{ ...old[0], favoritedAt: "" }]))[0]).not.toHaveProperty("favoritedAt");
+  });
+
+  it("removing a starred image, or its chat, takes the star with it", () => {
+    const starred = setFavorite(list(), "a", true, "s1").entries;
+    expect(removeEntry(starred, "a").entries.some((e) => e.id === "a")).toBe(false);
+    expect(removeChat(starred, "a").entries.some((e) => e.id === "a")).toBe(false);
   });
 });

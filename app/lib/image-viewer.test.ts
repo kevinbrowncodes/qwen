@@ -35,14 +35,14 @@ describe("collectImages", () => {
     const c = chat(`
       <img data-viewer data-viewer-name="reference.png" src="blob:ref" alt="reference.png">
       <img src="/not/marked.png">
-      <img id="r" data-viewer data-viewer-name="qwen-abc.png" data-viewer-download="/api/jobs/abc/result?download=1" src="/api/jobs/abc/result" alt="a prompt">
+      <img id="r" data-viewer data-viewer-name="qwen-abc.png" data-viewer-download="/api/jobs/abc/result?download=1" data-viewer-job="abc" src="/api/jobs/abc/result" alt="a prompt">
       <img data-viewer src="" alt="not loaded yet">`);
     const found = collectImages(c, c.querySelector("#r") ?? c);
     expect(found).toEqual({
       index: 1,
       images: [
         { src: "blob:ref", name: "reference.png", download: "blob:ref" },
-        { src: "/api/jobs/abc/result", name: "qwen-abc.png", download: "/api/jobs/abc/result?download=1" },
+        { src: "/api/jobs/abc/result", name: "qwen-abc.png", download: "/api/jobs/abc/result?download=1", job: "abc" },
       ],
     });
   });

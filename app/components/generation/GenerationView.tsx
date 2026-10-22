@@ -38,6 +38,10 @@ export interface GenerationViewProps {
   readonly onDelete?: () => void;
   /** Outlined: the turn the page was opened at from My Library (STORY_031). */
   readonly highlighted?: boolean;
+  /** Starred in history (STORY_039). */
+  readonly favorite?: boolean;
+  /** Stars or unstars the finished image; absent, no star is drawn. */
+  readonly onStar?: () => void;
 }
 
 function ReferenceTile({ file }: { readonly file: File }) {
@@ -95,7 +99,7 @@ function Skeleton({ ratio, status, narrow, onStop }: { readonly ratio: string | 
   );
 }
 
-export function GenerationView({ id, job, prompt, ratio, referenceFiles, referenceCount, problem, onEdit, onRegenerate, labels, onSameSeed, onStop, onDelete, highlighted = false }: GenerationViewProps) {
+export function GenerationView({ id, job, prompt, ratio, referenceFiles, referenceCount, problem, onEdit, onRegenerate, labels, onSameSeed, onStop, onDelete, highlighted = false, favorite = false, onStar }: GenerationViewProps) {
   const narrow = useNarrow();
   const [hover, setHover] = useState(false);
   // Closed by default, and not remembered (STORY_024).
@@ -172,6 +176,7 @@ export function GenerationView({ id, job, prompt, ratio, referenceFiles, referen
                     data-viewer=""
                     data-viewer-name={resultFileName(id)}
                     data-viewer-download={`${result.url}?download=1`}
+                    data-viewer-job={id}
                   />
                 </div>
                 {narrow ? null : (
@@ -224,6 +229,11 @@ export function GenerationView({ id, job, prompt, ratio, referenceFiles, referen
               {onDelete ? (
                 <button type="button" className="clone-icon-button clone-action" aria-label="Delete" onClick={onDelete}>
                   <Icon id={`${iconSet}-delete`} />
+                </button>
+              ) : null}
+              {onStar ? (
+                <button type="button" className={`clone-icon-button clone-action${favorite ? " clone-star-on" : ""}`} aria-label={favorite ? "Unstar" : "Star"} onClick={onStar}>
+                  <Icon id={`${iconSet}-${favorite ? "star-fill" : "star"}`} />
                 </button>
               ) : null}
             </div>

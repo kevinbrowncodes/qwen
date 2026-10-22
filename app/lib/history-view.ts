@@ -49,6 +49,32 @@ export function finished(entries: readonly HistoryEntry[]): HistoryEntry[] {
   return entries.filter((e) => e.status === "done" && e.result !== undefined);
 }
 
+/** My Library's two segments (STORY_039), kept in the URL as `?view=favorites`; All is the default. */
+export type LibraryView = "all" | "favorites";
+
+export function libraryViewOf(param: string | null): LibraryView {
+  return param === "favorites" ? "favorites" : "all";
+}
+
+/** What My Library says when a segment has no images (STORY_013 for All, STORY_039 for Favorites). */
+export const LIBRARY_EMPTY: Readonly<Record<LibraryView, { readonly title: string; readonly text: string }>> = {
+  all: { title: "No images yet.", text: "Generated images appear here." },
+  favorites: { title: "No favorites yet.", text: "Star an image to keep it here." },
+};
+
+/** The starred finished images, newest star first (STORY_039). */
+export function favorites(entries: readonly HistoryEntry[]): HistoryEntry[] {
+  return finished(entries)
+    .flatMap((e) => (e.favoritedAt === undefined ? [] : [{ e, at: e.favoritedAt }]))
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .map(({ e }) => e);
+}
+
+/** The images a segment of My Library lists. */
+export function libraryImages(entries: readonly HistoryEntry[], view: LibraryView): HistoryEntry[] {
+  return view === "favorites" ? favorites(entries) : finished(entries);
+}
+
 export function latestFinished(entries: readonly HistoryEntry[], n = 2): HistoryEntry[] {
   return finished(entries).slice(0, n);
 }

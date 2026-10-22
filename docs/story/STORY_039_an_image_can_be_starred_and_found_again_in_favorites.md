@@ -1,7 +1,7 @@
 # STORY_039 — An image can be starred and found again in Favorites
 
 **Epic:** [EPIC_003](../epic/EPIC_003_the_image_generation_screen_is_rebuilt_to_match_the_reference.md) (a follow-up the owner asked for on 2026-10-21)
-**Status:** Drafted 2026-10-21 for the owner's approval; not to be built until he approves
+**Status:** Approved by the owner 2026-10-22 (picker); being built
 **Created:** 2026-10-21
 **Relates to:** [STORY_038](STORY_038_a_clicked_image_opens_in_a_viewer_over_the_page.md) (the viewer's header carries the star; that story ships first), [STORY_007](STORY_007_past_generations_are_kept_and_can_be_reopened.md) (history on disk)
 

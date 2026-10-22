@@ -50,10 +50,13 @@ interface CardProps {
   readonly onDelete: (id: string) => void;
   /** Outlined: the turn My Library opened the chat at (STORY_031). */
   readonly highlighted: boolean;
+  /** Starred in history (STORY_039). */
+  readonly favorite: boolean;
+  readonly onStar: (id: string, on: boolean) => void;
 }
 
 /** One turn of the chat: its own poll, Stop, Delete, Regenerate and Same seed again, which add turns to this chat. */
-function GenerationCard({ id, chat, labels, onCreated, onEdit, onDelete, highlighted }: CardProps) {
+function GenerationCard({ id, chat, labels, onCreated, onEdit, onDelete, highlighted, favorite, onStar }: CardProps) {
   const [known] = useState<Known | null>(() => fromPending(id));
   const onTerminal = useCallback(() => {
     announceHistoryChanged();
@@ -112,6 +115,10 @@ function GenerationCard({ id, chat, labels, onCreated, onEdit, onDelete, highlig
         onDelete(id);
       }}
       highlighted={highlighted}
+      favorite={favorite}
+      onStar={() => {
+        onStar(id, !favorite);
+      }}
     />
   );
 }
@@ -125,7 +132,7 @@ function targetOf(urlId: string, chatId: string): string | null {
 
 export function GenerationPage({ id }: { readonly id: string }) {
   const router = useRouter();
-  const { entries, loaded } = useHistory();
+  const { entries, loaded, setFavorite } = useHistory();
   // The chat: the URL's own id until history says the URL names a later turn of another chat.
   const chatId = chatIdOf(entries, id) ?? id;
   /** Turns sent during this visit, shown before history records them. */
@@ -135,8 +142,21 @@ export function GenerationPage({ id }: { readonly id: string }) {
   const [inject, setInject] = useState<Injected | null>(null);
   const capabilities = useCapabilities();
   const scroller = useRef<HTMLDivElement>(null);
+  // STORY_039: a star is read from history and written through it; the action row and the viewer share it.
+  const starred = useMemo(() => new Set(entries.filter((e) => e.favoritedAt !== undefined).map((e) => e.id)), [entries]);
+  const onStar = useCallback(
+    (jobId: string, on: boolean) => {
+      void setFavorite(jobId, on);
+    },
+    [setFavorite],
+  );
   // STORY_038: a click on any finished image of the chat opens the viewer over the chat's images.
-  const viewer = useImageViewer();
+  const viewer = useImageViewer({
+    isStarred: (jobId) => starred.has(jobId),
+    toggle: (jobId) => {
+      onStar(jobId, !starred.has(jobId));
+    },
+  });
 
   const ids = useMemo(() => {
     const recorded = loaded ? turnsOf(entries, chatId).map((e) => e.id) : [];
@@ -233,7 +253,7 @@ export function GenerationPage({ id }: { readonly id: string }) {
     <div className="clone-chat-page">
       <div className="chat-container clone-chat-scroll" ref={scroller} onClick={viewer.onClick} onKeyDown={viewer.onKeyDown}>
         {ids.map((jobId) => (
-          <GenerationCard key={jobId} id={jobId} chat={chatId} labels={capabilities} onCreated={append} onEdit={onEdit} onDelete={onDelete} highlighted={highlight === jobId} />
+          <GenerationCard key={jobId} id={jobId} chat={chatId} labels={capabilities} onCreated={append} onEdit={onEdit} onDelete={onDelete} highlighted={highlight === jobId} favorite={starred.has(jobId)} onStar={onStar} />
         ))}
         <div className="chat-container-bottom" />
       </div>

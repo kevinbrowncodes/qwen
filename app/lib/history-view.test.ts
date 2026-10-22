@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HistoryEntry } from "./history";
-import { chatTitle, chatsOf, chatsOn, dayKey, dayOf, imageCount, longDate, parseDay, pastDays, shortDate, stepDay, timeOf, todaysChats, yesterdayOf, dayLabel, deleteChatMessage, finished, groupByDay, groupChatsByDay, isRunning, latestFinished, renameTo, resultUrl, titleOf, turnHref } from "./history-view";
+import { chatTitle, chatsOf, chatsOn, dayKey, dayOf, imageCount, longDate, parseDay, pastDays, shortDate, stepDay, timeOf, todaysChats, yesterdayOf, dayLabel, deleteChatMessage, finished, groupByDay, groupChatsByDay, isRunning, latestFinished, LIBRARY_EMPTY, libraryImages, libraryViewOf, favorites, renameTo, resultUrl, titleOf, turnHref } from "./history-view";
 
 // Dates are derived from the clock, never fixed (CLAUDE.md §6b): "now" is whatever day the test runs.
 const now = new Date();
@@ -173,5 +173,33 @@ describe("a chat's name (STORY_033)", () => {
     const e = (id: string, createdAt: string, title?: string): HistoryEntry => ({ ...entry(id, createdAt, "done", "c"), ...(title === undefined ? {} : { title }) });
     expect(chatsOf([e("c3", "2026-01-03T00:00:00Z"), e("c2", "2026-01-02T00:00:00Z", "Later"), e("c", "2026-01-01T00:00:00Z", "Earlier")])[0]?.title).toBe("Later");
     expect(chatsOf([e("c", "2026-01-01T00:00:00Z")])[0]?.title).toBeNull();
+  });
+});
+
+describe("My Library's segments (STORY_039)", () => {
+  const starred = (e: HistoryEntry, favoritedAt: string): HistoryEntry => ({ ...e, favoritedAt });
+  const list: HistoryEntry[] = [
+    starred(entry("new", at(0)), at(3)),
+    entry("plain", at(1)),
+    starred(entry("old", at(2)), at(0)),
+    starred(entry("running", at(0), "running"), at(0)),
+  ];
+
+  it("reads the segment from the URL, All unless it says favorites", () => {
+    expect(libraryViewOf("favorites")).toBe("favorites");
+    expect(libraryViewOf(null)).toBe("all");
+    expect(libraryViewOf("other")).toBe("all");
+  });
+
+  it("Favorites lists only starred finished images, newest star first; All lists every finished image", () => {
+    expect(favorites(list).map((e) => e.id)).toEqual(["old", "new"]);
+    expect(libraryImages(list, "favorites").map((e) => e.id)).toEqual(["old", "new"]);
+    expect(libraryImages(list, "all").map((e) => e.id)).toEqual(["new", "plain", "old"]);
+  });
+
+  it("Favorites with nothing starred is empty, with its own words", () => {
+    expect(libraryImages([entry("plain", at(1))], "favorites")).toEqual([]);
+    expect(LIBRARY_EMPTY.favorites).toEqual({ title: "No favorites yet.", text: "Star an image to keep it here." });
+    expect(LIBRARY_EMPTY.all.title).toBe("No images yet.");
   });
 });

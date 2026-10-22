@@ -457,7 +457,8 @@ html.mobile .chat-item-drag .chat-item-drag-web {
   color: #fafbff;
 }
 html:not(.mobile) .clone-library {
-  padding-top: 94px;
+  /* STORY_039: 40 + the 44px segments + 10 keeps the grid where it was, 94px down. */
+  padding-top: 40px;
 }
 .clone-masonry {
   columns: 3 276px;
@@ -1252,4 +1253,54 @@ html.mobile .clone-viewer-next {
 /* An image that opens the viewer says so to the pointer. */
 img[data-viewer] {
   cursor: zoom-in;
+}
+
+/* STORY_039: stars, in the accent (--text-theme, #426eff), and My Library's segments. */
+.clone-star-on,
+.clone-star-on:hover {
+  color: rgb(66, 110, 255) !important;
+}
+.clone-library-segments {
+  display: flex;
+  justify-content: flex-end;
+  max-width: 860px;
+  margin: 0 auto 10px;
+}
+.clone-library-segments .clone-segmented-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 0 16px;
+  text-decoration: none;
+}
+html.mobile .clone-library-segments {
+  max-width: none;
+  margin: 0 0 12px;
+}
+html.mobile .clone-library-segments .clone-segmented {
+  flex: 1;
+}
+html.mobile .clone-library-segments .clone-segmented-item {
+  flex: 1 1 0;
+}
+.library-item-operation {
+  gap: 8px;
+}
+html.mobile .library-item-operation {
+  gap: 20px;
+}
+.clone-card-star {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: none;
 }

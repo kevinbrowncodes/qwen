@@ -15,17 +15,24 @@ import { createPortal } from "react-dom";
 import { collectImages, counterLabel, stepIndex, swipeStep, VIEWER_ATTR, type ViewerImage } from "@/lib/image-viewer";
 import { Icon } from "./Icon";
 
+/** The star in the viewer's header (STORY_039), for an image that is a result; the state lives in history. */
+export interface ViewerStar {
+  readonly isStarred: (job: string) => boolean;
+  readonly toggle: (job: string) => void;
+}
+
 export interface ImageViewerProps {
   readonly images: readonly ViewerImage[];
   readonly index: number;
   readonly onClose: () => void;
   /** Focused again when the viewer closes. */
   readonly opener?: HTMLElement | null;
+  readonly star?: ViewerStar | undefined;
 }
 
 const FOCUSABLE = "a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
-export function ImageViewer({ images, index: start, onClose, opener = null }: ImageViewerProps) {
+export function ImageViewer({ images, index: start, onClose, opener = null, star }: ImageViewerProps) {
   const [index, setIndex] = useState(start);
   const dialog = useRef<HTMLDialogElement>(null);
   const touchX = useRef<number | null>(null);
@@ -106,6 +113,7 @@ export function ImageViewer({ images, index: start, onClose, opener = null }: Im
       <div className="clone-viewer-sheet" data-testid="viewer-sheet">
         <div className="clone-viewer-header">
           <span className="clone-viewer-name">{image.name}</span>
+          {star && image.job !== undefined ? <StarButton starred={star.isStarred(image.job)} job={image.job} onToggle={star.toggle} /> : null}
           <a className="clone-viewer-action" href={image.download} download={image.name} aria-label="Download">
             <Icon id="qwpcicon-download" />
           </a>
@@ -148,6 +156,21 @@ export function ImageViewer({ images, index: start, onClose, opener = null }: Im
   );
 }
 
+function StarButton({ starred, job, onToggle }: { readonly starred: boolean; readonly job: string; readonly onToggle: (job: string) => void }) {
+  return (
+    <button
+      type="button"
+      className={`clone-icon-button clone-viewer-action${starred ? " clone-star-on" : ""}`}
+      aria-label={starred ? "Unstar" : "Star"}
+      onClick={() => {
+        onToggle(job);
+      }}
+    >
+      <Icon id={starred ? "qwpcicon-star-fill" : "qwpcicon-star"} />
+    </button>
+  );
+}
+
 interface Open {
   readonly images: readonly ViewerImage[];
   readonly index: number;
@@ -164,7 +187,7 @@ function markedTarget(container: HTMLElement, target: EventTarget): HTMLElement 
  * Wires a container to the viewer: spread `onClick` and `onKeyDown` on it and render `viewer` beside it (not inside,
  * so the viewer's own clicks never reach the container).
  */
-export function useImageViewer(): { readonly onClick: (e: MouseEvent<HTMLElement>) => void; readonly onKeyDown: (e: KeyboardEvent<HTMLElement>) => void; readonly viewer: ReactNode } {
+export function useImageViewer(star?: ViewerStar): { readonly onClick: (e: MouseEvent<HTMLElement>) => void; readonly onKeyDown: (e: KeyboardEvent<HTMLElement>) => void; readonly viewer: ReactNode } {
   const [open, setOpen] = useState<Open | null>(null);
   const show = useCallback((container: HTMLElement, target: EventTarget): boolean => {
     const img = markedTarget(container, target);
@@ -188,6 +211,6 @@ export function useImageViewer(): { readonly onClick: (e: MouseEvent<HTMLElement
   const close = useCallback(() => {
     setOpen(null);
   }, []);
-  const viewer = open ? <ImageViewer images={open.images} index={open.index} opener={open.opener} onClose={close} /> : null;
+  const viewer = open ? <ImageViewer images={open.images} index={open.index} opener={open.opener} onClose={close} star={star} /> : null;
   return { onClick, onKeyDown, viewer };
 }
