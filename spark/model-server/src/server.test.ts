@@ -342,7 +342,9 @@ describe("the watchdog and restarts (STORY_026, BUG_011)", () => {
   it("says on /health what the worker is busy with and when it last spoke", async () => {
     await start();
     expect(await health()).toMatchObject({ ok: true, ready: true, job: null, queued: 0, lastRestart: null });
-    const a = await create({ prompt: "slow", ratio: "1:1" });
+    // BUG_018: "deaf" keeps running about a second after the stop, so the reading after DELETE still sees it; "slow"
+    // answered the stop within one 5 ms step, and a loaded gate read /health after the next job had started.
+    const a = await create({ prompt: "deaf", ratio: "1:1" });
     await create({ prompt: "waiting", ratio: "1:1" });
     await until(async () => (await status(a))["status"] === "running");
     const first = await health();
