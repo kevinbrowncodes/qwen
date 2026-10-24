@@ -95,3 +95,9 @@ the deploy script; the number itself comes from CHORE_036.
 - Not deployed to the Ultra yet: with `MEMORY_TOKEN` unset in `~/qwen-model/.env` the deployed
   server would behave exactly as now, and a deploy reloads the 33 GB model. It goes out with
   `tools/deploy/model.sh` once the owner has set the token and the two numbers (PATHS CHORE_036).
+- 2026-10-23, later: the lease's size is the image's whole share on the `qwen-model` service, the
+  33 GB model included, not "the working set above it" as the criterion above words it. The
+  agent (PATHS STORY_101, BUG_057) charges a service the larger of its standing and its
+  footprint and adds to the ceiling only what a lease rises above that; against the measured
+  room a lease draws its whole share less what the service already holds. So `MEMORY_LEASE_GB`
+  is the measured peak of a whole image, and 48 is the right placeholder.

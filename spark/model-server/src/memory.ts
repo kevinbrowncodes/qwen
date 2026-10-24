@@ -6,8 +6,9 @@
  *
  * Env, from ~/qwen-model/.env through spark/mac/start.sh: MEMORY_TOKEN (the agent's token; unset, leases are off and
  * every ask is granted, said once), MEMORY_AGENT (default http://127.0.0.1:8700), MEMORY_LEASE_GB (the image's
- * working set on top of the loaded model, which the agent already charges as the qwen-model service's standing
- * reservation; default 48, start.sh's NEED_GIB, until PATHS CHORE_036 measures it). An agent that does not answer
+ * whole share on the qwen-model service, the loaded model included: the agent charges the service the larger of
+ * its standing and its footprint and adds to the ceiling only what a lease rises above that; default 48, start.sh's
+ * NEED_GIB, until PATHS CHORE_036 measures it). An agent that does not answer
  * makes the image wait, saying so: starting anyway would be the 2026-10-23 panic.
  */
 
