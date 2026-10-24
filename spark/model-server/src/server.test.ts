@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RESTARTED } from "./jobs.ts";
 import type { Lora } from "./loras.ts";
 import { createModelServer, WORKER_SILENT, WORKER_STOPPED, type ModelServer, type ModelServerOptions } from "./server.ts";
+import { createMemory } from "./memory.ts";
 
 const FAKE = fileURLToPath(new URL("./fake-worker.ts", import.meta.url));
 const FIXTURES = fileURLToPath(new URL("../../../tools/stub-generation-server/fixtures/", import.meta.url));
@@ -19,7 +20,7 @@ let log = "";
 let model: ModelServer | null = null;
 let base = "";
 
-type Extra = Partial<Pick<ModelServerOptions, "apiKey" | "maxQueued" | "cancelGraceMs" | "silenceMs" | "watchdogTickMs" | "killAfterMs">> & { loras?: readonly Lora[] };
+type Extra = Partial<Pick<ModelServerOptions, "apiKey" | "maxQueued" | "cancelGraceMs" | "silenceMs" | "watchdogTickMs" | "killAfterMs" | "memory" | "memoryRetryMs" | "memoryRenewMs">> & { loras?: readonly Lora[] };
 
 async function start(extra: Extra = {}): Promise<void> {
   process.env["FAKE_LOG"] = log;
@@ -392,5 +393,75 @@ describe("the watchdog and restarts (STORY_026, BUG_011)", () => {
     }
     await start();
     expect(readdirSync(path.join(dir, "uploads"))).toEqual([]);
+  });
+});
+
+/** A memory agent the server asks (PATHS STORY_101's contract), whose answer the test sets: `mode` "wait" answers
+ * waiting at `position`, "grant" grants; it records every request it saw. */
+function standInAgent() {
+  const state = { mode: "wait" as "wait" | "grant", position: 2, seen: [] as string[], leases: new Map<string, string>() };
+  const fetchFn = ((url: string | URL | Request, init?: RequestInit) => {
+    const route = new URL(typeof url === "string" ? url : url instanceof URL ? url.href : url.url).pathname;
+    const method = init?.method ?? "GET";
+    state.seen.push(`${method} ${route}`);
+    if (method === "DELETE") {
+      state.leases.set(route.split("/").pop() ?? "", "released");
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
+    const id = route.endsWith("/renew") ? (route.split("/")[3] ?? "") : `lease-${String(state.leases.size + 1)}`;
+    if (!state.leases.has(id) || state.leases.get(id) !== "released") state.leases.set(id, state.mode);
+    const body = { id, status: state.mode === "grant" ? "granted" : "waiting", position: state.mode === "grant" ? 0 : state.position };
+    return Promise.resolve(new Response(JSON.stringify(body), { status: route.endsWith("/renew") ? 200 : 202 }));
+  }) as typeof fetch;
+  const memory = createMemory({ token: "t", agent: "http://agent.test:8700", gb: 15, fetch: fetchFn, log: () => undefined });
+  return { state, memory };
+}
+
+describe("the Ultra's memory, asked before each image (STORY_041)", () => {
+  it("keeps a job queued with the agent's words while it is told to wait, then runs it once granted", async () => {
+    const agent = standInAgent();
+    await start({ memory: agent.memory, memoryRetryMs: 20, memoryRenewMs: 20 });
+    const id = await create({ prompt: "a red bicycle", ratio: "16:9", seed: 1 });
+    await until(async () => (await status(id))["note"] === "Waiting for memory on the Ultra (2nd in line)");
+    expect(await status(id)).toMatchObject({ status: "queued" });
+    expect(sentToWorker().filter((m) => m["type"] === "job")).toEqual([]);
+    const health = await json(await fetch(`${base}/health`));
+    expect(health["memory"]).toEqual({ enabled: true, gb: 15, lease: { job: id, id: "lease-1", granted: false, note: "Waiting for memory on the Ultra (2nd in line)" } });
+    agent.state.mode = "grant";
+    expect((await terminal(id))["status"]).toBe("done");
+    expect((await status(id))["note"]).toBeUndefined();
+    expect(agent.state.seen[0]).toBe("POST /api/leases");
+    expect(agent.state.seen).toContain("POST /api/leases/lease-1/renew");
+    await until(() => agent.state.seen.includes("DELETE /api/leases/lease-1"));
+    expect(((await json(await fetch(`${base}/health`)))["memory"] as Record<string, unknown>)["lease"]).toBeNull();
+  });
+
+  it("gives the place back when a waiting job is cancelled, and the next job asks for its own", async () => {
+    const agent = standInAgent();
+    await start({ memory: agent.memory, memoryRetryMs: 20 });
+    const first = await create({ prompt: "one", ratio: "1:1", seed: 1 });
+    const second = await create({ prompt: "two", ratio: "1:1", seed: 2 });
+    await until(async () => typeof (await status(first))["note"] === "string");
+    expect((await fetch(`${base}/jobs/${first}`, { method: "DELETE" })).status).toBe(202);
+    await until(() => agent.state.seen.includes("DELETE /api/leases/lease-1"));
+    agent.state.mode = "grant";
+    expect((await terminal(second))["status"]).toBe("done");
+    expect(sentToWorker().filter((m) => m["type"] === "job").map((m) => m["id"])).toEqual([second]);
+  });
+
+  it("lets the share go when the worker dies under a running image", async () => {
+    const agent = standInAgent();
+    agent.state.mode = "grant";
+    await start({ memory: agent.memory });
+    const id = await create({ prompt: "crash", ratio: "1:1", seed: 3 });
+    expect(await terminal(id)).toMatchObject({ status: "failed", error: { message: WORKER_STOPPED } });
+    await until(() => agent.state.seen.includes("DELETE /api/leases/lease-1"));
+  });
+
+  it("asks nothing and runs at once when no agent is configured", async () => {
+    await start();
+    const id = await create({ prompt: "a red bicycle", ratio: "16:9", seed: 4 });
+    expect((await terminal(id))["status"]).toBe("done");
+    expect(((await json(await fetch(`${base}/health`)))["memory"] as Record<string, unknown>)["enabled"]).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 # STORY_041 — The model server asks for memory before each image, and the worker keeps to its limit
 
 **Epic:** [EPIC_007](../epic/EPIC_007_the_app_runs_on_the_mac_studio_2022_and_draws_on_the_mac_studio_2026_deployed_from_the_mac_studio_2025.md) (a follow-up); PATHS EPIC_023 (Memory agent), row 7
-**Status:** Draft 2026-10-23; approved by the owner before it is built; waits for the agent on the Ultra (PATHS STORY_101) and the owner's measurement (PATHS CHORE_036). Builds: Opus.
+**Status:** Approved by the owner 2026-10-23 (through the picker, in PATHS' session); built the same day by Opus. Not Done until the declared working set is the owner's measurement (PATHS CHORE_036) and the server is deployed to the Ultra with it.
 **Created:** 2026-10-23
 **Relates to:** [BUG_013](../bug/BUG_013_the_spark_runs_short_of_gpu_memory_and_up_sh_can_restart_the_model_without_checking.md) (the same problem on the Spark, "a memory budget for each"), Topaz STORY_008 (the other asker on the Ultra)
 
@@ -27,13 +27,13 @@ for Machines and the next story that wants to show it.
 
 ## Acceptance Criteria
 
-- [ ] `spark/model-server/src/memory.ts` (new): `ask`, `renew` and `release` against the agent's
+- [x] `spark/model-server/src/memory.ts` (new): `ask`, `renew` and `release` against the agent's
       API (`POST /api/leases`, `POST /api/leases/{id}/renew`, `DELETE /api/leases/{id}`) at
       `MEMORY_AGENT` (default `http://127.0.0.1:8700`) with `MEMORY_TOKEN`, both from `.env`.
       Unset, every ask is granted and one line is logged at start; set and not answering, the
       ask is waiting with the note "The memory agent on the Ultra does not answer", never
       granted by default.
-- [ ] In `server.ts`'s pump, before `worker.send`: ask `{holder: "qwen-model", service:
+- [x] In `server.ts`'s pump, before `worker.send`: ask `{holder: "qwen-model", service:
       "qwen-model", kind: "image", job: <id>, gb: <the working set>}`. Waiting: the job's
       `note` is set (a new optional field on `JobRecord`, in `GET /jobs/{id}` and in
       `/health.memory` with the agent's answer), and the pump tries again on a 10 s timer.
@@ -43,13 +43,18 @@ for Machines and the next story that wants to show it.
       below in place, written here as a number with its date; until then the story is not Done.
       The 33 GB of the loaded model is the registered service's standing reservation, not the
       lease.
-- [ ] `worker_mlx.py`'s `main()` calls `mx.set_memory_limit(MEMORY_LIMIT_GB << 30)` from the
-      environment (the standing 33 plus the working set), checked against mlx 0.32.4's API in
-      `spark/model/mlx/uv.lock`; an allocation beyond it raises the out-of-memory error
-      `mlxjob.failure_message` already maps to "The model server ran out of memory for this
-      image; try a smaller one". `start.sh`'s 48 GiB refusal stays.
-- [ ] `com.qwen.model.plist.in` and `tools/deploy/model.sh` pass `MEMORY_LIMIT_GB`, and
-      `README.md`'s "Running the Model" table records the limit, the lease and the agent.
+- [x] `worker_mlx.py`'s `main()` calls `mx.set_memory_limit(MEMORY_LIMIT_GB << 30)` from the
+      environment (the standing 33 plus the working set), before the model loads, checked against
+      mlx 0.32.4 on the Ultra (`set_memory_limit` is there); ~~an allocation beyond it raises the
+      out-of-memory error~~ MLX calls the limit a guideline: past it MLX frees its cache and waits
+      for work in flight, and an allocation raises (the error `mlxjob.failure_message` words) only
+      once RAM and swap are also exhausted (its docstring, read on the Ultra 2026-10-23). It slows
+      the worker's growth; the lease is the guard. `start.sh`'s 48 GiB refusal stays.
+- [x] ~~`com.qwen.model.plist.in` and `tools/deploy/model.sh` pass `MEMORY_LIMIT_GB`~~ (they need
+      not: `spark/mac/start.sh` sources `~/qwen-model/.env` with `set -a`, so `MEMORY_TOKEN`,
+      `MEMORY_LEASE_GB` and `MEMORY_LIMIT_GB` set there reach the server and the worker it
+      starts), and `README.md`'s "Running the Model" table records the limit, the lease and the
+      agent.
 
 ## Technical Notes
 
@@ -77,3 +82,16 @@ the agent's `/health`, recorded in Notes with the date.
 
 Medium: one new module and a pump change in the server, one call in the worker, the plist and
 the deploy script; the number itself comes from CHORE_036.
+
+## Notes
+
+- Built 2026-10-23 by Opus. The server keeps one lease, for the job at the head of the line:
+  asked before the worker is sent the job, asked again every 10 s (`memoryRetryMs`) while told
+  to wait, renewed every 60 s while the image runs, released on done, failed, cancelled and a
+  worker exit, and given back when a waiting job is cancelled. `GET /jobs/{id}` carries `note`
+  only while that job is the one waiting; `/health.memory` says whether leases are on, the
+  lease's size and the lease held or waited on. The lease size defaults to 48 GB, `start.sh`'s
+  `NEED_GIB`, until CHORE_036 measures it; with `MEMORY_TOKEN` unset (today) nothing changes.
+- Not deployed to the Ultra yet: with `MEMORY_TOKEN` unset in `~/qwen-model/.env` the deployed
+  server would behave exactly as now, and a deploy reloads the 33 GB model. It goes out with
+  `tools/deploy/model.sh` once the owner has set the token and the two numbers (PATHS CHORE_036).

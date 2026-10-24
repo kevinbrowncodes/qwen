@@ -171,6 +171,16 @@ def run(model, steps_cb: _Steps, loras: Loras, job: dict, loop: JobLoop) -> None
 def main() -> int:
     from mflux.models.qwen21.variants.edit.qwen_image_21_edit import QwenImage21Edit
 
+    # The worker keeps to its share of the Ultra (STORY_041): set before the model loads, so the load counts too.
+    limit = mlxjob.memory_limit_bytes(dict(os.environ))
+    if limit is not None:
+        import mlx.core as mx
+
+        mx.set_memory_limit(limit)
+        print(f"worker: MLX memory limit {limit / (1 << 30):.0f} GiB", file=sys.stderr)
+    else:
+        print("worker: MEMORY_LIMIT_GB is not set; MLX keeps its own limit", file=sys.stderr)
+
     model = QwenImage21Edit(quantize=None, model_path=WEIGHTS or None)
     loras = Loras(model, read_init())
     steps_cb = _Steps(_loop)

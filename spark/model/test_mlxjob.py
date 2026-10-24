@@ -76,3 +76,21 @@ class FailureMessage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MemoryLimit(unittest.TestCase):
+    """STORY_041: the worker's MLX limit comes from MEMORY_LIMIT_GB, and the worker sets it before the model loads."""
+
+    def test_the_limit_is_read_in_gib_and_is_none_when_unset_or_not_positive(self):
+        self.assertEqual(mlxjob.memory_limit_bytes({"MEMORY_LIMIT_GB": "48"}), 48 << 30)
+        self.assertEqual(mlxjob.memory_limit_bytes({"MEMORY_LIMIT_GB": " 40.5 "}), int(40.5 * (1 << 30)))
+        for env in ({}, {"MEMORY_LIMIT_GB": ""}, {"MEMORY_LIMIT_GB": "0"}, {"MEMORY_LIMIT_GB": "-3"}, {"MEMORY_LIMIT_GB": "lots"}):
+            self.assertIsNone(mlxjob.memory_limit_bytes(env), env)
+
+    def test_the_worker_sets_the_limit_before_it_loads_the_model(self):
+        from pathlib import Path
+
+        source = (Path(__file__).with_name("worker_mlx.py")).read_text()
+        main = source[source.index("def main()"):]
+        self.assertIn("mx.set_memory_limit(limit)", main)
+        self.assertLess(main.index("mx.set_memory_limit(limit)"), main.index("QwenImage21Edit(quantize"))

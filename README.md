@@ -189,7 +189,7 @@ The UI reads `MODEL_BASE_URL` (the generation server, no trailing slash), `MODEL
 | Model / checkpoint | `Qwen/Qwen-Image-2.1` @ `790c926`, bf16, one `QwenImage21Edit` model for text-to-image and edits |
 | Time per image | Text-to-image at 896×1184, 40 steps: **35 s** in the worker, 36 s through the job API. With a guided LoRA: 75 s. Edit: 50 s. The Spark took 53, 120 and 60 s |
 | Start | Ready in about 5 s with six LoRAs once the files are cached (the Spark: 3.3 minutes) |
-| Memory | Peak resident about 33 GB. `spark/mac/start.sh` refuses to start below 48 GiB available and never stops anything to make room |
+| Memory | Peak resident about 33 GB at rest; 81 GB footprint mid-generation at the 2026-10-23 panic (PATHS EPIC_023). `spark/mac/start.sh` refuses to start below 48 GiB available and never stops anything to make room. Since STORY_041 the server asks the Ultra's memory agent (PATHS `memory/agent.py`, port 8700) for each image's share before it runs (`MEMORY_TOKEN`, `MEMORY_LEASE_GB`, default 48, in `~/qwen-model/.env`; unset, leases are off), and the worker sets `mx.set_memory_limit` from `MEMORY_LIMIT_GB` (a guideline to MLX, not a hard cap) |
 | LoRAs | All six in `spark/loras.json`, loaded unbaked. Each job swaps in only its own LoRA's layers, so switching costs no reload and an unused LoRA costs nothing per step |
 | Layout on the 2026 | `~/qwen-model/`: `app/` (what the deploy copies), `models/Qwen-Image-2.1` (a link to the spike's copy), `models/loras/`, `data/outputs/`, `.env` (`MODEL_API_KEY`, mode 600). Log: `~/Library/Logs/qwen-model.log` |
 

@@ -13,6 +13,21 @@ NEGATIVE_PROMPT = " "
 MEMORY_MESSAGE = "The model server ran out of memory for this image; try a smaller one."
 
 
+def memory_limit_bytes(env: dict) -> Optional[int]:
+    """The worker's MLX memory limit (STORY_041), from MEMORY_LIMIT_GB in its environment (~/qwen-model/.env): the
+    loaded model plus an image's working set, in bytes. None when unset or not a positive number: MLX keeps its own
+    default, 91.2 GiB on the Ultra (95 % of hw.memsize, measured 2026-10-23). MLX calls the limit a guideline: past
+    it, MLX frees its cache and waits for work in flight before allocating more, and an allocation raises (the
+    out-of-memory error failure_message words) only when RAM and swap are also exhausted. So it slows the worker's
+    growth; the Ultra's memory agent, asked before each image, is the guard (PATHS EPIC_023)."""
+    raw = str(env.get("MEMORY_LIMIT_GB") or "").strip()
+    try:
+        gb = float(raw)
+    except ValueError:
+        return None
+    return int(gb * (1 << 30)) if gb > 0 else None
+
+
 class NotLoaded(RuntimeError):
     """A job named an add-on the worker does not have (the server only offers loaded ones; a restart can race)."""
 

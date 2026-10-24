@@ -14,6 +14,7 @@ import { CAPABILITIES, STEPS } from "./capabilities.ts";
 import { BusyError, isTerminal, Jobs, type JobRecord, type JobRequest } from "./jobs.ts";
 import { MAX_BODY_BYTES, MultipartError, boundaryOf, parseMultipart, type MultipartFile } from "./multipart.ts";
 import { loraInfo, withTrigger, type Lora } from "./loras.ts";
+import { createMemory, type Memory } from "./memory.ts";
 import { parametersFor } from "./parameters.ts";
 import { progressFor, type FromWorker } from "./protocol.ts";
 import { HttpError, validateRequest, type Capabilities } from "./validation.ts";
@@ -41,6 +42,11 @@ export interface ModelServerOptions {
   readonly silenceMs?: number;
   readonly watchdogTickMs?: number;
   readonly killAfterMs?: number;
+  /** The Ultra's memory agent (STORY_041): asked before each image. Absent, leases are off. */
+  readonly memory?: Memory;
+  /** While told to wait, how often to ask again, and how often a running image renews its lease. Defaults 10 s, 60 s. */
+  readonly memoryRetryMs?: number;
+  readonly memoryRenewMs?: number;
 }
 
 export interface ModelServer {
@@ -110,6 +116,21 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
   const installed = options.loras ?? [];
   /** The add-ons the worker reported loaded in its last `ready`; one that failed to load is never offered. */
   let loaded: readonly Lora[] = [];
+  // The Ultra's memory (STORY_041): one lease, for the job at the head of the line, asked before the worker is sent
+  // it; `note` is what a waiting job shows. Leases are off when no agent is configured.
+  const memory = options.memory ?? createMemory({ log: () => undefined });
+  let lease: { job: string; id: string | null; granted: boolean; note: string } | null = null;
+  let asking = false;
+  let retry: NodeJS.Timeout | null = null;
+  let renewer: NodeJS.Timeout | null = null;
+  const letGo = (job: string): void => {
+    if (lease?.job !== job) return;
+    const id = lease.id;
+    lease = null;
+    if (renewer !== null) clearInterval(renewer);
+    renewer = null;
+    if (id !== null) void memory.release(id);
+  };
   const capabilities = (): Capabilities => ({ ...CAPABILITIES, loras: loaded.map((l) => ({ id: l.id, label: l.label, info: loraInfo(l) })) });
 
   const save = (): void => {
@@ -134,6 +155,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
         if (!closing) lastRestart = { at: new Date().toISOString(), reason };
         replacing = false;
         if (current !== null && !closing) {
+          letGo(current);
           jobs.fail(current, WORKER_STOPPED);
           cleanup(jobs.get(current));
           current = null;
@@ -181,6 +203,28 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       pump();
       return;
     }
+    // The Ultra's memory first (STORY_041): told to wait, the job stays queued, says why, and is asked about again.
+    if (memory.enabled && !(lease?.job === job.id && lease.granted)) {
+      if (asking) return;
+      asking = true;
+      const carried = lease?.job === job.id ? lease.id : null;
+      if (lease && lease.job !== job.id) letGo(lease.job);
+      void memory.ask(job.id, carried).then((answer) => {
+        asking = false;
+        lease = { job: job.id, id: answer.id, granted: answer.granted, note: answer.note };
+        if (answer.granted) {
+          pump();
+          return;
+        }
+        if (retry !== null) clearTimeout(retry);
+        retry = setTimeout(() => {
+          retry = null;
+          pump();
+        }, options.memoryRetryMs ?? 10_000);
+        retry.unref();
+      });
+      return;
+    }
     // The job runs with what was recorded at creation (STORY_024), not with whatever the manifest says now.
     const r = job.request;
     const sent = worker.send({
@@ -197,6 +241,13 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
     });
     if (!sent) return;
     current = job.id;
+    if (lease?.job === job.id && lease.id !== null) {
+      const id = lease.id;
+      renewer = setInterval(() => {
+        void memory.renew(id);
+      }, options.memoryRenewMs ?? 60_000);
+      renewer.unref();
+    }
     startedAt = lastHeardAt = Date.now();
     stopRequestedAt = null;
     jobs.start(job.id);
@@ -229,6 +280,7 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
       jobs.fail(m.id, m.message);
     }
     // cancelled: the job was already marked cancelled when DELETE arrived; the worker is now free.
+    letGo(m.id);
     cleanup(job);
     if (current === m.id) current = null;
     save();
@@ -242,6 +294,8 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
     request: job.request,
+    // Why a queued job waits (STORY_041): the memory agent's words, while it is the one asking.
+    ...(job.status === "queued" && lease?.job === job.id && lease.note ? { note: lease.note } : {}),
     ...(job.status === "failed" && job.error ? { error: job.error } : {}),
     ...(job.status === "done" && job.result
       ? { result: { url: `/jobs/${job.id}/result`, mimeType: "image/png", width: job.result.width, height: job.result.height, sizeBytes: job.result.sizeBytes } }
@@ -338,6 +392,8 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
           : null,
         queued: jobs.queued().length,
         lastRestart,
+        // STORY_041: whether this server asks the Ultra's memory agent, and the lease it holds or waits on.
+        memory: { enabled: memory.enabled, gb: memory.gb, lease: lease ? { job: lease.job, id: lease.id, granted: lease.granted, note: lease.note || null } : null },
       });
       return;
     }
@@ -363,7 +419,11 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
           worker.send({ type: "cancel", id: job.id });
           if (job.id === current && stopRequestedAt === null) stopRequestedAt = Date.now();
         }
-        else cleanup(job);
+        else {
+          letGo(job.id); // a queued image waiting for memory gives its place back
+          cleanup(job);
+          pump();
+        }
         save();
         sendJson(res, 202, { id: job.id, status: "cancelled", progress: job.progress });
         return;
@@ -407,6 +467,8 @@ export function createModelServer(options: ModelServerOptions): ModelServer {
     close: async () => {
       closing = true;
       clearInterval(watchdog);
+      if (retry !== null) clearTimeout(retry);
+      if (lease !== null) letGo(lease.job);
       await worker.stop();
       await new Promise<void>((resolve) => {
         server.closeAllConnections();
